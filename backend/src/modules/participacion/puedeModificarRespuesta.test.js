@@ -17,4 +17,10 @@ test('No permite modificar si la participación ya finalizó', () => {
 
   assert.equal(resultado, false);
 });
- 
+
+test('Rechaza un estado de finalización inválido', () => {
+  assert.throws(
+    () => puedeModificarRespuesta('finalizada'),
+    TypeError
+  );
+});

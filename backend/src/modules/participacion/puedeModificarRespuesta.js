@@ -1,11 +1,11 @@
-
 function puedeModificarRespuesta(participacionFinalizada) {
-  if (participacionFinalizada === true) {
-    return false;
+  if (typeof participacionFinalizada !== 'boolean') {
+    throw new TypeError(
+      'El estado de finalización debe ser verdadero o falso'
+    );
   }
 
-  return true;
+  return !participacionFinalizada;
 }
 
 module.exports = { puedeModificarRespuesta };
-
