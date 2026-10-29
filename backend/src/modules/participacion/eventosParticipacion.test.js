@@ -57,3 +57,20 @@ test('Rechaza observadores que no son funciones', () => {
   assert.throws(() => eventos.suscribir('observador'), TypeError);
 });
 
+
+test('No notifica después de desuscribir un observador', () => {
+  const eventos = new EventosParticipacion();
+  let notificacionesRecibidas = 0;
+
+  const observador = () => {
+    notificacionesRecibidas++;
+  };
+
+  eventos.suscribir(observador);
+  eventos.notificar({ tipo: 'participacionFinalizada' });
+
+  eventos.desuscribir(observador);
+  eventos.notificar({ tipo: 'participacionFinalizada' });
+
+  assert.equal(notificacionesRecibidas, 1);
+});

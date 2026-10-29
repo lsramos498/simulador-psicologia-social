@@ -10,7 +10,14 @@ class EventosParticipacion {
     }
 
     this.observadores.push(observador);
+
   }
+
+  desuscribir(observador) {
+  this.observadores = this.observadores.filter(
+    (elemento) => elemento !== observador
+  );
+}
 
   notificar(evento) {
     for (const observador of this.observadores) {
@@ -18,6 +25,7 @@ class EventosParticipacion {
     }
   }
 }
+
 
 module.exports = { EventosParticipacion };
 
