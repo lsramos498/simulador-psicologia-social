@@ -27,5 +27,5 @@ class EventosParticipacion {
 }
 
 
-module.exports = { EventosParticipacion };
+export { EventosParticipacion };
 

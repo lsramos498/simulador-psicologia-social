@@ -1,9 +1,9 @@
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
-const { EventosParticipacion } = require('./eventosParticipacion');
-const { crearNotificacionInterna } = require('./notificacionInterna');
+import { EventosParticipacion } from './eventosParticipacion.js';
+import { crearNotificacionInterna } from './notificacionInterna.js';
 
 test('Observer crea una notificación al finalizar una participación', () => {
   const eventos = new EventosParticipacion();

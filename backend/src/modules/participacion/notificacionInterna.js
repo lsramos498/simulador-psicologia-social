@@ -11,5 +11,4 @@ function crearNotificacionInterna(evento) {
   };
 }
 
-module.exports = { crearNotificacionInterna };
-
+export { crearNotificacionInterna };

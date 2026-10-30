@@ -17,4 +17,4 @@ function calcularProgreso(totalPreguntas, preguntasRespondidas) {
   };
 }
 
-module.exports = { calcularProgreso };
+export { calcularProgreso };

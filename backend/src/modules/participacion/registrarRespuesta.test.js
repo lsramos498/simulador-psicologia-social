@@ -1,8 +1,7 @@
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-
-const { registrarRespuesta } = require('./registrarRespuesta');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { registrarRespuesta } from './registrarRespuesta.js';
 
 test('Registra una respuesta con todos sus datos', () => {
   const datos = {

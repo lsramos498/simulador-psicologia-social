@@ -1,8 +1,9 @@
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
 
-const { calcularProgreso } = require('./calcularProgreso');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { calcularProgreso } from './calcularProgreso.js';
+
 
 test('Calcula las preguntas pendientes', () => {
   const resultado = calcularProgreso(5, 3);

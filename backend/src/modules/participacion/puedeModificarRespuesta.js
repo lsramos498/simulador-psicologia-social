@@ -8,4 +8,4 @@ function puedeModificarRespuesta(participacionFinalizada) {
   return !participacionFinalizada;
 }
 
-module.exports = { puedeModificarRespuesta };
+export { puedeModificarRespuesta };

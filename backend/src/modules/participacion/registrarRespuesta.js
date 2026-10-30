@@ -23,5 +23,4 @@ function registrarRespuesta(datos) {
   };
 }
 
-module.exports = { registrarRespuesta };
-
+export { registrarRespuesta };

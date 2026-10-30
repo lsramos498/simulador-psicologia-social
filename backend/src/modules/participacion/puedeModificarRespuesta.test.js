@@ -1,10 +1,9 @@
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
 
-const {
-  puedeModificarRespuesta
-} = require('./puedeModificarRespuesta');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { puedeModificarRespuesta } from './puedeModificarRespuesta.js';
+
 
 test('Permite modificar si la participación no ha finalizado', () => {
   const resultado = puedeModificarRespuesta(false);
