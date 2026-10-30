@@ -1,0 +1,486 @@
+// MODELO RELACIONAL FINAL PROPUESTO — PROYECTO NUCLEAR
+// Sistema de Gestión de Casos Situacionales / Simulador de Psicología Social
+// DBMS objetivo: MySQL 8+
+// Basado en los requisitos funcionales actualizados RF-01 a RF-27.
+// Las reglas indicadas como "backend" deben implementarse y probarse en la aplicación.
+
+Project ProyectoNuclear {
+  database_type: 'MySQL'
+  Note: 'Modelo depurado. Confirmar con el equipo que esta es la versión definitiva de RF-01 a RF-27 antes de implementar.'
+}
+
+// =====================================================
+// 1. USUARIOS, ROLES Y PERMISOS
+// =====================================================
+
+Table Usuario {
+  id int [pk, increment]
+  nombres varchar(100) [not null]
+  apellidos varchar(100) [not null]
+  correoInstitucional varchar(150) [not null, unique]
+  codigoInstitucional varchar(50) [unique]
+  contrasenaHash varchar(255) [not null, note: 'Hash seguro; nunca almacenar contraseñas en texto plano.']
+  activo boolean [not null, default: true]
+  fechaCreacion datetime [not null]
+  fechaActualizacion datetime
+}
+
+Table Rol {
+  id int [pk, increment]
+  nombre varchar(30) [not null, unique, note: 'Administrador, Docente, Estudiante']
+  descripcion varchar(255)
+}
+
+Table UsuarioRol {
+  usuario_id int [not null]
+  rol_id int [not null]
+  asignadoPor_id int
+  fechaAsignacion datetime [not null]
+
+  indexes {
+    (usuario_id, rol_id) [pk]
+  }
+}
+
+Table Permiso {
+  id int [pk, increment]
+  nombre varchar(60) [not null, unique, note: 'Ejemplo: CREAR_CASOS']
+  descripcion varchar(255)
+}
+
+Table RolPermiso {
+  rol_id int [not null]
+  permiso_id int [not null]
+
+  indexes {
+    (rol_id, permiso_id) [pk]
+  }
+}
+
+// =====================================================
+// 2. ORGANIZACIÓN ACADÉMICA
+// =====================================================
+
+Table EspacioAcademico {
+  id int [pk, increment]
+  nombre varchar(150) [not null]
+  codigo varchar(50) [unique]
+  activo boolean [not null, default: true]
+}
+
+// =====================================================
+// 3. DISEÑO DEL CASO SITUACIONAL
+// =====================================================
+
+Table Caso {
+  id int [pk, increment]
+  creador_id int [not null]
+  titulo varchar(200) [not null]
+  desarrolloSituacional text [not null]
+  contextoHistoria text [not null]
+  tiempoEstimadoSegundos int [not null, note: 'Debe ser mayor que cero.']
+  estado varchar(20) [not null, default: 'Borrador', note: 'Borrador, Publicado, Archivado']
+  fechaCreacion datetime [not null]
+  fechaActualizacion datetime
+
+  indexes {
+    (id, creador_id) [unique]
+  }
+
+  Note: 'No se separan descripcion, tematica ni condicionesEntorno: solo deben añadirse si los requisitos definitivos les asignan una función distinta de desarrolloSituacional/contextoHistoria.'
+}
+
+Table Escena {
+  id int [pk, increment]
+  caso_id int [not null]
+  nombre varchar(150) [not null]
+  contexto text [not null]
+  orden int [not null]
+  esFinal boolean [not null, default: false]
+
+  indexes {
+    (caso_id, orden) [unique]
+    (caso_id, id) [unique]
+  }
+}
+
+Table Decision {
+  id int [pk, increment]
+  escena_id int [not null]
+  pregunta text [not null]
+  orden int [not null]
+  ayuda text [note: 'Pista opcional; solo se muestra cuando corresponda según las reglas del simulador.']
+
+  indexes {
+    (escena_id, orden) [unique]
+    (escena_id, id) [unique]
+  }
+}
+
+Table OpcionDecision {
+  id int [pk, increment]
+  decision_id int [not null]
+  texto text [not null]
+  esCorrecta boolean [not null]
+  consecuencia text [note: 'Consecuencia narrativa de la elección; no sustituye la explicación pedagógica de la retroalimentación.']
+  orden int [not null]
+
+  indexes {
+    (decision_id, orden) [unique]
+    (decision_id, id) [unique]
+  }
+}
+
+Table Retroalimentacion {
+  id int [pk, increment]
+  decision_id int
+  opcion_id int
+  explicacion text [not null]
+  fundamentoTeorico text
+
+  Note: 'Regla de integridad: debe existir exactamente uno entre decision_id y opcion_id. Validar en backend/constraint CHECK. Mostrar la retroalimentación al finalizar el intento, no durante la resolución.'
+}
+
+Table Personaje {
+  id int [pk, increment]
+  caso_id int [not null]
+  nombre varchar(100) [not null]
+  rolSocial varchar(100)
+  perfil text
+  pautasComportamiento text
+}
+
+Table EscenaPersonaje {
+  escena_id int [not null]
+  personaje_id int [not null]
+
+  indexes {
+    (escena_id, personaje_id) [pk]
+  }
+}
+
+// =====================================================
+// 4. RÚBRICAS, CRITERIOS Y NIVELES DE DESEMPEÑO
+// =====================================================
+
+Table Rubrica {
+  id int [pk, increment]
+  caso_id int [not null]
+  nombre varchar(150) [not null]
+  descripcion text
+  version int [not null, default: 1]
+  activa boolean [not null, default: true]
+  fechaCreacion datetime [not null]
+
+  indexes {
+    (caso_id, version) [unique]
+    (id, caso_id) [unique]
+  }
+}
+
+Table CriterioEvaluacion {
+  id int [pk, increment]
+  nombre varchar(150) [not null, unique]
+  descripcion text
+}
+
+Table RubricaCriterio {
+  rubrica_id int [not null]
+  criterio_id int [not null]
+  ponderacion decimal(5,2) [not null, note: 'Peso porcentual; validar rango y suma de pesos en backend.']
+  puntajeMaximo decimal(8,2) [not null]
+
+  indexes {
+    (rubrica_id, criterio_id) [pk]
+  }
+}
+
+Table NivelDesempeno {
+  id int [pk, increment]
+  rubrica_id int [not null]
+  criterio_id int [not null]
+  nombre varchar(80) [not null]
+  descripcion text [not null]
+  puntaje decimal(8,2) [not null]
+  orden int [not null]
+
+  indexes {
+    (rubrica_id, criterio_id, orden) [unique]
+    (rubrica_id, criterio_id, id) [unique]
+  }
+
+  Note: 'Cada nivel pertenece a un criterio dentro de una rúbrica concreta.'
+}
+
+// =====================================================
+// 5. PROGRAMACIÓN Y CONVOCATORIA
+// =====================================================
+
+Table ActividadProgramada {
+  id int [pk, increment]
+  caso_id int [not null]
+  espacioAcademico_id int [not null]
+  docente_id int [not null]
+  rubrica_id int [not null]
+  fechaInicio datetime [not null]
+  fechaFin datetime [not null]
+  tiempoLimiteSegundos int [not null]
+  lugar varchar(255) [note: 'Opcional cuando no aplica un lugar físico.']
+  mensajePersonalizado text
+  intentosPermitidos int [not null, default: 1]
+  fechaCreacion datetime [not null]
+
+  indexes {
+    (id, caso_id) [unique]
+    (id, rubrica_id) [unique]
+  }
+
+  Note: 'Solo se pueden programar casos publicados. Validar fechaFin > fechaInicio, tiempoLimiteSegundos > 0 y <= Caso.tiempoEstimadoSegundos, y que la rúbrica corresponda al mismo caso.'
+}
+
+Table EstudianteAutorizado {
+  id int [pk, increment]
+  actividad_id int [not null]
+  estudiante_id int [not null]
+  codigoAutorizacion varchar(100) [not null, unique]
+  estado varchar(20) [not null, default: 'Autorizado', note: 'Autorizado, Retirado, Bloqueado']
+  fechaAutorizacion datetime [not null]
+
+  indexes {
+    (actividad_id, estudiante_id) [unique]
+  }
+}
+
+Table Asistencia {
+  id int [pk, increment]
+  actividad_id int [not null]
+  estudiante_id int [not null]
+  estado varchar(20) [not null, note: 'Convocado, Presente, Ausente, Retirado']
+  fechaRegistro datetime [not null]
+  observaciones text
+
+  indexes {
+    (actividad_id, estudiante_id) [unique]
+  }
+
+  Note: 'El estudiante registrado debe estar asociado a la convocatoria de esa actividad.'
+}
+
+// =====================================================
+// 6. SESIONES, RESPUESTAS, RECORRIDO Y REFLEXIONES
+// =====================================================
+
+Table SesionSimulacion (
+  id int [pk, increment]
+  actividad_id int [not null]
+  estudiante_id int [not null]
+  numeroIntento int [not null, default: 1]
+  estado varchar(20) [not null, default: 'Sin iniciar', note: 'Sin iniciar, En curso, Finalizado']
+  inicio datetime
+  fin datetime
+  segundosConsumidos int [not null, default: 0]
+  motivoCierre varchar(30) [note: 'Finalizacion, TiempoAgotado, CierreDocente, CierreAutomatico']
+
+  indexes {
+    (actividad_id, estudiante_id, numeroIntento) [unique]
+    (id, actividad_id, estudiante_id) [unique]
+  }
+
+  Note: 'La creación de la sesión requiere estudiante autorizado. Validar límite de intentos, ventana de acceso, cierre automático y bloqueo de sesiones finalizadas en backend.'
+}
+
+Table RespuestaEstudiante {
+  id int [pk, increment]
+  sesion_id int [not null]
+  decision_id int [not null]
+  opcion_id int
+  fechaRespuesta datetime
+  fechaModificacion datetime
+  esCorrecta boolean
+  puntuacionObtenida decimal(8,2) [not null, default: 0]
+
+  indexes {
+    (sesion_id, decision_id) [unique]
+  }
+
+  Note: 'Una respuesta por pregunta y sesión; la opción puede ser nula mientras no se responda. El backend debe comprobar que la pregunta pertenece al caso/actividad de la sesión y que la opción pertenece a esa pregunta.'
+}
+
+Table RegistroInteraccion {
+  id int [pk, increment]
+  sesion_id int [not null]
+  escena_id int
+  decision_id int
+  opcion_id int
+  momento datetime [not null]
+  duracionSegundos int
+  tipoEvento varchar(60) [not null]
+  detalle text
+
+  Note: 'Historial técnico del recorrido, respuestas y tiempos de la sesión.'
+}
+
+// =====================================================
+// 7. EVALUACIÓN Y RESULTADOS
+// =====================================================
+
+Table Evaluacion (
+  id int [pk, increment]
+  sesion_id int [not null, unique]
+  actividad_id int [not null]
+  rubrica_id int [not null]
+  evaluador_id int
+  fechaEvaluacion datetime [not null]
+  resultado decimal(8,2) [not null, default: 0]
+  retroalimentacionGeneral text
+
+  indexes {
+    (id, rubrica_id) [unique]
+  }
+
+  Note: 'Guardar el resultado de cada intento con la versión de rúbrica aplicada; el máximo total se deriva de los criterios y sus niveles. No recalcular evaluaciones históricas si la rúbrica cambia.'
+}
+
+Table ResultadoCriterio (
+  evaluacion_id int [not null]
+  rubrica_id int [not null, note: 'Se almacena para garantizar que el criterio pertenezca a la rúbrica usada en la evaluación.']
+  criterio_id int [not null]
+  puntuacion decimal(8,2) [not null, default: 0]
+  observacion text
+
+  indexes {
+    (evaluacion_id, criterio_id) [pk]
+  }
+}
+
+// =====================================================
+// 8. AUTORIZACIONES EXTRA Y NOTIFICACIONES
+// =====================================================
+
+Table AutorizacionRepeticion {
+  id int [pk, increment]
+  actividad_id int [not null]
+  estudiante_id int [not null]
+  autorizadoPor_id int [not null]
+  fechaAutorizacion datetime [not null]
+  motivo text [not null]
+  estado varchar(20) [not null, default: 'Aprobada', note: 'Aprobada, Rechazada, Consumida']
+  consumidaEn datetime
+
+  Note: 'El backend debe verificar que quien autoriza sea el docente creador del caso y que la autorización permita una repetición excepcional no reutilizable.'
+}
+
+Table Notificacion {
+  id int [pk, increment]
+  usuario_id int [not null]
+  actividad_id int
+  sesion_id int
+  tipo varchar(40) [not null, note: 'Convocatoria, CambioConvocatoria, Calificacion, Retroalimentacion']
+  canal varchar(15) [not null, note: 'Correo, Sistema']
+  asunto varchar(255)
+  mensaje text [not null]
+  url varchar(500)
+  estado varchar(20) [not null, default: 'Pendiente', note: 'Pendiente, Enviada, Leida, Fallida']
+  fechaCreacion datetime [not null]
+  fechaEnvio datetime
+  fechaLectura datetime
+  errorEnvio text
+}
+
+// =====================================================
+// RELACIONES
+// =====================================================
+
+// Usuarios, roles y permisos
+Ref: UsuarioRol.usuario_id > Usuario.id
+Ref: UsuarioRol.rol_id > Rol.id
+Ref: UsuarioRol.asignadoPor_id > Usuario.id
+Ref: RolPermiso.rol_id > Rol.id
+Ref: RolPermiso.permiso_id > Permiso.id
+
+// Casos, escenas, preguntas, opciones y personajes
+Ref: Caso.creador_id > Usuario.id
+Ref: Escena.caso_id > Caso.id
+Ref: Decision.escena_id > Escena.id
+Ref: OpcionDecision.decision_id > Decision.id
+Ref: Retroalimentacion.decision_id > Decision.id
+Ref: Retroalimentacion.opcion_id > OpcionDecision.id
+Ref: Personaje.caso_id > Caso.id
+Ref: EscenaPersonaje.escena_id > Escena.id
+Ref: EscenaPersonaje.personaje_id > Personaje.id
+
+// Rúbricas y niveles
+Ref: Rubrica.caso_id > Caso.id
+Ref: RubricaCriterio.rubrica_id > Rubrica.id
+Ref: RubricaCriterio.criterio_id > CriterioEvaluacion.id
+Ref: NivelDesempeno.(rubrica_id, criterio_id) > RubricaCriterio.(rubrica_id, criterio_id)
+
+// Programación y convocatoria
+Ref: ActividadProgramada.caso_id > Caso.id
+Ref: ActividadProgramada.espacioAcademico_id > EspacioAcademico.id
+Ref: ActividadProgramada.docente_id > Usuario.id
+Ref: ActividadProgramada.rubrica_id > Rubrica.id
+Ref: ActividadProgramada.(rubrica_id, caso_id) > Rubrica.(id, caso_id)
+Ref: EstudianteAutorizado.actividad_id > ActividadProgramada.id
+Ref: EstudianteAutorizado.estudiante_id > Usuario.id
+Ref: Asistencia.actividad_id > ActividadProgramada.id
+Ref: Asistencia.estudiante_id > Usuario.id
+Ref: Asistencia.(actividad_id, estudiante_id) > EstudianteAutorizado.(actividad_id, estudiante_id)
+
+// Sesiones, respuestas y trazabilidad
+Ref: SesionSimulacion.actividad_id > ActividadProgramada.id
+Ref: SesionSimulacion.estudiante_id > Usuario.id
+Ref: SesionSimulacion.(actividad_id, estudiante_id) > EstudianteAutorizado.(actividad_id, estudiante_id)
+Ref: RespuestaEstudiante.sesion_id > SesionSimulacion.id
+Ref: RespuestaEstudiante.decision_id > Decision.id
+Ref: RespuestaEstudiante.(decision_id, opcion_id) > OpcionDecision.(decision_id, id)
+Ref: RegistroInteraccion.sesion_id > SesionSimulacion.id
+Ref: RegistroInteraccion.escena_id > Escena.id
+Ref: RegistroInteraccion.decision_id > Decision.id
+Ref: RegistroInteraccion.opcion_id > OpcionDecision.id
+
+// Evaluación y resultados
+Ref: Evaluacion.sesion_id > SesionSimulacion.id
+Ref: Evaluacion.rubrica_id > Rubrica.id
+Ref: Evaluacion.evaluador_id > Usuario.id
+Ref: Evaluacion.(sesion_id, actividad_id) > SesionSimulacion.(id, actividad_id)
+Ref: Evaluacion.(actividad_id, rubrica_id) > ActividadProgramada.(id, rubrica_id)
+Ref: ResultadoCriterio.evaluacion_id > Evaluacion.id
+Ref: ResultadoCriterio.(evaluacion_id, rubrica_id) > Evaluacion.(id, rubrica_id)
+Ref: ResultadoCriterio.(rubrica_id, criterio_id) > RubricaCriterio.(rubrica_id, criterio_id)
+
+// Repeticiones excepcionales y notificaciones
+Ref: AutorizacionRepeticion.actividad_id > ActividadProgramada.id
+Ref: AutorizacionRepeticion.estudiante_id > Usuario.id
+Ref: AutorizacionRepeticion.autorizadoPor_id > Usuario.id
+Ref: Notificacion.usuario_id > Usuario.id
+Ref: Notificacion.actividad_id > ActividadProgramada.id
+Ref: Notificacion.sesion_id > SesionSimulacion.id
+
+// =====================================================
+// REGLAS DE NEGOCIO QUE DEBEN VALIDARSE EN BACKEND
+// =====================================================
+// 1. Usuario: los estudiantes deben autenticarse con correo institucional y código de autorización válido.
+// 2. Roles/permisos: solo usuarios con permiso pueden crear casos; restringir funciones por rol.
+// 3. Caso: titulo, desarrolloSituacional y contextoHistoria no vacíos; tiempo estimado > 0.
+// 4. Publicación: el caso debe tener al menos una escena, al menos una pregunta en alguna escena,
+//    cada pregunta debe tener al menos dos opciones y el caso debe tener una rúbrica antes de publicarse.
+// 5. Cada opción de una pregunta debe tener una explicación/retroalimentación según las reglas funcionales.
+// 6. Retroalimentacion: exactamente uno entre decision_id y opcion_id debe ser no nulo.
+// 7. Personajes asociados a una escena deben pertenecer al mismo caso de esa escena.
+// 8. ActividadProgramada: caso publicado; rúbrica del mismo caso; fechaFin > fechaInicio;
+//    tiempoLimiteSegundos > 0 y no mayor a Caso.tiempoEstimadoSegundos.
+// 9. Acceso: código de autorización válido, estudiante convocado, dentro de ventana permitida y sesión no finalizada.
+// 10. Estados de sesión: Sin iniciar -> En curso -> Finalizado. Automatizar el cierre cuando corresponda,
+//     incluido el cierre un día después del fin previsto, según RF-19.
+// 11. RF-22: bloquear ingreso tardío aplicando el umbral acordado con el responsable académico.
+// 12. Intentos: por defecto uno; permitir repetición excepcional solo con autorización del docente creador.
+// 13. Respuesta: la opción seleccionada debe pertenecer a la pregunta respondida; guardar por separado cada intento.
+// 14. Evaluación: al finalizar, calcular nota con la rúbrica asociada; guardar resultados por criterio.
+//     Los intentos incompletos reciben nota parcial según rúbrica; la ausencia recibe cero por pregunta.
+// 15. ResultadoCriterio almacena rubrica_id y tiene claves foráneas compuestas para garantizar que
+//     el criterio forme parte de la rúbrica aplicada a esa evaluación.
+// 16. Mostrar retroalimentación por pregunta y general solo al finalizar, según permisos y RF-14/RF-26.
+// 17. Notificar convocatorias, cambios de convocatoria, calificaciones y nuevas retroalimentaciones.
+// 18. La suma de ponderaciones de RubricaCriterio debe cumplir la escala acordada; puntajes dentro de rango.
+// 19. Aplicar restricciones de acceso, validación de entradas, transacciones y protección de datos en backend.
