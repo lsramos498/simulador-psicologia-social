@@ -14,7 +14,7 @@ import {
 
 // Usuarios ficticios solo para pruebas
 const administrador = { id: 1, roles: [ROLES.ADMINISTRADOR], permisos: [] };
-const docenteCreador = { id: 2, roles: [ROLES.DOCENTE], permisos: ['crear_casos'] };
+const docenteCreador = { id: 2, roles: [ROLES.DOCENTE], permisos: ['CREAR_CASOS'] };
 const docenteSinPermiso = { id: 3, roles: [ROLES.DOCENTE], permisos: [] };
 const estudiante = { id: 4, roles: [ROLES.ESTUDIANTE], permisos: [] };
 
@@ -37,13 +37,13 @@ test('tieneRol responde false si el usuario no tiene roles', () => {
 });
 
 test('tienePermiso distingue docentes con y sin permiso de crear casos', () => {
-  assert.equal(tienePermiso(docenteCreador, 'crear_casos'), true);
-  assert.equal(tienePermiso(docenteSinPermiso, 'crear_casos'), false);
+  assert.equal(tienePermiso(docenteCreador, 'CREAR_CASOS'), true);
+  assert.equal(tienePermiso(docenteSinPermiso, 'CREAR_CASOS'), false);
 });
 
 test('las reglas rechazan un usuario inexistente', () => {
   assert.throws(() => tieneRol(null, ROLES.DOCENTE), TypeError);
-  assert.throws(() => tienePermiso(undefined, 'crear_casos'), TypeError);
+  assert.throws(() => tienePermiso(undefined, 'CREAR_CASOS'), TypeError);
 });
 
 // ---------- Pruebas de integración con una ruta de prueba ----------
@@ -58,7 +58,7 @@ function crearAppDePrueba(usuario) {
   app.get('/solo-admin', requiereRol(ROLES.ADMINISTRADOR), (_req, res) => {
     res.status(200).json({ ok: true });
   });
-  app.post('/casos', requierePermiso('crear_casos'), (_req, res) => {
+  app.post('/casos', requierePermiso('CREAR_CASOS'), (_req, res) => {
     res.status(201).json({ ok: true });
   });
   return app;

@@ -3,14 +3,14 @@
  * RF-02: restringir funciones según rol y permiso específico.
  *
  * Trabaja sobre el usuario autenticado que el servidor deja en req.usuario:
- *   { id, roles: ['docente'], permisos: ['crear_casos'] }
+ *   { id, roles: ['Docente'], permisos: ['CREAR_CASOS'] }
  * Nunca sobre roles o permisos enviados por el cliente.
  */
 
 export const ROLES = Object.freeze({
-  ADMINISTRADOR: 'administrador',
-  DOCENTE: 'docente',
-  ESTUDIANTE: 'estudiante'
+  ADMINISTRADOR: 'Administrador',
+  DOCENTE: 'Docente',
+  ESTUDIANTE: 'Estudiante'
 });
 
 function validarUsuario(usuario) {
