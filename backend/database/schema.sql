@@ -168,11 +168,9 @@ CREATE TABLE Retroalimentacion (
   fundamentoTeorico TEXT NULL,
   PRIMARY KEY (id),
   CONSTRAINT fk_retro_decision
-    FOREIGN KEY (decision_id) REFERENCES Decision (id)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (decision_id) REFERENCES Decision (id),
   CONSTRAINT fk_retro_opcion
-    FOREIGN KEY (opcion_id) REFERENCES OpcionDecision (id)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (opcion_id) REFERENCES OpcionDecision (id),
   CONSTRAINT chk_retro_un_destino CHECK (
     (decision_id IS NOT NULL AND opcion_id IS NULL)
     OR (decision_id IS NULL AND opcion_id IS NOT NULL)
