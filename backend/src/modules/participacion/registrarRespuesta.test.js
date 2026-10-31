@@ -3,11 +3,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { registrarRespuesta } from './registrarRespuesta.js';
 
-test('Registra una respuesta con todos sus datos', () => {
+test('Valida una respuesta con datos correctos', () => {
   const datos = {
-    estudianteId: 1,
-    sesionId: 2,
-    preguntaId: 3,
+    sesionId: 1,
+    decisionId: 3,
     opcionId: 4
   };
 
@@ -16,11 +15,10 @@ test('Registra una respuesta con todos sus datos', () => {
   assert.deepEqual(resultado, datos);
 });
 
-test('Rechaza una respuesta con datos incompletos', () => {
+test('Rechaza una respuesta sin opción', () => {
   const datos = {
-    estudianteId: 1,
-    sesionId: 2,
-    preguntaId: 3
+    sesionId: 1,
+    decisionId: 3
   };
 
   assert.throws(() => registrarRespuesta(datos));
@@ -28,4 +26,12 @@ test('Rechaza una respuesta con datos incompletos', () => {
 
 test('Rechaza una respuesta sin datos', () => {
   assert.throws(() => registrarRespuesta(null), TypeError);
+});
+
+test('Rechaza identificadores incorrectos', () => {
+  assert.throws(() => registrarRespuesta({
+    sesionId: -1,
+    decisionId: 3,
+    opcionId: 4
+  }));
 });

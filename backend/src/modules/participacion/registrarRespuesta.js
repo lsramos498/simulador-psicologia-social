@@ -4,21 +4,21 @@ function registrarRespuesta(datos) {
     throw new TypeError('Los datos de la respuesta no son válidos');
   }
 
-  const { estudianteId, sesionId, preguntaId, opcionId } = datos;
+  const { sesionId, decisionId, opcionId } = datos;
 
   if (
-    estudianteId == null ||
-    sesionId == null ||
-    preguntaId == null ||
-    opcionId == null
+    !Number.isInteger(sesionId) || sesionId <= 0 ||
+    !Number.isInteger(decisionId) || decisionId <= 0 ||
+    !Number.isInteger(opcionId) || opcionId <= 0
   ) {
-    throw new Error('Faltan datos para registrar la respuesta');
+    throw new Error(
+      'La sesión, la decisión y la opción deben tener identificadores válidos'
+    );
   }
 
   return {
-    estudianteId,
     sesionId,
-    preguntaId,
+    decisionId,
     opcionId
   };
 }
