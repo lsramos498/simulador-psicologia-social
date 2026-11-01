@@ -2,9 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ESTADOS_AUTORIZACION,
+  crearCodigoAutorizacion,
   generarCodigoAutorizacion,
-  validarAccesoEstudiante
+  hashearCodigoAutorizacion,
+  validarAccesoEstudiante,
+  verificarCodigoAutorizacion
 } from '../src/modules/acceso/codigos.js';
+
+// Clave secreta ficticia solo para pruebas (la real va en .env, nunca en Git)
+process.env.CODIGO_AUTORIZACION_SECRETO = 'clave-de-prueba-solo-para-tests-0123456789';
 
 // Datos ficticios solo para pruebas
 const AHORA = new Date('2026-11-03T15:00:00');
@@ -20,7 +26,7 @@ function crearRegistro(cambios = {}) {
     autorizacion: {
       actividad_id: 5,
       estudiante_id: 10,
-      codigoAutorizacion: 'ABCD2345',
+      codigoAutorizacion: hashearCodigoAutorizacion('ABCD2345'),
       estado: ESTADOS_AUTORIZACION.AUTORIZADO,
       ...cambios.autorizacion
     },
@@ -57,6 +63,46 @@ test('genera códigos de 8 caracteres sin letras ni números confusos', () => {
 test('genera códigos distintos en llamadas sucesivas', () => {
   const codigos = new Set(Array.from({ length: 200 }, generarCodigoAutorizacion));
   assert.equal(codigos.size, 200);
+});
+
+// ---------- Hash de códigos (decisión del equipo) ----------
+
+test('el hash no contiene el código original y tiene 64 caracteres', () => {
+  const hash = hashearCodigoAutorizacion('ABCD2345');
+  assert.match(hash, /^[0-9a-f]{64}$/);
+  assert.ok(!hash.includes('ABCD2345'));
+});
+
+test('el mismo código siempre produce el mismo hash (se puede buscar en la BD)', () => {
+  assert.equal(hashearCodigoAutorizacion('ABCD2345'), hashearCodigoAutorizacion(' abcd2345 '));
+});
+
+test('códigos distintos producen hashes distintos', () => {
+  assert.notEqual(hashearCodigoAutorizacion('ABCD2345'), hashearCodigoAutorizacion('ABCD2346'));
+});
+
+test('verificarCodigoAutorizacion acepta el código correcto y rechaza otro', () => {
+  const hash = hashearCodigoAutorizacion('ABCD2345');
+  assert.equal(verificarCodigoAutorizacion('abcd2345', hash), true);
+  assert.equal(verificarCodigoAutorizacion('ZZZZ9999', hash), false);
+  assert.equal(verificarCodigoAutorizacion('', hash), false);
+  assert.equal(verificarCodigoAutorizacion('ABCD2345', null), false);
+});
+
+test('crearCodigoAutorizacion entrega el código para el correo y su hash para la BD', () => {
+  const { codigo, codigoHash } = crearCodigoAutorizacion();
+  assert.match(codigo, /^[A-HJKMNP-Z2-9]{8}$/);
+  assert.equal(verificarCodigoAutorizacion(codigo, codigoHash), true);
+});
+
+test('falla con un mensaje claro si falta la clave secreta', () => {
+  const original = process.env.CODIGO_AUTORIZACION_SECRETO;
+  delete process.env.CODIGO_AUTORIZACION_SECRETO;
+  try {
+    assert.throws(() => hashearCodigoAutorizacion('ABCD2345'), /CODIGO_AUTORIZACION_SECRETO/);
+  } finally {
+    process.env.CODIGO_AUTORIZACION_SECRETO = original;
+  }
 });
 
 // ---------- Acceso permitido (RF-01) ----------
@@ -145,4 +191,3 @@ test('rechaza con 403 si la sesión del estudiante ya finalizó', () => {
   const registro = crearRegistro({ sesion: { estado: 'Finalizado' } });
   esperarError(() => validarAccesoEstudiante(credenciales, registro, AHORA), 403, /finalizada/);
 });
-
