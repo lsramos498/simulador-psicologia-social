@@ -1,5 +1,5 @@
 import { randomInt } from 'node:crypto';
-
+import { ESTADOS_SESION } from '../sesiones/sesion.state.js';
 /**
  * Códigos de autorización de la convocatoria (Sofía Gallego — acceso y permisos).
  * RF-01: el estudiante ingresa con correo institucional + código de autorización.
@@ -18,8 +18,7 @@ export const ESTADOS_AUTORIZACION = Object.freeze({
   BLOQUEADO: 'Bloqueado'
 });
 
-// Mismo valor que ESTADOS_SESION.FINALIZADO del módulo de sesiones (Laura).
-const SESION_FINALIZADA = 'Finalizado';
+
 
 // Sin 0/O ni 1/I/L para evitar confusiones al copiar el código del correo.
 const ALFABETO = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -106,7 +105,7 @@ export function validarAccesoEstudiante(credenciales, registro, ahora = new Date
     throw errorAcceso('La actividad ya terminó', 403);
   }
 
-  if (sesion && sesion.estado === SESION_FINALIZADA) {
+    if (sesion && sesion.estado === ESTADOS_SESION.FINALIZADO) {
     throw errorAcceso('La participación en esta actividad ya fue finalizada', 403);
   }
 
