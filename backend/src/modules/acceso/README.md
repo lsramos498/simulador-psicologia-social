@@ -42,12 +42,17 @@ Crea los roles `Administrador`, `Docente` y `Estudiante`, el catálogo inicial d
 roles: eso lo hace después el administrador. Se puede ejecutar varias veces sin duplicar datos
 y no cambia la contraseña de un administrador que ya existe.
 
-## Endpoint
+## Endpoints
 
-### `POST /api/acceso/estudiantes/ingreso`
+### `POST /api/acceso/estudiantes/ingreso` (RF-01, RF-20)
 
 ```json
 { "correo": "estudiante@unihumboldt.edu.co", "codigo": "ABCD2345" }
+```
+
+```
+correo + código → hash del código → convocatoria en MySQL → reglas (estado, ventana, sesión)
+→ roles y permisos (MySQL) → ¿tiene el rol Estudiante? → token JWT
 ```
 
 | Respuesta | Cuándo |
@@ -58,6 +63,50 @@ y no cambia la contraseña de un administrador que ya existe.
 | `403` | Estudiante retirado o bloqueado, cuenta inactiva, fuera de la ventana, sesión finalizada o sin rol `Estudiante` |
 | `404` | La actividad del código no existe |
 | `500` | Error interno (sin detalles para el cliente) |
+
+### `POST /api/acceso/ingreso` (docentes y administradores)
+
+```json
+{ "correo": "docente@unihumboldt.edu.co", "contrasena": "..." }
+```
+
+```
+correo + contraseña → buscar usuario (MySQL) → verificar hash (scrypt)
+→ ¿cuenta activa? → roles y permisos (MySQL) → ¿Docente o Administrador? → token JWT
+```
+
+| Respuesta | Cuándo |
+|---|---|
+| `200` `{ token, usuario: { id, roles, permisos } }` | Credenciales correctas |
+| `400` | Falta el correo o la contraseña |
+| `401` | Correo o contraseña no válidos (mismo mensaje en ambos casos) |
+| `403` | Cuenta inactiva, o el usuario no es docente ni administrador (los estudiantes usan su código) |
+| `500` | Error interno |
+
+### Administración: `/api/acceso/admin/...` (RF-03)
+
+Todas exigen token (`401`) y el rol `Administrador` (`403`).
+
+| Método y ruta | Cuerpo | Qué hace |
+|---|---|---|
+| `GET /roles` | | Roles con sus permisos |
+| `GET /permisos` | | Catálogo de permisos |
+| `POST /docentes` | `{ nombres, apellidos, correo, contrasena }` | Crea un usuario con rol `Docente` (`201`, `409` si el correo existe) |
+| `POST /usuarios/:id/roles` | `{ "rol": "Docente" }` | Asigna un rol existente |
+| `DELETE /usuarios/:id/roles/:rol` | | Quita un rol (`409` si el administrador intenta quitarse el suyo) |
+| `POST /roles/:rol/permisos` | `{ "permiso": "CREAR_CASOS" }` | Asigna un permiso del catálogo a un rol |
+| `DELETE /roles/:rol/permisos/:permiso` | | Quita un permiso de un rol |
+
+Roles o permisos que no existen responden `404`: no se crean roles ni permisos desde la API.
+
+### Seguridad
+
+- Mismo mensaje para "no existe" e "incorrecto", para no revelar qué correos o códigos son válidos.
+- Si el correo no existe, la contraseña se compara contra un hash ficticio: la respuesta tarda lo mismo y el tiempo no delata qué correos están registrados.
+- Las contraseñas se guardan con scrypt y sal aleatoria; los códigos, con HMAC-SHA256. Ninguno se devuelve en las respuestas.
+- La identidad y los permisos salen del token firmado por el servidor, nunca del cuerpo de la petición.
+- Un docente no puede asignarse roles ni permisos; el administrador no puede quitarse su propio rol.
+- Los cambios de roles o permisos se aplican en el siguiente ingreso, porque viajan dentro del token (máximo 1 hora).
 
 ## Uso desde otros módulos
 
@@ -108,18 +157,19 @@ const { codigo, codigoHash } = crearCodigoAutorizacion();
 | `tokens.js` | Firmar y verificar JWT |
 | `autenticar.middleware.js` | Llena `req.usuario` a partir del token |
 | `acceso.repository.js` | Consultas MySQL (solo lectura) |
-| `acceso.service.js` | Ingreso del estudiante: repositorio → reglas → token |
+| `acceso.service.js` | Ingreso del estudiante y de docentes/administradores: repositorio → reglas → token |
+| `administracion.repository.js` | Escrituras MySQL de RF-03 (crear docente en transacción, roles, permisos) |
+| `administracion.service.js` | Reglas de RF-03 |
+| `routes/acceso.routes.js`, `routes/administracion.routes.js` | Rutas HTTP del módulo |
 | `seed.js` + `scripts/seed-inicial.js` | Datos iniciales: roles, permisos y primer administrador |
-
-Las pruebas están en `backend/tests/` y se ejecutan con `npm test`. No usan MySQL ni datos reales.
 
 ## Patrones de diseño
 
 | Patrón | Dónde | Problema que resuelve |
 |---|---|---|
 | **Proxy** (de protección) | `servicioProtegido.proxy.js` | Controla el acceso a una operación de negocio (por ejemplo, crear casos) antes de delegarla al servicio real. El servicio real no necesita saber nada de seguridad. Expone solo las operaciones configuradas y no se puede modificar después de creado. |
-| **Chain of Responsibility** | `autenticar` → `requiereRol` / `requierePermiso` → ruta | Cada eslabón revisa una sola cosa (identidad, luego permiso) y decide si pasa la petición al siguiente o la detiene con 401 o 403. Separa autenticación de autorización. |
-| **Repository** | `acceso.repository.js` | Aísla el SQL. Las reglas de negocio y el servicio no saben que existe MySQL; solo piden datos. |
+| **Chain of Responsibility** | `autenticar` → `requiereRol` / `requierePermiso` → ruta (en administración, `router.use(autenticar, requiereRol('Administrador'))` protege todas las rutas) | Cada eslabón revisa una sola cosa (identidad, luego permiso) y decide si pasa la petición al siguiente o la detiene con 401 o 403. Separa autenticación de autorización. |
+| **Repository** | `acceso.repository.js`, `administracion.repository.js` | Aísla el SQL. Las reglas de negocio y el servicio no saben que existe MySQL; solo piden datos. |
 | **Inyección de dependencias** | `crearServicioAcceso(repositorio, { reloj })`, `crearRepositorioAcceso(pool)`, `crearRutasAcceso(obtenerServicio)` | Cada pieza recibe lo que necesita en vez de crearlo. Por eso las pruebas pueden usar un pool falso o fijar la fecha actual sin tocar el código. |
 | **Factory** (funciones fábrica) | `crearRepositorioAcceso`, `crearServicioAcceso`, `crearServicioProtegido`, `crearRutasAcceso` | Construyen objetos ya configurados con sus dependencias y validan que lo recibido sea correcto. |
 
@@ -130,18 +180,27 @@ para no duplicar la verificación de permisos.
 
 | Tipo | Archivos | Qué comprueban |
 |---|---|---|
-| Unitarias | `autorizacion`, `codigos`, `contrasenas`, `servicioProtegido.proxy`, `seed`, `acceso.repository` | Cada función aislada; MySQL se reemplaza por un pool o una conexión falsa |
-| Integración | `acceso.ingreso`, `autenticacion` (rutas), `autorizacion` (rutas) | Varias piezas juntas a través de peticiones HTTP con `supertest` |
+| Unitarias | `autorizacion`, `codigos`, `contrasenas`, `servicioProtegido.proxy`, `seed`, `acceso.repository`, `administracion.service`, `administracion.repository` | Cada función aislada; MySQL se reemplaza por un pool, una conexión o un repositorio falso |
+| Integración (HTTP) | `acceso.ingreso`, `acceso.ingreso-docente`, `administracion.routes`, `autenticacion`, `autorizacion` (rutas) | Varias piezas juntas a través de peticiones HTTP con `supertest` |
+| Integración (MySQL real) | `acceso.mysql` | Seed, creación de docente, permisos, ingreso de docente y de estudiante contra la base real |
 
 ```
-npm test                                  # todas las pruebas
+npm test                                  # todas (la de MySQL real se salta)
 node --test --experimental-test-coverage  # con reporte de cobertura
+```
+
+La prueba con MySQL real se activa a propósito y usa la base del `.env`. Todo ocurre dentro
+de una transacción que se deshace al final, así que no deja datos guardados:
+
+```
+set LUMINA_MYSQL_TEST=1
+node --test tests/acceso.mysql.test.js
 ```
 
 ## Pendiente
 
-- Nombres del catálogo de permisos.
-- Ingreso de docente y administrador (ruta).
-- Administración de docentes, roles y permisos (RF-03).
+- Nombres del resto del catálogo de permisos (hoy solo `CREAR_CASOS`).
+- Política de contraseñas (longitud mínima) y límite de intentos de ingreso.
+- Pantallas del frontend (cuando exista el proyecto de React).
 - Umbral de ingreso tardío (RF-22), con la profesora.
 - `Usuario.contrasenaHash` opcional en el esquema (Stefanía).
