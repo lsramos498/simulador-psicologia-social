@@ -5,6 +5,7 @@ import {
   normalizarCorreo,
   validarAccesoEstudiante
 } from './codigos.js';
+import { hashearContrasena, verificarContrasena } from './contrasenas.js';
 import { firmarToken } from './tokens.js';
 
 /**
@@ -14,7 +15,18 @@ import { firmarToken } from './tokens.js';
  * RF-01: el estudiante ingresa con correo institucional + código de autorización.
  * Acordado con el equipo: el estudiante debe existir, estar activo y tener
  * el rol Estudiante.
+ *
+ * Decisión del equipo: docentes y administradores ingresan con correo
+ * institucional + contraseña (solo se guarda el hash).
  */
+
+// Hash de una contraseña que nadie conoce. Se compara cuando el correo no
+// existe, para que la respuesta tarde lo mismo y no revele qué correos existen.
+let hashFicticio;
+async function obtenerHashFicticio() {
+  hashFicticio ??= await hashearContrasena('contrasena-ficticia-que-nunca-coincide');
+  return hashFicticio;
+}
 
 function errorAcceso(mensaje, statusCode) {
   const error = new Error(mensaje);
@@ -56,6 +68,44 @@ export function crearServicioAcceso(repositorio, { reloj = () => new Date() } = 
       return {
         token,
         usuario: { id: estudianteId, roles, actividadId }
+      };
+    },
+
+    async ingresarConContrasena(credenciales) {
+      const correo = normalizarCorreo(credenciales?.correo);
+      const contrasena = credenciales?.contrasena;
+
+      if (!correo || typeof contrasena !== 'string' || contrasena === '') {
+        throw errorAcceso('El correo institucional y la contraseña son obligatorios', 400);
+      }
+
+      // 1. Buscar al usuario y comprobar la contraseña contra su hash.
+      const usuarioBd = await repositorio.buscarUsuarioPorCorreo(correo);
+      const hashGuardado = usuarioBd?.contrasenaHash ?? await obtenerHashFicticio();
+      const contrasenaValida = await verificarContrasena(contrasena, hashGuardado);
+
+      // Mismo mensaje si el correo no existe o la contraseña es incorrecta.
+      if (!usuarioBd || !contrasenaValida) {
+        throw errorAcceso('Correo o contraseña no válidos', 401);
+      }
+
+      if (!usuarioBd.activo) {
+        throw errorAcceso('La cuenta está inactiva', 403);
+      }
+
+      // 2. Roles y permisos desde la base de datos.
+      const { roles, permisos } = await repositorio.obtenerRolesYPermisos(usuarioBd.id);
+      const usuario = { id: usuarioBd.id, roles, permisos };
+
+      // Los estudiantes ingresan con su código, no con contraseña.
+      if (!tieneRol(usuario, ROLES.DOCENTE, ROLES.ADMINISTRADOR)) {
+        throw errorAcceso('Este ingreso es solo para docentes y administradores', 403);
+      }
+
+      // 3. Entregar el token de sesión.
+      return {
+        token: firmarToken(usuario),
+        usuario
       };
     }
   };
