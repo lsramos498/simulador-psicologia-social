@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { construirCaso } from '../src/modules/casos/caso.builder.js';
 import {
+  normalizarDecision,
+  normalizarEscena,
   normalizarOpcion,
+  normalizarPersonaje,
   normalizarRubrica,
   validarCaso,
   validarCreador,
@@ -300,4 +303,227 @@ test('guardar la rúbrica solo ocurre si el caso sigue en borrador', async () =>
 
   assert.equal(guardada.nombre, 'Rúbrica de aula');
   assert.equal(caso.rubrica.nombre, 'Rúbrica de aula');
+});
+
+test('el personaje exige nombre y deja vacíos los datos opcionales', () => {
+  const personaje = normalizarPersonaje({ nombre: '  Ana  ' });
+
+  assert.equal(personaje.nombre, 'Ana');
+  assert.equal(personaje.rolSocial, null);
+  assert.equal(personaje.perfil, null);
+  assert.throws(
+    () => normalizarPersonaje({ nombre: '   ' }),
+    (error) => error.errores.some((item) => item.includes('nombre'))
+  );
+});
+
+test('la pregunta rechaza opciones con el mismo orden y una lista inválida', () => {
+  assert.throws(
+    () => normalizarDecision({
+      pregunta: '¿Qué hace?',
+      orden: 1,
+      opciones: [
+        { texto: 'A', esCorrecta: true, orden: 1, explicacion: 'Una' },
+        { texto: 'B', esCorrecta: false, orden: 1, explicacion: 'Otra' }
+      ]
+    }),
+    (error) => error.errores.some((item) => item.includes('mismo orden'))
+  );
+
+  assert.throws(
+    () => normalizarDecision({ pregunta: '¿Qué hace?', orden: 1, opciones: 'no' }),
+    (error) => error.errores.some((item) => item.includes('lista'))
+  );
+});
+
+test('la escena exige el nombre de cada personaje y asume que no es final', () => {
+  const escena = normalizarEscena({
+    nombre: 'Aula',
+    contexto: 'Inicio',
+    orden: 1,
+    decisiones: []
+  });
+
+  assert.equal(escena.esFinal, false);
+  assert.deepEqual(escena.personajes, []);
+  assert.throws(
+    () => normalizarEscena({
+      nombre: 'Aula',
+      contexto: 'Inicio',
+      orden: 1,
+      personajes: [''],
+      decisiones: []
+    }),
+    (error) => error.errores.some((item) => item.includes('nombre'))
+  );
+});
+
+test('el título no puede superar 200 caracteres', () => {
+  assert.throws(
+    () => validarDatosBasicos({
+      titulo: 'a'.repeat(201),
+      desarrolloSituacional: 'Desarrollo',
+      contextoHistoria: 'Contexto',
+      tiempoEstimadoSegundos: 90
+    }),
+    (error) => error.errores.some((item) => item.includes('200'))
+  );
+});
+
+test('publicar exige al menos una escena y una pregunta', () => {
+  assert.throws(
+    () => validarParaPublicar({ escenas: [], rubrica: casoPublicable().rubrica }),
+    (error) => {
+      const texto = error.errores.join(' ');
+      return texto.includes('escena') && texto.includes('pregunta');
+    }
+  );
+});
+
+test('la rúbrica rechaza un criterio repetido', () => {
+  const criterio = {
+    nombre: 'Contexto',
+    ponderacion: 50,
+    puntajeMaximo: 5,
+    niveles: [{ nombre: 'Inicial', descripcion: 'Describe.', puntaje: 2, orden: 1 }]
+  };
+
+  assert.throws(
+    () => normalizarRubrica({
+      nombre: 'Observación',
+      criterios: [criterio, { ...criterio, nombre: ' contexto ' }]
+    }),
+    (error) => error.errores.some((item) => item.includes('repetido'))
+  );
+});
+
+test('consultar casos exige un identificador entero y avisa si el caso no existe', async () => {
+  const servicio = crearServicioCasos(repositorio({
+    async obtenerCompleto() {
+      return null;
+    }
+  }));
+
+  await assert.rejects(
+    () => servicio.listar('abc'),
+    (error) => error.codigo === 'ID_INVALIDO'
+  );
+  await assert.rejects(
+    () => servicio.obtener(4),
+    (error) => error.codigo === 'CASO_NO_EXISTE' && error.statusCode === 404
+  );
+});
+
+test('actualizar un borrador guarda el título recortado', async () => {
+  let guardado = null;
+  const servicio = crearServicioCasos(repositorio({
+    async actualizarCaso(_id, datos) {
+      guardado = datos;
+      return 1;
+    },
+    async obtenerCompleto(id) {
+      return { id, estado: 'Borrador', ...guardado };
+    }
+  }));
+
+  const caso = await servicio.actualizar(1, datosBasicos({ titulo: '  Nuevo título  ' }));
+
+  assert.equal(guardado.titulo, 'Nuevo título');
+  assert.equal(caso.titulo, 'Nuevo título');
+});
+
+test('actualizar rechaza un caso que ya no está en borrador', async () => {
+  const servicio = crearServicioCasos(repositorio({
+    async obtenerPorId() {
+      return { id: 1, estado: 'Publicado' };
+    }
+  }));
+
+  await assert.rejects(
+    () => servicio.actualizar(1, datosBasicos()),
+    (error) => error.codigo === 'CASO_NO_EDITABLE'
+  );
+});
+
+test('archivar un borrador lo deja en Archivado', async () => {
+  const cambios = [];
+  const servicio = crearServicioCasos(repositorio({
+    async actualizarEstado(id, estado, anterior) {
+      cambios.push({ id, estado, anterior });
+      return 1;
+    },
+    async obtenerCompleto(id) {
+      return { id, estado: 'Archivado' };
+    }
+  }));
+
+  const caso = await servicio.archivar(1);
+
+  assert.equal(caso.estado, 'Archivado');
+  assert.deepEqual(cambios, [{ id: 1, estado: 'Archivado', anterior: 'Borrador' }]);
+});
+
+test('una escena nueva no puede traer personajes todavía', async () => {
+  let inserto = false;
+  const servicio = crearServicioCasos(repositorio({
+    async insertarEscena() {
+      inserto = true;
+    }
+  }));
+
+  await assert.rejects(
+    () => servicio.agregarEscena(1, {
+      nombre: 'Aula',
+      contexto: 'Inicio',
+      orden: 1,
+      esFinal: false,
+      personajes: ['Ana']
+    }),
+    (error) => error.codigo === 'PERSONAJES_EN_ESCENA'
+  );
+  assert.equal(inserto, false);
+});
+
+test('la pregunta debe pertenecer a una escena del mismo caso', async () => {
+  const servicio = crearServicioCasos(repositorio({
+    async obtenerEscena() {
+      return { id: 2, casoId: 9 };
+    }
+  }));
+
+  await assert.rejects(
+    () => servicio.agregarDecision(1, 2, { pregunta: '¿Qué hace?', orden: 1 }),
+    (error) => error.codigo === 'ESCENA_NO_EXISTE'
+  );
+});
+
+test('agregar un personaje guarda el nombre recortado', async () => {
+  let guardado = null;
+  const servicio = crearServicioCasos(repositorio({
+    async insertarPersonaje(_id, personaje) {
+      guardado = personaje;
+    },
+    async obtenerCompleto(id) {
+      return { id, personajes: [guardado] };
+    }
+  }));
+
+  const caso = await servicio.agregarPersonaje(1, { nombre: '  Ana  ' });
+
+  assert.equal(guardado.nombre, 'Ana');
+  assert.equal(guardado.rolSocial, null);
+  assert.equal(caso.personajes[0].nombre, 'Ana');
+});
+
+test('no se publica un caso que ya no está en borrador', async () => {
+  const servicio = crearServicioCasos(repositorio({
+    async obtenerCompleto() {
+      return { ...casoPublicable(), estado: 'Publicado' };
+    }
+  }));
+
+  await assert.rejects(
+    () => servicio.publicar(1),
+    (error) => error.codigo === 'CASO_NO_PUBLICABLE'
+  );
 });
