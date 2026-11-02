@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { autenticar } from '../modules/acceso/autenticar.middleware.js';
+import { requierePermiso } from '../modules/acceso/autorizar.middleware.js';
 import { crearRepositorioCasos } from '../modules/casos/casos.repository.js';
 import { crearServicioCasos } from '../modules/casos/casos.service.js';
 
@@ -49,8 +51,11 @@ export function crearRutasCasos(obtenerServicio) {
     return res.status(201).json({ data: caso });
   }));
 
-  router.post('/', (req, res) => ejecutar(res, async (servicio) => {
-    const caso = await servicio.crear(req.body);
+  router.post('/', autenticar, requierePermiso('CREAR_CASOS'), (req, res) => ejecutar(res, async (servicio) => {
+    const datos = req.body && typeof req.body === 'object' && !Array.isArray(req.body)
+      ? req.body
+      : {};
+    const caso = await servicio.crear({ ...datos, creadorId: req.usuario.id });
     return res.status(201).json({ data: caso });
   }));
 
