@@ -197,6 +197,21 @@ set LUMINA_MYSQL_TEST=1
 node --test tests/acceso.mysql.test.js
 ```
 
+## Colección de Postman
+
+`acceso.postman_collection.json` tiene 17 peticiones con pruebas (ingreso del administrador,
+administración RF-03, ingreso del docente e ingreso del estudiante). Guarda los tokens
+automáticamente entre peticiones.
+
+Con el servidor encendido (`npm run dev`) y el seed ejecutado, desde la raíz del proyecto:
+
+```
+npx --yes newman@6 run backend/src/modules/acceso/acceso.postman_collection.json --env-var "adminCorreo=..." --env-var "adminContrasena=..."
+```
+
+También se puede importar en Postman y escribir `adminCorreo` y `adminContrasena` en *Current value*.
+La ejecución crea un docente de demostración con un correo único.
+
 ## Pendiente
 
 - Nombres del resto del catálogo de permisos (hoy solo `CREAR_CASOS`).
