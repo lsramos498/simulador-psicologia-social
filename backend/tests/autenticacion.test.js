@@ -37,6 +37,17 @@ test('el token del estudiante conserva la actividad a la que ingresó', () => {
   assert.deepEqual(usuario, { id: 10, roles: ['Estudiante'], permisos: [], actividadId: 5 });
 });
 
+test('por defecto el token dura 1 hora (decisión del equipo)', () => {
+  const original = process.env.JWT_EXPIRACION;
+  delete process.env.JWT_EXPIRACION;
+  try {
+    const datos = jwt.decode(firmarToken(docenteCreador));
+    assert.equal(datos.exp - datos.iat, 3600);
+  } finally {
+    if (original !== undefined) process.env.JWT_EXPIRACION = original;
+  }
+});
+
 test('no firma tokens para usuarios sin id o sin roles', () => {
   assert.throws(() => firmarToken({ roles: [ROLES.DOCENTE] }), TypeError);
   assert.throws(() => firmarToken({ id: 1, roles: [] }), TypeError);

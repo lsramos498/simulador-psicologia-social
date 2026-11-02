@@ -6,15 +6,18 @@ import jwt from 'jsonwebtoken';
  *
  * Variables de entorno (.env):
  *  - JWT_SECRETO:    clave para firmar los tokens (mínimo 32 caracteres).
- *  - JWT_EXPIRACION: cuánto dura un token, por ejemplo '2h'.
- *                    PROVISIONAL: el equipo aún debe definir el vencimiento.
+ *  - *  - JWT_EXPIRACION: cuánto dura un token. Decisión del equipo: 1 hora ('1h').
+ *
+ * Cierre de sesión (decisión del equipo): el cliente elimina el token.
+ * El servidor lo sigue aceptando hasta que vence; si se necesita
+ * invalidación inmediata habría que agregar una lista de revocación.
  *
  * El token guarda quién es el usuario (sub), sus roles y sus permisos.
  * Como lo firma el servidor, el cliente no puede cambiarlos sin invalidarlo.
  */
 
 const ALGORITMO = 'HS256';
-const EXPIRACION_POR_DEFECTO = '2h';
+const EXPIRACION_POR_DEFECTO = '1h';
 const LONGITUD_MINIMA_SECRETO = 32;
 
 function errorAutenticacion(mensaje) {
