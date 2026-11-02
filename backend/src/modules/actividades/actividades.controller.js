@@ -67,7 +67,7 @@ export function crearControladorActividades(servicio) {
       }
 
       try {
-        const actividad = await servicio.consultarPorId(req.params.id);
+        const actividad = await servicio.consultarPorId(Number(req.params.id));
 
         if (Number(actividad.docenteId) !== docenteId) {
           return res.status(403).json({
@@ -81,6 +81,31 @@ export function crearControladorActividades(servicio) {
       } catch (error) {
         return responderError(res, error);
       }
+    },
+
+    async iniciar(req, res) {
+      return cambiarEstado(servicio.iniciar, req, res);
+    },
+
+    async cerrar(req, res) {
+      return cambiarEstado(servicio.cerrar, req, res);
     }
   };
+}
+
+async function cambiarEstado(operacion, req, res) {
+  const docenteId = obtenerDocenteAutenticado(req);
+
+  if (!docenteId) {
+    return res.status(401).json({
+      error: 'Se requiere una sesión autenticada de docente.'
+    });
+  }
+
+  try {
+    const data = await operacion(Number(req.params.id), docenteId);
+    return res.status(200).json({ data });
+  } catch (error) {
+    return responderError(res, error);
+  }
 }

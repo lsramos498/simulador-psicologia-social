@@ -1,4 +1,11 @@
-﻿const MAX_INT_MYSQL = 2147483647;
+﻿import { TIPOS_NOTIFICACION } from '../notificaciones/notificaciones.factory.js';
+
+const MAX_INT_MYSQL = 2147483647;
+const ESTADOS_ACTIVIDAD = Object.freeze({
+  PROGRAMADA: 'Programada',
+  INICIADA: 'Iniciada',
+  CERRADA: 'Cerrada'
+});
 
 function errorActividad(codigo, mensaje, statusCode = 400) {
   return Object.assign(new Error(mensaje), { codigo, statusCode });
@@ -183,10 +190,31 @@ function validarDatosActividad(datos, docenteId) {
   };
 }
 
+function resolverCodigo(generado) {
+  const codigo = generado?.codigo;
+  const codigoHash = generado?.codigoHash;
+
+  if (
+    typeof codigo !== 'string' ||
+    !codigo.trim() ||
+    codigo.length > 100 ||
+    typeof codigoHash !== 'string' ||
+    !codigoHash.trim() ||
+    codigoHash.length > 100
+  ) {
+    throw new TypeError(
+      'El generador debe usar crearCodigoAutorizacion() y devolver el código y su hash.'
+    );
+  }
+
+  return { codigo: codigo.trim(), codigoHash };
+}
+
 export function crearServicioActividades(
   repositorio,
-  generarCodigoAutorizacion,
-  reloj = () => new Date()
+  crearCodigoAutorizacion,
+  reloj = () => new Date(),
+  notificaciones = null
 ) {
   if (!repositorio || typeof repositorio.enTransaccion !== 'function') {
     throw new TypeError('Se requiere un repositorio de actividades válido.');
@@ -199,12 +227,19 @@ export function crearServicioActividades(
     throw new TypeError('El repositorio no tiene las operaciones de consulta requeridas.');
   }
 
-  if (typeof generarCodigoAutorizacion !== 'function') {
-    throw new TypeError('Se requiere una función generadora de códigos.');
+  if (typeof crearCodigoAutorizacion !== 'function') {
+    throw new TypeError('Se requiere crearCodigoAutorizacion() del módulo de acceso.');
   }
 
   if (typeof reloj !== 'function') {
     throw new TypeError('El reloj debe ser una función.');
+  }
+
+  if (
+    notificaciones != null &&
+    typeof notificaciones.enviar !== 'function'
+  ) {
+    throw new TypeError('Se requiere el servicio de notificaciones.');
   }
 
   return {
@@ -216,7 +251,7 @@ export function crearServicioActividades(
         'fechaCreacion'
       );
 
-      return repositorio.enTransaccion(async (transaccion) => {
+      const { actividad: creada, convocatorias } = await repositorio.enTransaccion(async (transaccion) => {
         const caso = await transaccion.obtenerCaso(actividad.casoId);
 
         if (!caso) {
@@ -359,22 +394,14 @@ export function crearServicioActividades(
         });
 
         const autorizaciones = [];
+        const convocatorias = [];
         const codigosUtilizados = new Set();
 
         for (const estudianteId of actividad.estudiantesIds) {
-          const codigoAutorizacion = generarCodigoAutorizacion();
+          const { codigo, codigoHash } = resolverCodigo(crearCodigoAutorizacion());
+          const estudiante = estudiantesPorId.get(estudianteId);
 
-          if (
-            typeof codigoAutorizacion !== 'string' ||
-            !codigoAutorizacion.trim() ||
-            codigoAutorizacion.length > 100
-          ) {
-            throw new TypeError(
-              'El generador produjo un código de autorización inválido.'
-            );
-          }
-
-          if (codigosUtilizados.has(codigoAutorizacion)) {
+          if (codigosUtilizados.has(codigo) || codigosUtilizados.has(codigoHash)) {
             throw errorActividad(
               'CODIGO_DUPLICADO',
               'Se generaron códigos de autorización repetidos.',
@@ -382,7 +409,19 @@ export function crearServicioActividades(
             );
           }
 
-          codigosUtilizados.add(codigoAutorizacion);
+          codigosUtilizados.add(codigo);
+          codigosUtilizados.add(codigoHash);
+
+          if (
+            notificaciones &&
+            (typeof estudiante.correo !== 'string' || !estudiante.correo.trim())
+          ) {
+            throw errorActividad(
+              'ESTUDIANTE_SIN_CORREO',
+              `El estudiante ${estudianteId} no tiene correo institucional.`,
+              422
+            );
+          }
 
           let autorizacionId;
 
@@ -390,7 +429,7 @@ export function crearServicioActividades(
             autorizacionId = await transaccion.insertarEstudianteAutorizado({
               actividadId,
               estudianteId,
-              codigoAutorizacion,
+              codigoAutorizacion: codigoHash,
               fechaAutorizacion: fechaCreacion
             });
           } catch (error) {
@@ -408,17 +447,61 @@ export function crearServicioActividades(
           autorizaciones.push({
             id: autorizacionId,
             estudianteId,
-            codigoAutorizacion
+            codigoAutorizacion: codigo
           });
+
+          if (notificaciones) {
+            convocatorias.push({
+              destinatario: estudiante.correo.trim(),
+              caso: {
+                titulo: caso.titulo,
+                desarrolloSituacional: caso.desarrolloSituacional ?? '',
+                contextoHistoria: caso.contextoHistoria ?? ''
+              },
+              mensajePersonalizado: actividad.mensajePersonalizado,
+              urlAcceso: process.env.URL_ACCESO || 'http://localhost:3000',
+              codigoAutorizacion: codigo
+            });
+          }
         }
 
         return {
-          id: actividadId,
-          ...actividad,
-          fechaCreacion,
-          estudiantesAutorizados: autorizaciones
+          actividad: {
+            id: actividadId,
+            ...actividad,
+            estado: ESTADOS_ACTIVIDAD.PROGRAMADA,
+            fechaCreacion,
+            estudiantesAutorizados: autorizaciones
+          },
+          convocatorias
         };
       });
+
+      if (notificaciones) {
+        for (const convocatoria of convocatorias) {
+          await notificaciones.enviar(TIPOS_NOTIFICACION.CONVOCATORIA, convocatoria);
+        }
+      }
+
+      return creada;
+    },
+
+    async iniciar(actividadId, docenteId) {
+      return cambiarEstadoActividad(
+        repositorio,
+        actividadId,
+        docenteId,
+        ESTADOS_ACTIVIDAD.INICIADA
+      );
+    },
+
+    async cerrar(actividadId, docenteId) {
+      return cambiarEstadoActividad(
+        repositorio,
+        actividadId,
+        docenteId,
+        ESTADOS_ACTIVIDAD.CERRADA
+      );
     },
 
     async consultarPorId(actividadId) {
@@ -445,4 +528,51 @@ export function crearServicioActividades(
       };
     }
   };
+}
+
+async function cambiarEstadoActividad(repositorio, actividadId, docenteId, estado) {
+  validarId(actividadId, 'actividadId');
+  validarId(docenteId, 'docenteId');
+
+  if (typeof repositorio.actualizarEstado !== 'function') {
+    throw new TypeError('El repositorio no puede actualizar el estado de la actividad.');
+  }
+
+  const actividad = await repositorio.obtenerActividadPorId(actividadId);
+
+  if (!actividad) {
+    throw errorActividad(
+      'ACTIVIDAD_NO_EXISTE',
+      'La actividad programada no existe.',
+      404
+    );
+  }
+
+  if (Number(actividad.docenteId) !== docenteId) {
+    throw errorActividad(
+      'ACTIVIDAD_AJENA',
+      'No tiene autorización para modificar esta actividad.',
+      403
+    );
+  }
+
+  if (actividad.estado === ESTADOS_ACTIVIDAD.CERRADA && estado === ESTADOS_ACTIVIDAD.INICIADA) {
+    throw errorActividad(
+      'ACTIVIDAD_CERRADA',
+      'Una actividad cerrada no se puede iniciar.',
+      409
+    );
+  }
+
+  const filas = await repositorio.actualizarEstado(actividadId, estado);
+
+  if (!filas) {
+    throw errorActividad(
+      'ACTIVIDAD_NO_EXISTE',
+      'La actividad programada no existe.',
+      404
+    );
+  }
+
+  return { ...actividad, estado };
 }

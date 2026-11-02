@@ -6,42 +6,50 @@ export function crearRepositorioParticipacion(pool) {
         const [filas] = await conexion.execute(`
           SELECT s.id, s.estudiante_id AS estudianteId, s.estado,
                  a.caso_id AS casoId
-          FROM sesionsimulacion s
-          JOIN actividadprogramada a ON a.id = s.actividad_id
+          FROM SesionSimulacion s
+          JOIN ActividadProgramada a ON a.id = s.actividad_id
           WHERE s.id = ?${bloquear ? ' FOR UPDATE' : ''}
         `, [sesionId]);
         return filas[0] ?? null;
       },
       async opcionValida(casoId, decisionId, opcionId) {
         const [filas] = await conexion.execute(`
-          SELECT o.id FROM opciondecision o
-          JOIN decision d ON d.id = o.decision_id
-          JOIN escena e ON e.id = d.escena_id
+          SELECT o.id FROM OpcionDecision o
+          JOIN Decision d ON d.id = o.decision_id
+          JOIN Escena e ON e.id = d.escena_id
           WHERE e.caso_id = ? AND d.id = ? AND o.id = ?
         `, [casoId, decisionId, opcionId]);
         return filas.length > 0;
       },
-      async existeRespuesta(sesionId, decisionId) {
+      async obtenerRespuesta(sesionId, decisionId) {
         const [filas] = await conexion.execute(`
-          SELECT id FROM respuestaestudiante
+          SELECT id FROM RespuestaEstudiante
           WHERE sesion_id = ? AND decision_id = ?
         `, [sesionId, decisionId]);
-        return filas.length > 0;
+        return filas[0] ?? null;
       },
       async insertarRespuesta({ sesionId, decisionId, opcionId }) {
         const [resultado] = await conexion.execute(`
-          INSERT INTO respuestaestudiante
+          INSERT INTO RespuestaEstudiante
             (sesion_id, decision_id, opcion_id, fechaRespuesta)
           VALUES (?, ?, ?, CURRENT_TIMESTAMP)
         `, [sesionId, decisionId, opcionId]);
         return resultado.insertId;
+      },
+      async actualizarRespuesta(respuestaId, opcionId) {
+        const [resultado] = await conexion.execute(`
+          UPDATE RespuestaEstudiante
+          SET opcion_id = ?, fechaModificacion = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `, [opcionId, respuestaId]);
+        return resultado.affectedRows;
       },
       async consultarRespuestas(sesionId) {
         // No exponer corrección ni puntuación durante la participación.
         const [filas] = await conexion.execute(`
           SELECT id, sesion_id AS sesionId, decision_id AS decisionId,
                  opcion_id AS opcionId, fechaRespuesta, fechaModificacion
-          FROM respuestaestudiante
+          FROM RespuestaEstudiante
           WHERE sesion_id = ? AND opcion_id IS NOT NULL
           ORDER BY id
         `, [sesionId]);

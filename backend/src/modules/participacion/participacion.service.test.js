@@ -10,8 +10,9 @@ function preparar(cambios = {}) {
   const repositorio = {
     obtenerSesion: async () => ({ estudianteId: 7, estado: 'En curso', casoId: 9 }),
     opcionValida: async () => true,
-    existeRespuesta: async () => false,
+    obtenerRespuesta: async () => null,
     insertarRespuesta: async (respuesta) => { llamadas.push(respuesta); return 10; },
+    actualizarRespuesta: async () => 1,
     consultarRespuestas: async () => [{ id: 10, ...datos }],
     ...cambios
   };
@@ -46,8 +47,7 @@ for (const [nombre, cambios, codigo] of [
   ...['Sin iniciar', 'Finalizado'].map((estado) => [estado, {
     obtenerSesion: async () => ({ estudianteId: 7, estado })
   }, 'ESTADO_NO_PERMITIDO']),
-  ['relación caso/decisión/opción inválida', { opcionValida: async () => false }, 'OPCION_INVALIDA'],
-  ['duplicado', { existeRespuesta: async () => true }, 'RESPUESTA_DUPLICADA']
+  ['relación caso/decisión/opción inválida', { opcionValida: async () => false }, 'OPCION_INVALIDA']
 ]) {
   test(`No guarda ante ${nombre}`, async () => {
     const { servicio, llamadas } = preparar(cambios);
@@ -55,6 +55,24 @@ for (const [nombre, cambios, codigo] of [
     assert.equal(llamadas.length, 0);
   });
 }
+
+test('Cambia la respuesta mientras la sesión sigue en curso', async () => {
+  const actualizadas = [];
+  const { servicio, llamadas } = preparar({
+    obtenerRespuesta: async () => ({ id: 10 }),
+    actualizarRespuesta: async (id, opcionId) => {
+      actualizadas.push({ id, opcionId });
+      return 1;
+    }
+  });
+
+  const resultado = await servicio.registrar({ ...datos, opcionId: 4 }, 7);
+
+  assert.equal(resultado.id, 10);
+  assert.equal(resultado.opcionId, 4);
+  assert.deepEqual(actualizadas, [{ id: 10, opcionId: 4 }]);
+  assert.equal(llamadas.length, 0);
+});
 
 test('Consulta respuestas del propietario incluso después de finalizar', async () => {
   const { servicio } = preparar({ obtenerSesion: async () => ({ estudianteId: 7, estado: 'Finalizado' }) });

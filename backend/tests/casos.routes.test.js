@@ -7,8 +7,8 @@ import { crearRutasCasos } from '../src/routes/casos.routes.js';
 
 process.env.JWT_SECRETO = 'clave-de-prueba-para-casos-0123456789';
 
-function tokenDe(id, permisos) {
-  return firmarToken({ id, roles: ['Docente'], permisos });
+function tokenDe(id, permisos, roles = ['Docente']) {
+  return firmarToken({ id, roles, permisos });
 }
 
 function appCon(servicio) {
@@ -55,20 +55,24 @@ test('POST /api/casos exige el permiso y usa el docente de la sesión', async ()
   assert.equal(response.body.data.titulo, 'Caso de aula');
 });
 
-test('POST /api/casos/construir responde 201', async () => {
+test('POST /api/casos/construir responde 201 con el docente de la sesión', async () => {
+  let recibido = null;
   const app = appCon({
     async construir(datos) {
-      return { id: 4, estado: 'Borrador', titulo: datos.titulo };
+      recibido = datos;
+      return { id: 4, estado: 'Borrador', titulo: datos.titulo, creadorId: datos.creadorId };
     }
   });
 
   const response = await request(app)
     .post('/api/casos/construir')
-    .send({ titulo: 'Caso nuevo' })
+    .set('Authorization', `Bearer ${tokenDe(5, ['CREAR_CASOS'])}`)
+    .send({ titulo: 'Caso nuevo', creadorId: 99 })
     .expect(201);
 
   assert.equal(response.body.data.id, 4);
   assert.equal(response.body.data.titulo, 'Caso nuevo');
+  assert.equal(recibido.creadorId, 5);
 });
 
 test('GET /api/casos/:id responde 404 cuando el caso no existe', async () => {
@@ -83,6 +87,7 @@ test('GET /api/casos/:id responde 404 cuando el caso no existe', async () => {
 
   const response = await request(app)
     .get('/api/casos/999')
+    .set('Authorization', `Bearer ${tokenDe(5, ['CREAR_CASOS'])}`)
     .expect(404);
 
   assert.equal(response.body.codigo, 'CASO_NO_EXISTE');
@@ -101,7 +106,40 @@ test('POST /api/casos/:id/publicar devuelve las reglas que faltan', async () => 
 
   const response = await request(app)
     .post('/api/casos/2/publicar')
+    .set('Authorization', `Bearer ${tokenDe(5, ['CREAR_CASOS'])}`)
     .expect(422);
 
   assert.match(response.body.errores[0], /rúbrica/);
+});
+
+test('un estudiante autenticado no recibe la opción esperada ni su explicación', async () => {
+  const app = appCon({
+    async obtener() {
+      return {
+        id: 1,
+        escenas: [{
+          decisiones: [{
+            opciones: [{
+              texto: 'Escucha',
+              esCorrecta: true,
+              explicacion: 'Secreto',
+              fundamentoTeorico: 'Teoría'
+            }]
+          }]
+        }]
+      };
+    }
+  });
+
+  await request(app).get('/api/casos/1').expect(401);
+
+  const response = await request(app)
+    .get('/api/casos/1')
+    .set('Authorization', `Bearer ${tokenDe(8, [], ['Estudiante'])}`)
+    .expect(200);
+
+  const opcion = response.body.data.escenas[0].decisiones[0].opciones[0];
+  assert.equal(opcion.texto, 'Escucha');
+  assert.equal(Object.hasOwn(opcion, 'esCorrecta'), false);
+  assert.equal(Object.hasOwn(opcion, 'explicacion'), false);
 });

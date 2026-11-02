@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { autenticar } from '../modules/acceso/autenticar.middleware.js';
+import { ROLES, tienePermiso, tieneRol } from '../modules/acceso/autorizacion.js';
 import { requierePermiso } from '../modules/acceso/autorizar.middleware.js';
 import { crearRepositorioCasos } from '../modules/casos/casos.repository.js';
 import { crearServicioCasos } from '../modules/casos/casos.service.js';
@@ -25,6 +26,44 @@ function responder(res, error) {
   return res.status(status).json(cuerpo);
 }
 
+function datosEntrada(req) {
+  return req.body && typeof req.body === 'object' && !Array.isArray(req.body)
+    ? req.body
+    : {};
+}
+
+function puedeVerRespuestas(usuario) {
+  return tieneRol(usuario, ROLES.DOCENTE, ROLES.ADMINISTRADOR)
+    || tienePermiso(usuario, 'CREAR_CASOS');
+}
+
+function ocultarRespuestasCorrectas(caso) {
+  if (!caso || typeof caso !== 'object' || !Array.isArray(caso.escenas)) {
+    return caso;
+  }
+
+  return {
+    ...caso,
+    escenas: caso.escenas.map((escena) => ({
+      ...escena,
+      decisiones: Array.isArray(escena.decisiones)
+        ? escena.decisiones.map((decision) => ({
+          ...decision,
+          opciones: Array.isArray(decision.opciones)
+            ? decision.opciones.map(({ esCorrecta, explicacion, fundamentoTeorico, ...opcion }) => opcion)
+            : decision.opciones
+        }))
+        : escena.decisiones
+    }))
+  };
+}
+
+function entregarCaso(req, caso) {
+  return puedeVerRespuestas(req.usuario) ? caso : ocultarRespuestasCorrectas(caso);
+}
+
+const docente = [autenticar, requierePermiso('CREAR_CASOS')];
+
 export function crearRutasCasos(obtenerServicio) {
   if (typeof obtenerServicio !== 'function') {
     throw new TypeError('Se requiere una función que entregue el servicio de casos.');
@@ -41,55 +80,52 @@ export function crearRutasCasos(obtenerServicio) {
     }
   }
 
-  router.get('/', (req, res) => ejecutar(res, async (servicio) => {
+  router.get('/', autenticar, (req, res) => ejecutar(res, async (servicio) => {
     const data = await servicio.listar(req.query.creadorId);
     return res.status(200).json({ total: data.length, data });
   }));
 
-  router.post('/construir', (req, res) => ejecutar(res, async (servicio) => {
-    const caso = await servicio.construir(req.body);
+  router.post('/construir', ...docente, (req, res) => ejecutar(res, async (servicio) => {
+    const caso = await servicio.construir({ ...datosEntrada(req), creadorId: req.usuario.id });
     return res.status(201).json({ data: caso });
   }));
 
-  router.post('/', autenticar, requierePermiso('CREAR_CASOS'), (req, res) => ejecutar(res, async (servicio) => {
-    const datos = req.body && typeof req.body === 'object' && !Array.isArray(req.body)
-      ? req.body
-      : {};
-    const caso = await servicio.crear({ ...datos, creadorId: req.usuario.id });
+  router.post('/', ...docente, (req, res) => ejecutar(res, async (servicio) => {
+    const caso = await servicio.crear({ ...datosEntrada(req), creadorId: req.usuario.id });
     return res.status(201).json({ data: caso });
   }));
 
-  router.get('/:id', (req, res) => ejecutar(res, async (servicio) => {
+  router.get('/:id', autenticar, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.obtener(req.params.id);
-    return res.status(200).json({ data: caso });
+    return res.status(200).json({ data: entregarCaso(req, caso) });
   }));
 
-  router.patch('/:id', (req, res) => ejecutar(res, async (servicio) => {
+  router.patch('/:id', ...docente, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.actualizar(req.params.id, req.body);
     return res.status(200).json({ data: caso });
   }));
 
-  router.post('/:id/escenas', (req, res) => ejecutar(res, async (servicio) => {
+  router.post('/:id/escenas', ...docente, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.agregarEscena(req.params.id, req.body);
     return res.status(201).json({ data: caso });
   }));
 
-  router.post('/:id/escenas/:escenaId/decisiones', (req, res) => ejecutar(res, async (servicio) => {
+  router.post('/:id/escenas/:escenaId/decisiones', ...docente, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.agregarDecision(req.params.id, req.params.escenaId, req.body);
     return res.status(201).json({ data: caso });
   }));
 
-  router.post('/:id/decisiones/:decisionId/opciones', (req, res) => ejecutar(res, async (servicio) => {
+  router.post('/:id/decisiones/:decisionId/opciones', ...docente, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.agregarOpcion(req.params.id, req.params.decisionId, req.body);
     return res.status(201).json({ data: caso });
   }));
 
-  router.post('/:id/personajes', (req, res) => ejecutar(res, async (servicio) => {
+  router.post('/:id/personajes', ...docente, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.agregarPersonaje(req.params.id, req.body);
     return res.status(201).json({ data: caso });
   }));
 
-  router.post('/:id/escenas/:escenaId/personajes', (req, res) => ejecutar(res, async (servicio) => {
+  router.post('/:id/escenas/:escenaId/personajes', ...docente, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.asociarPersonaje(
       req.params.id,
       req.params.escenaId,
@@ -98,17 +134,17 @@ export function crearRutasCasos(obtenerServicio) {
     return res.status(201).json({ data: caso });
   }));
 
-  router.put('/:id/rubrica', (req, res) => ejecutar(res, async (servicio) => {
+  router.put('/:id/rubrica', ...docente, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.guardarRubrica(req.params.id, req.body);
     return res.status(200).json({ data: caso });
   }));
 
-  router.post('/:id/publicar', (req, res) => ejecutar(res, async (servicio) => {
+  router.post('/:id/publicar', ...docente, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.publicar(req.params.id);
     return res.status(200).json({ data: caso });
   }));
 
-  router.post('/:id/archivar', (req, res) => ejecutar(res, async (servicio) => {
+  router.post('/:id/archivar', ...docente, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.archivar(req.params.id);
     return res.status(200).json({ data: caso });
   }));

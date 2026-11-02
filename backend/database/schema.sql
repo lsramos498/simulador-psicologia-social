@@ -280,6 +280,7 @@ CREATE TABLE ActividadProgramada (
   mensajePersonalizado TEXT NULL,
   intentosPermitidos INT NOT NULL DEFAULT 1,
   fechaCreacion DATETIME NOT NULL,
+  estado VARCHAR(20) NOT NULL DEFAULT 'Programada' COMMENT 'Programada, Iniciada, Cerrada',
   PRIMARY KEY (id),
   UNIQUE KEY uk_actividad_id_caso (id, caso_id),
   UNIQUE KEY uk_actividad_id_rubrica (id, rubrica_id),
@@ -300,7 +301,8 @@ CREATE TABLE ActividadProgramada (
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT chk_actividad_fechas CHECK (fechaFin > fechaInicio),
   CONSTRAINT chk_actividad_tiempo CHECK (tiempoLimiteSegundos > 0),
-  CONSTRAINT chk_actividad_intentos CHECK (intentosPermitidos >= 1)
+  CONSTRAINT chk_actividad_intentos CHECK (intentosPermitidos >= 1),
+  CONSTRAINT chk_actividad_estado CHECK (estado IN ('Programada', 'Iniciada', 'Cerrada'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Caso publicado y tiempoLimiteSegundos <= Caso.tiempoEstimadoSegundos se validan en backend. La FK compuesta exige que la rúbrica sea del mismo caso.';
 

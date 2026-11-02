@@ -32,7 +32,7 @@ test('MySQL: registro y consulta en proyecto_nuclear_test', {
   t.after(async () => {
     try {
       if (sesionId) {
-        await pool.execute('DELETE FROM respuestaestudiante WHERE sesion_id = ?', [sesionId]);
+        await pool.execute('DELETE FROM RespuestaEstudiante WHERE sesion_id = ?', [sesionId]);
       }
       // Solo IDs creados por esta ejecución; orden inverso de las claves foráneas.
       for (const { tabla, id } of [...creados].reverse()) {
@@ -47,8 +47,8 @@ test('MySQL: registro y consulta en proyecto_nuclear_test', {
 
   // Tablas fijas del esquema aprobado; los nombres nunca vienen del usuario.
   async function insertar(tabla, columnas, valores) {
-    const permitidas = ['usuario', 'espacioacademico', 'caso', 'rubrica', 'escena',
-      'decision', 'opciondecision', 'actividadprogramada', 'estudianteautorizado', 'sesionsimulacion'];
+    const permitidas = ['Usuario', 'EspacioAcademico', 'Caso', 'Rubrica', 'Escena',
+      'Decision', 'OpcionDecision', 'ActividadProgramada', 'EstudianteAutorizado', 'SesionSimulacion'];
     assert.ok(permitidas.includes(tabla));
     const [resultado] = await pool.execute(
       `INSERT INTO ${tabla} (${columnas}) VALUES (${valores.map(() => '?').join(', ')})`, valores
@@ -59,40 +59,40 @@ test('MySQL: registro y consulta en proyecto_nuclear_test', {
 
   const etiqueta = randomUUID();
   const fecha = new Date('2026-11-02T09:00:00Z');
-  const estudianteId = await insertar('usuario',
+  const estudianteId = await insertar('Usuario',
     'nombres, apellidos, correoInstitucional, contrasenaHash, fechaCreacion',
     ['Prueba', 'Participacion', `${etiqueta}@example.invalid`, 'fixture-no-utilizable-para-login', fecha]);
-  const otroEstudianteId = await insertar('usuario',
+  const otroEstudianteId = await insertar('Usuario',
     'nombres, apellidos, correoInstitucional, contrasenaHash, fechaCreacion',
     ['Otro', 'Participante', `${etiqueta}-otro@example.invalid`, 'fixture-no-utilizable-para-login', fecha]);
-  const espacioId = await insertar('espacioacademico', 'nombre', ['Prueba Participación']);
-  const casoId = await insertar('caso',
+  const espacioId = await insertar('EspacioAcademico', 'nombre', ['Prueba Participación']);
+  const casoId = await insertar('Caso',
     'creador_id, titulo, desarrolloSituacional, contextoHistoria, tiempoEstimadoSegundos, fechaCreacion',
     [estudianteId, 'Fixture técnico', 'Situación controlada', 'Contexto controlado', 600, fecha]);
-  const rubricaId = await insertar('rubrica', 'caso_id, nombre, fechaCreacion', [casoId, 'Fixture', fecha]);
-  const escenaId = await insertar('escena', 'caso_id, nombre, contexto, `orden`', [casoId, 'Escena', 'Contexto', 1]);
-  const decisionId = await insertar('decision', 'escena_id, pregunta, `orden`', [escenaId, 'Pregunta de prueba', 1]);
-  const otraDecisionId = await insertar('decision', 'escena_id, pregunta, `orden`', [escenaId, 'Otra pregunta', 2]);
-  const opcionId = await insertar('opciondecision', 'decision_id, texto, esCorrecta, `orden`', [decisionId, 'Opción', true, 1]);
-  const otraOpcionId = await insertar('opciondecision', 'decision_id, texto, esCorrecta, `orden`', [otraDecisionId, 'Otra opción', false, 1]);
-  const otroCasoId = await insertar('caso',
+  const rubricaId = await insertar('Rubrica', 'caso_id, nombre, fechaCreacion', [casoId, 'Fixture', fecha]);
+  const escenaId = await insertar('Escena', 'caso_id, nombre, contexto, `orden`', [casoId, 'Escena', 'Contexto', 1]);
+  const decisionId = await insertar('Decision', 'escena_id, pregunta, `orden`', [escenaId, 'Pregunta de prueba', 1]);
+  const otraDecisionId = await insertar('Decision', 'escena_id, pregunta, `orden`', [escenaId, 'Otra pregunta', 2]);
+  const opcionId = await insertar('OpcionDecision', 'decision_id, texto, esCorrecta, `orden`', [decisionId, 'Opción', true, 1]);
+  const otraOpcionId = await insertar('OpcionDecision', 'decision_id, texto, esCorrecta, `orden`', [otraDecisionId, 'Otra opción', false, 1]);
+  const otroCasoId = await insertar('Caso',
     'creador_id, titulo, desarrolloSituacional, contextoHistoria, tiempoEstimadoSegundos, fechaCreacion',
     [estudianteId, 'Otro caso', 'Situación', 'Contexto', 600, fecha]);
-  const otraEscenaId = await insertar('escena', 'caso_id, nombre, contexto, `orden`', [otroCasoId, 'Otra escena', 'Contexto', 1]);
-  const decisionAjenaId = await insertar('decision', 'escena_id, pregunta, `orden`', [otraEscenaId, 'Decisión ajena', 1]);
-  const opcionAjenaId = await insertar('opciondecision', 'decision_id, texto, esCorrecta, `orden`', [decisionAjenaId, 'Opción ajena', false, 1]);
-  const actividadId = await insertar('actividadprogramada',
+  const otraEscenaId = await insertar('Escena', 'caso_id, nombre, contexto, `orden`', [otroCasoId, 'Otra escena', 'Contexto', 1]);
+  const decisionAjenaId = await insertar('Decision', 'escena_id, pregunta, `orden`', [otraEscenaId, 'Decisión ajena', 1]);
+  const opcionAjenaId = await insertar('OpcionDecision', 'decision_id, texto, esCorrecta, `orden`', [decisionAjenaId, 'Opción ajena', false, 1]);
+  const actividadId = await insertar('ActividadProgramada',
     'caso_id, espacioAcademico_id, docente_id, rubrica_id, fechaInicio, fechaFin, tiempoLimiteSegundos, fechaCreacion',
     [casoId, espacioId, estudianteId, rubricaId, fecha, new Date('2026-11-02T10:00:00Z'), 600, fecha]);
-  await insertar('estudianteautorizado',
+  await insertar('EstudianteAutorizado',
     'actividad_id, estudiante_id, codigoAutorizacion, fechaAutorizacion', [actividadId, estudianteId, etiqueta, fecha]);
-  sesionId = await insertar('sesionsimulacion',
+  sesionId = await insertar('SesionSimulacion',
     'actividad_id, estudiante_id, estado, inicio', [actividadId, estudianteId, 'En curso', fecha]);
 
   const servicio = crearServicioParticipacion(crearRepositorioParticipacion(pool));
   const datos = { sesionId, decisionId, opcionId };
   async function cantidad() {
-    const [[fila]] = await pool.execute('SELECT COUNT(*) AS total FROM respuestaestudiante WHERE sesion_id = ?', [sesionId]);
+    const [[fila]] = await pool.execute('SELECT COUNT(*) AS total FROM RespuestaEstudiante WHERE sesion_id = ?', [sesionId]);
     return fila.total;
   }
 
@@ -103,7 +103,7 @@ test('MySQL: registro y consulta en proyecto_nuclear_test', {
     assert.equal(await cantidad(), 0);
   });
   await t.test('Sesión inexistente, IDs inválidos y relaciones inválidas no insertan', async () => {
-    const [[fila]] = await pool.query('SELECT MAX(id) AS maximo FROM sesionsimulacion');
+    const [[fila]] = await pool.query('SELECT MAX(id) AS maximo FROM SesionSimulacion');
     await assert.rejects(servicio.registrar({ ...datos, sesionId: fila.maximo + 1 }, estudianteId), { codigo: 'SESION_NO_EXISTE' });
     await assert.rejects(servicio.registrar({ ...datos, opcionId: -1 }, estudianteId));
     await assert.rejects(servicio.registrar({ ...datos, opcionId: otraOpcionId }, estudianteId), { codigo: 'OPCION_INVALIDA' });
@@ -113,12 +113,12 @@ test('MySQL: registro y consulta en proyecto_nuclear_test', {
   await t.test('Sin iniciar y Finalizado impiden guardar', async () => {
     try {
       for (const estado of ['Sin iniciar', 'Finalizado']) {
-        await pool.execute('UPDATE sesionsimulacion SET estado = ? WHERE id = ?', [estado, sesionId]);
+        await pool.execute('UPDATE SesionSimulacion SET estado = ? WHERE id = ?', [estado, sesionId]);
         await assert.rejects(servicio.registrar(datos, estudianteId), { codigo: 'ESTADO_NO_PERMITIDO' });
       }
       assert.equal(await cantidad(), 0);
     } finally {
-      await pool.execute('UPDATE sesionsimulacion SET estado = ? WHERE id = ?', ['En curso', sesionId]);
+      await pool.execute('UPDATE SesionSimulacion SET estado = ? WHERE id = ?', ['En curso', sesionId]);
     }
   });
   await t.test('Inserción confirmada visible desde otra conexión y consulta del servicio', async () => {
@@ -127,7 +127,7 @@ test('MySQL: registro y consulta en proyecto_nuclear_test', {
     let guardada;
     try {
       guardada = await servicio.registrar(datos, estudianteId);
-      const [[fila]] = await conexion.execute('SELECT sesion_id, decision_id, opcion_id, fechaRespuesta FROM respuestaestudiante WHERE id = ?', [guardada.id]);
+      const [[fila]] = await conexion.execute('SELECT sesion_id, decision_id, opcion_id, fechaRespuesta FROM RespuestaEstudiante WHERE id = ?', [guardada.id]);
       assert.equal(fila.sesion_id, sesionId);
       assert.equal(fila.decision_id, decisionId);
       assert.equal(fila.opcion_id, opcionId);
@@ -141,8 +141,9 @@ test('MySQL: registro y consulta en proyecto_nuclear_test', {
     assert.equal(Object.hasOwn(respuesta, 'esCorrecta'), false);
     assert.equal(await cantidad(), 1);
   });
-  await t.test('Duplicados no sobrescriben y dos registros concurrentes producen una sola fila', async () => {
-    await assert.rejects(servicio.registrar(datos, estudianteId), { codigo: 'RESPUESTA_DUPLICADA' });
+  await t.test('Una respuesta en curso se puede cambiar y dos registros concurrentes producen una sola fila', async () => {
+    const cambiada = await servicio.registrar(datos, estudianteId);
+    assert.equal(cambiada.opcionId, opcionId);
     const segunda = { sesionId, decisionId: otraDecisionId, opcionId: otraOpcionId };
     const resultados = await Promise.allSettled([
       servicio.registrar(segunda, estudianteId), servicio.registrar(segunda, estudianteId)

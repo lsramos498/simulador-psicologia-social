@@ -240,7 +240,7 @@ test('Permite consultar una actividad al docente responsable', async () => {
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body.data, actividad);
-  assert.deepEqual(llamadas.consultarPorId, ['50']);
+  assert.deepEqual(llamadas.consultarPorId, [50]);
 });
 
 test('Rechaza la consulta de una actividad de otro docente', async () => {

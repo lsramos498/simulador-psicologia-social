@@ -29,7 +29,8 @@ function preparar({
   ],
   codigos = ['CODIGO20', 'CODIGO21'],
   actividadEncontrada = { id: 50, casoId: 10 },
-  autorizados = []
+  autorizados = [],
+  notificaciones = null
 } = {}) {
   const llamadas = [];
   const eventosTransaccion = [];
@@ -104,8 +105,12 @@ function preparar({
 
   const servicio = crearServicioActividades(
     repositorio,
-    () => codigos[indiceCodigo++],
-    relojFijo
+    () => {
+      const codigo = codigos[indiceCodigo++];
+      return { codigo, codigoHash: `hash-${codigo}` };
+    },
+    relojFijo,
+    notificaciones
   );
 
   return {
@@ -136,6 +141,10 @@ test('Registra una actividad válida y autoriza sus estudiantes', async () => {
 
   assert.equal(contexto.actividadesInsertadas.length, 1);
   assert.equal(contexto.autorizacionesInsertadas.length, 2);
+  assert.deepEqual(
+    contexto.autorizacionesInsertadas.map((item) => item.codigoAutorizacion),
+    ['hash-CODIGO20', 'hash-CODIGO21']
+  );
   assert.deepEqual(contexto.eventosTransaccion, ['inicio', 'commit']);
 });
 
@@ -329,6 +338,65 @@ test('Rechaza códigos de autorización duplicados', async () => {
 
   assert.equal(contexto.autorizacionesInsertadas.length, 1);
   assert.equal(contexto.eventosTransaccion.at(-1), 'rollback');
+});
+
+test('Guarda el hash y convoca a cada estudiante con el código en claro', async () => {
+  const enviados = [];
+  const contexto = preparar({
+    caso: {
+      estado: 'Publicado',
+      tiempoEstimadoSegundos: 1200,
+      titulo: 'Conflicto en el aula',
+      desarrolloSituacional: 'Dos grupos discuten.',
+      contextoHistoria: 'Primer semestre.'
+    },
+    estudiantes: [
+      { id: 20, activo: 1, esEstudiante: 1, correo: 'ana@unihumboldt.edu.co' },
+      { id: 21, activo: 1, esEstudiante: 1, correo: 'luis@unihumboldt.edu.co' }
+    ],
+    notificaciones: {
+      async enviar(tipo, aviso) {
+        enviados.push({
+          tipo,
+          destinatario: aviso.destinatario,
+          codigo: aviso.codigoAutorizacion
+        });
+      }
+    }
+  });
+
+  await contexto.servicio.crear(datos, 2);
+
+  assert.deepEqual(enviados, [
+    { tipo: 'CONVOCATORIA', destinatario: 'ana@unihumboldt.edu.co', codigo: 'CODIGO20' },
+    { tipo: 'CONVOCATORIA', destinatario: 'luis@unihumboldt.edu.co', codigo: 'CODIGO21' }
+  ]);
+});
+
+test('Iniciar y cerrar registran el estado de la actividad', async () => {
+  let estado = 'Programada';
+  const servicio = crearServicioActividades({
+    async enTransaccion() {
+      throw new Error('no debe abrir transacción');
+    },
+    async obtenerActividadPorId() {
+      return { id: 4, docenteId: 2, estado };
+    },
+    async listarEstudiantesAutorizados() {
+      return [];
+    },
+    async actualizarEstado(_id, nuevo) {
+      estado = nuevo;
+      return 1;
+    }
+  }, () => ({ codigo: 'CODIGO', codigoHash: 'hash-CODIGO' }));
+
+  assert.equal((await servicio.iniciar(4, 2)).estado, 'Iniciada');
+  assert.equal((await servicio.cerrar(4, 2)).estado, 'Cerrada');
+  await assert.rejects(
+    () => servicio.iniciar(4, 9),
+    { codigo: 'ACTIVIDAD_AJENA' }
+  );
 });
 
 test('Consulta una actividad con sus estudiantes autorizados', async () => {

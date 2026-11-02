@@ -1,4 +1,5 @@
 import { registrarRespuesta } from './registrarRespuesta.js';
+import { puedeModificarRespuesta } from './puedeModificarRespuesta.js';
 import { ESTADOS_SESION } from '../sesiones/sesion.state.js';
 
 function errorParticipacion(codigo, mensaje) {
@@ -36,8 +37,16 @@ export function crearServicioParticipacion(repositorio) {
           if (!await transaccion.opcionValida(sesion.casoId, respuesta.decisionId, respuesta.opcionId)) {
             throw errorParticipacion('OPCION_INVALIDA', 'La decisión debe pertenecer al caso y la opción a la decisión.');
           }
-          if (await transaccion.existeRespuesta(respuesta.sesionId, respuesta.decisionId)) {
-            throw errorParticipacion('RESPUESTA_DUPLICADA', 'Ya existe una respuesta para esta sesión y decisión.');
+          const existente = await transaccion.obtenerRespuesta(respuesta.sesionId, respuesta.decisionId);
+          if (existente) {
+            if (!puedeModificarRespuesta(sesion.estado === ESTADOS_SESION.FINALIZADO)) {
+              throw errorParticipacion(
+                'RESPUESTA_NO_MODIFICABLE',
+                'La respuesta ya no se puede cambiar.'
+              );
+            }
+            await transaccion.actualizarRespuesta(existente.id, respuesta.opcionId);
+            return { id: existente.id, ...respuesta };
           }
           const id = await transaccion.insertarRespuesta(respuesta);
           return { id, ...respuesta };

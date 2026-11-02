@@ -229,6 +229,7 @@ Table ActividadProgramada {
   mensajePersonalizado text
   intentosPermitidos int [not null, default: 1]
   fechaCreacion datetime [not null]
+  estado varchar(20) [not null, default: 'Programada', note: 'Programada, Iniciada, Cerrada']
 
   indexes {
     (id, caso_id) [unique]

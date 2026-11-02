@@ -22,9 +22,8 @@ const respuestas = await servicio.consultar(1, estudianteId);
 En la futura API debe venir del módulo de autenticación, nunca confiar en un ID libre del cliente.
 
 El servicio reutiliza `registrarRespuesta()` y `ESTADOS_SESION` del módulo de sesiones.
-El repositorio recibe el pool existente; no modifica su configuración. Usa tablas en minúsculas
-según el entorno Windows del equipo. En servidores sensibles a mayúsculas se debe comprobar
-la nomenclatura física antes de integrar.
+El repositorio recibe el pool existente; no modifica su configuración. Usa los nombres de tabla
+del esquema, con mayúscula inicial (`SesionSimulacion`, `RespuestaEstudiante`).
 
 El registro comprueba propietario, estado En curso y la cadena actividad/caso/escena/decisión/opción.
 Una transacción con bloqueo de sesión mantiene estado y escritura coordinados. La restricción UNIQUE
@@ -32,9 +31,9 @@ del esquema complementa el rechazo de duplicados. Devuelve el ID solo después d
 La consulta requiere propietario, permite sesiones finalizadas y excluye soluciones y puntuaciones.
 No calcula calificaciones ni altera la sesión.
 
-Si ya existe una fila para la sesión y decisión, incluso con opción nula, esta etapa la rechaza
-como duplicada. Completar filas precreadas y modificar respuestas queda pendiente de acordar
-con el módulo que las cree. La consulta muestra únicamente filas con opción seleccionada.
+Si ya existe una fila para la sesión y decisión, y la sesión sigue En curso, el registro cambia
+la opción elegida. Una sesión finalizada no acepta respuestas nuevas ni cambios. La consulta
+muestra únicamente filas con opción seleccionada.
 
 Errores de negocio: `SESION_NO_EXISTE`, `SESION_AJENA`, `ESTADO_NO_PERMITIDO`,
 `OPCION_INVALIDA`, `RESPUESTA_DUPLICADA` en `error.codigo`. Los errores de infraestructura

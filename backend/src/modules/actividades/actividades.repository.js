@@ -11,7 +11,8 @@
     return {
       async obtenerCaso(casoId) {
         const [filas] = await conexion.execute(
-          `SELECT id, estado, tiempoEstimadoSegundos
+          `SELECT id, estado, tiempoEstimadoSegundos, titulo,
+                  desarrolloSituacional, contextoHistoria
            FROM Caso
            WHERE id = ?
            FOR UPDATE`,
@@ -77,6 +78,7 @@
         const [filas] = await conexion.execute(
           `SELECT
              u.id,
+             u.correoInstitucional AS correo,
              u.activo,
              EXISTS (
                SELECT 1
@@ -108,8 +110,9 @@
              lugar,
              mensajePersonalizado,
              intentosPermitidos,
-             fechaCreacion
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             fechaCreacion,
+             estado
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Programada')`,
           [
             actividad.casoId,
             actividad.espacioAcademicoId,
@@ -187,6 +190,17 @@
       }
     },
 
+    async actualizarEstado(actividadId, estado) {
+      const [resultado] = await pool.execute(
+        `UPDATE ActividadProgramada
+         SET estado = ?
+         WHERE id = ?`,
+        [estado, actividadId]
+      );
+
+      return resultado.affectedRows;
+    },
+
     async obtenerActividadPorId(actividadId) {
       const [filas] = await pool.execute(
         `SELECT
@@ -202,6 +216,7 @@
            a.mensajePersonalizado,
            a.intentosPermitidos,
            a.fechaCreacion,
+           a.estado,
            c.titulo AS casoTitulo,
            e.nombre AS espacioAcademicoNombre,
            r.nombre AS rubricaNombre,
