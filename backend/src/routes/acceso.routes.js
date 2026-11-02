@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { crearRepositorioAcceso } from '../modules/acceso/acceso.repository.js';
 import { crearServicioAcceso } from '../modules/acceso/acceso.service.js';
+import { crearRepositorioAdministracion } from '../modules/acceso/administracion.repository.js';
+import { crearServicioAdministracion } from '../modules/acceso/administracion.service.js';
+import { crearRutasAdministracion } from './administracion.routes.js';
 
 /**
  * Rutas del módulo de acceso (Sofía Gallego — acceso y permisos).
@@ -78,6 +81,7 @@ export function crearRutasAcceso(obtenerServicio) {
 // La conexión a MySQL se carga solo cuando llega la primera petición,
 // así las pruebas que no usan la base de datos no necesitan un .env.
 let servicioPorDefecto;
+let servicioAdministracion;
 
 async function obtenerServicioPorDefecto() {
   if (!servicioPorDefecto) {
@@ -87,4 +91,16 @@ async function obtenerServicioPorDefecto() {
   return servicioPorDefecto;
 }
 
-export default crearRutasAcceso(obtenerServicioPorDefecto);
+async function obtenerServicioAdministracion() {
+  if (!servicioAdministracion) {
+    const { pool } = await import('../config/database.js');
+    servicioAdministracion = crearServicioAdministracion(crearRepositorioAdministracion(pool));
+  }
+  return servicioAdministracion;
+}
+
+const rutasAcceso = crearRutasAcceso(obtenerServicioPorDefecto);
+// RF-03: rutas del administrador bajo /api/acceso/admin (no requiere tocar app.js).
+rutasAcceso.use('/admin', crearRutasAdministracion(obtenerServicioAdministracion));
+
+export default rutasAcceso;
