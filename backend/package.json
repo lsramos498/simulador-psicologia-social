@@ -7,11 +7,8 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "test": "node --test",
-"db:check": "node scripts/check-db-connection.js",
-"db:seed": "node scripts/seed-inicial.js"
-
-
-
+    "db:check": "node scripts/check-db-connection.js",
+    "db:seed": "node scripts/seed-inicial.js"
   },
   "dependencies": {
     "cors": "^2.8.6",

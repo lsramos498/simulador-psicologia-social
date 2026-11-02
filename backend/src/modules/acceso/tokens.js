@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
  *
  * Variables de entorno (.env):
  *  - JWT_SECRETO:    clave para firmar los tokens (mínimo 32 caracteres).
- *     - JWT_EXPIRACION: cuánto dura un token. Decisión del equipo: 1 hora ('1h').
+ *  - JWT_EXPIRACION: cuánto dura un token. Decisión del equipo: 1 hora ('1h').
  *
  * Cierre de sesión (decisión del equipo): el cliente elimina el token.
  * El servidor lo sigue aceptando hasta que vence; si se necesita
