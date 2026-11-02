@@ -2,6 +2,7 @@
 import cors from 'cors';
 import healthRoutes from './routes/health.routes.js';
 import casosRoutes from './routes/casos.routes.js';
+import accesoRoutes from './routes/acceso.routes.js';
 
 const app = express();
 
@@ -17,5 +18,6 @@ app.get('/', (_req, res) => {
 
 app.use('/api/health', healthRoutes);
 app.use('/api/casos', casosRoutes);
+app.use('/api/acceso', accesoRoutes);
 
 export default app;
