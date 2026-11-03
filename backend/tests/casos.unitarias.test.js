@@ -527,3 +527,264 @@ test('no se publica un caso que ya no está en borrador', async () => {
     (error) => error.codigo === 'CASO_NO_PUBLICABLE'
   );
 });
+
+test('los datos del caso deben ser un objeto y el título un texto', () => {
+  assert.throws(
+    () => validarDatosBasicos(null),
+    (error) => error.errores.some((item) => item.includes('no son válidos'))
+  );
+  assert.throws(
+    () => validarDatosBasicos({
+      titulo: 12,
+      desarrolloSituacional: 'Desarrollo',
+      contextoHistoria: 'Contexto',
+      tiempoEstimadoSegundos: 90
+    }),
+    (error) => error.errores.some((item) => item.includes('texto'))
+  );
+});
+
+test('el tiempo estimado no puede pasar el máximo de MySQL', () => {
+  assert.throws(
+    () => validarDatosBasicos({
+      titulo: 'Caso',
+      desarrolloSituacional: 'Desarrollo',
+      contextoHistoria: 'Contexto',
+      tiempoEstimadoSegundos: 2147483648
+    }),
+    (error) => error.statusCode === 422
+  );
+});
+
+test('la pregunta recorta el texto y rechaza dos preguntas con el mismo orden', () => {
+  const decision = normalizarDecision({
+    pregunta: '  ¿Qué hace?  ',
+    orden: 1,
+    opciones: []
+  });
+
+  assert.equal(decision.pregunta, '¿Qué hace?');
+  assert.equal(decision.ayuda, null);
+  assert.throws(
+    () => normalizarEscena({
+      nombre: 'Aula',
+      contexto: 'Inicio',
+      orden: 1,
+      esFinal: false,
+      decisiones: [
+        { pregunta: 'Una', orden: 1, opciones: [] },
+        { pregunta: 'Otra', orden: 1, opciones: [] }
+      ]
+    }),
+    (error) => error.errores.some((item) => item.includes('mismo orden'))
+  );
+});
+
+test('la marca de escena final tiene que ser verdadero o falso', () => {
+  assert.throws(
+    () => normalizarEscena({
+      nombre: 'Aula',
+      contexto: 'Inicio',
+      orden: 1,
+      esFinal: 'si',
+      decisiones: []
+    }),
+    (error) => error.errores.some((item) => item.includes('verdadero o falso'))
+  );
+});
+
+test('el orden de una opción empieza en uno', () => {
+  assert.throws(
+    () => normalizarOpcion({
+      texto: 'Escucha',
+      esCorrecta: true,
+      orden: 0,
+      explicacion: 'Reconoce el conflicto.'
+    }),
+    (error) => error.errores.some((item) => item.includes('orden'))
+  );
+});
+
+test('la rúbrica exige criterios y cada criterio exige un nivel', () => {
+  assert.throws(
+    () => normalizarRubrica({ nombre: 'Observación', criterios: [] }),
+    (error) => error.errores.some((item) => item.includes('al menos un criterio'))
+  );
+  assert.throws(
+    () => normalizarRubrica({
+      nombre: 'Observación',
+      criterios: [{ nombre: 'Contexto', ponderacion: 100, puntajeMaximo: 5, niveles: [] }]
+    }),
+    (error) => error.errores.some((item) => item.includes('al menos un nivel'))
+  );
+});
+
+test('un personaje de la escena tiene que existir en el caso', () => {
+  assert.throws(
+    () => validarCaso(datosBasicos({
+      personajes: [{ nombre: 'Ana' }],
+      escenas: [{
+        nombre: 'Aula',
+        contexto: 'Inicio',
+        orden: 1,
+        esFinal: false,
+        personajes: ['Luis'],
+        decisiones: []
+      }]
+    })),
+    (error) => error.errores.some((item) => item.includes('Luis'))
+  );
+});
+
+test('publicar acepta la opción esperada marcada con 1', () => {
+  const caso = casoPublicable();
+  caso.escenas[0].decisiones[0].opciones[0].esCorrecta = 1;
+
+  assert.doesNotThrow(() => validarParaPublicar(caso));
+});
+
+test('listar sin filtro consulta todos y con filtro usa el docente', async () => {
+  const filtros = [];
+  const servicio = crearServicioCasos(repositorio({
+    async listar(filtro) {
+      filtros.push(filtro);
+      return [];
+    }
+  }));
+
+  assert.deepEqual(await servicio.listar(), []);
+  assert.deepEqual(await servicio.listar(''), []);
+  assert.deepEqual(await servicio.listar(5), []);
+  assert.deepEqual(filtros, [null, null, 5]);
+});
+
+test('archivar un caso publicado lo deja en Archivado', async () => {
+  const cambios = [];
+  const servicio = crearServicioCasos(repositorio({
+    async obtenerPorId() {
+      return { id: 1, estado: 'Publicado' };
+    },
+    async actualizarEstado(id, estado, anterior) {
+      cambios.push({ id, estado, anterior });
+      return 1;
+    },
+    async obtenerCompleto(id) {
+      return { id, estado: 'Archivado' };
+    }
+  }));
+
+  const caso = await servicio.archivar(1);
+
+  assert.equal(caso.estado, 'Archivado');
+  assert.deepEqual(cambios, [{ id: 1, estado: 'Archivado', anterior: 'Publicado' }]);
+});
+
+test('agregar una escena en borrador la guarda sin personajes', async () => {
+  let guardada = null;
+  const servicio = crearServicioCasos(repositorio({
+    async insertarEscena(_id, escena) {
+      guardada = escena;
+    },
+    async obtenerCompleto(id) {
+      return { id, escenas: [guardada] };
+    }
+  }));
+
+  const caso = await servicio.agregarEscena(1, {
+    nombre: '  Aula  ',
+    contexto: 'Inicio de clase',
+    orden: 1,
+    esFinal: false
+  });
+
+  assert.equal(guardada.nombre, 'Aula');
+  assert.deepEqual(guardada.personajes, []);
+  assert.equal(caso.escenas[0].nombre, 'Aula');
+});
+
+test('publicar un caso que no existe avisa que no se encontró', async () => {
+  const servicio = crearServicioCasos(repositorio({
+    async obtenerCompleto() {
+      return null;
+    }
+  }));
+
+  await assert.rejects(
+    () => servicio.publicar(3),
+    (error) => error.codigo === 'CASO_NO_EXISTE' && error.statusCode === 404
+  );
+});
+
+test('construir rechaza un docente que no está activo', async () => {
+  let guardo = false;
+  const servicio = crearServicioCasos(repositorio({
+    async guardarCasoCompleto() {
+      guardo = true;
+    }
+  }));
+
+  await assert.rejects(
+    () => servicio.construir(datosBasicos({ creadorId: 9 })),
+    (error) => error.codigo === 'CREADOR_NO_EXISTE'
+  );
+  assert.equal(guardo, false);
+});
+
+test('no se guarda la rúbrica de un caso publicado', async () => {
+  const servicio = crearServicioCasos(repositorio({
+    async obtenerPorId() {
+      return { id: 1, estado: 'Publicado' };
+    }
+  }));
+
+  await assert.rejects(
+    () => servicio.guardarRubrica(1, {
+      nombre: 'Rúbrica',
+      criterios: [{
+        nombre: 'Intervención',
+        ponderacion: 100,
+        puntajeMaximo: 5,
+        niveles: [{ nombre: 'Inicial', descripcion: 'Describe.', puntaje: 2, orden: 1 }]
+      }]
+    }),
+    (error) => error.codigo === 'CASO_NO_EDITABLE'
+  );
+});
+
+test('asociar un personaje del mismo caso deja el vínculo', async () => {
+  let vinculo = null;
+  const servicio = crearServicioCasos(repositorio({
+    async obtenerEscena() {
+      return { id: 2, casoId: 1 };
+    },
+    async obtenerPersonaje() {
+      return { id: 7, casoId: 1 };
+    },
+    async asociarPersonaje(escenaId, personajeId) {
+      vinculo = { escenaId, personajeId };
+    },
+    async obtenerCompleto(id) {
+      return { id, escenas: [{ id: 2, personajes: [7] }] };
+    }
+  }));
+
+  const caso = await servicio.asociarPersonaje(1, 2, 7);
+
+  assert.deepEqual(vinculo, { escenaId: 2, personajeId: 7 });
+  assert.deepEqual(caso.escenas[0].personajes, [7]);
+});
+
+test('crear no guarda un caso sin título', async () => {
+  let guardo = false;
+  const servicio = crearServicioCasos(repositorio({
+    async insertarCaso() {
+      guardo = true;
+    }
+  }));
+
+  await assert.rejects(
+    () => servicio.crear(datosBasicos({ titulo: '   ' })),
+    (error) => error.codigo === 'ESTRUCTURA_INVALIDA'
+  );
+  assert.equal(guardo, false);
+});
