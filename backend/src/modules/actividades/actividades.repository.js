@@ -1,4 +1,5 @@
-﻿export function crearRepositorioActividades(pool) {
+﻿
+export function crearRepositorioActividades(pool) {
   if (
     !pool ||
     typeof pool.execute !== 'function' ||
@@ -77,6 +78,9 @@
         const [filas] = await conexion.execute(
           `SELECT
              u.id,
+             u.nombres,
+             u.apellidos,
+             u.correoInstitucional,
              u.activo,
              EXISTS (
                SELECT 1
@@ -240,3 +244,4 @@
     }
   };
 }
+
