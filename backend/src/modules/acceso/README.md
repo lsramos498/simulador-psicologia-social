@@ -62,6 +62,7 @@ correo + código → hash del código → convocatoria en MySQL → reglas (esta
 | `401` | Correo o código no válidos (mismo mensaje en ambos casos) |
 | `403` | Estudiante retirado o bloqueado, cuenta inactiva, fuera de la ventana, sesión finalizada o sin rol `Estudiante` |
 | `404` | La actividad del código no existe |
+| `429` | 5 códigos incorrectos seguidos para ese correo: bloqueo de 15 minutos |
 | `500` | Error interno (sin detalles para el cliente) |
 
 ### `POST /api/acceso/ingreso` (docentes y administradores)
@@ -81,6 +82,7 @@ correo + contraseña → buscar usuario (MySQL) → verificar hash (scrypt)
 | `400` | Falta el correo o la contraseña |
 | `401` | Correo o contraseña no válidos (mismo mensaje en ambos casos) |
 | `403` | Cuenta inactiva, o el usuario no es docente ni administrador (los estudiantes usan su código) |
+| `429` | 5 contraseñas incorrectas seguidas para ese correo: bloqueo de 15 minutos |
 | `500` | Error interno |
 
 ### Administración: `/api/acceso/admin/...` (RF-03)
@@ -91,7 +93,7 @@ Todas exigen token (`401`) y el rol `Administrador` (`403`).
 |---|---|---|
 | `GET /roles` | | Roles con sus permisos |
 | `GET /permisos` | | Catálogo de permisos |
-| `POST /docentes` | `{ nombres, apellidos, correo, contrasena }` | Crea un usuario con rol `Docente` (`201`, `409` si el correo existe) |
+| `POST /docentes` | `{ nombres, apellidos, correo, contrasena }` | Crea un usuario con rol `Docente` (`201`; `400` si la contraseña no cumple la política; `409` si el correo existe) |
 | `POST /usuarios/:id/roles` | `{ "rol": "Docente" }` | Asigna un rol existente |
 | `DELETE /usuarios/:id/roles/:rol` | | Quita un rol (`409` si el administrador intenta quitarse el suyo) |
 | `POST /roles/:rol/permisos` | `{ "permiso": "CREAR_CASOS" }` | Asigna un permiso del catálogo a un rol |
@@ -107,6 +109,9 @@ Roles o permisos que no existen responden `404`: no se crean roles ni permisos d
 - La identidad y los permisos salen del token firmado por el servidor, nunca del cuerpo de la petición.
 - Un docente no puede asignarse roles ni permisos; el administrador no puede quitarse su propio rol.
 - Los cambios de roles o permisos se aplican en el siguiente ingreso, porque viajan dentro del token (máximo 1 hora).
+- Política de contraseñas al crear docentes: mínimo 8 caracteres, con al menos una letra y un número.
+- Límite de intentos: 5 fallos seguidos (contraseña o código) bloquean ese correo 15 minutos (`429`). Un ingreso correcto reinicia la cuenta. Los contadores viven en memoria: se borran si el servidor se reinicia.
+- Los errores inesperados responden `500` con un mensaje genérico; el detalle solo queda en el registro del servidor (`errores.js`).
 
 ## Uso desde otros módulos
 
@@ -153,7 +158,9 @@ const { codigo, codigoHash } = crearCodigoAutorizacion();
 | `autorizar.middleware.js` | `requiereRol`, `requierePermiso` (401 / 403) |
 | `servicioProtegido.proxy.js` | Patrón Proxy de protección de operaciones |
 | `codigos.js` | Generar, hashear y verificar códigos; reglas de acceso del estudiante |
-| `contrasenas.js` | Hash y verificación de contraseñas con scrypt |
+| `contrasenas.js` | Hash y verificación de contraseñas con scrypt; política de contraseñas |
+| `limiteIntentos.js` | Bloqueo temporal tras varios ingresos fallidos |
+| `errores.js` | Errores HTTP del módulo y respuesta segura de errores (sin detalles internos) |
 | `tokens.js` | Firmar y verificar JWT |
 | `autenticar.middleware.js` | Llena `req.usuario` a partir del token |
 | `acceso.repository.js` | Consultas MySQL (solo lectura) |
@@ -180,7 +187,7 @@ para no duplicar la verificación de permisos.
 
 | Tipo | Archivos | Qué comprueban |
 |---|---|---|
-| Unitarias | `autorizacion`, `codigos`, `contrasenas`, `servicioProtegido.proxy`, `seed`, `acceso.repository`, `administracion.service`, `administracion.repository` | Cada función aislada; MySQL se reemplaza por un pool, una conexión o un repositorio falso |
+| Unitarias | `autorizacion`, `codigos`, `contrasenas`, `limiteIntentos`, `errores`, `servicioProtegido.proxy`, `seed`, `acceso.repository`, `administracion.service`, `administracion.repository` | Cada función aislada; MySQL se reemplaza por un pool, una conexión o un repositorio falso |
 | Integración (HTTP) | `acceso.ingreso`, `acceso.ingreso-docente`, `administracion.routes`, `autenticacion`, `autorizacion` (rutas) | Varias piezas juntas a través de peticiones HTTP con `supertest` |
 | Integración (MySQL real) | `acceso.mysql` | Seed, creación de docente, permisos, ingreso de docente y de estudiante contra la base real |
 
@@ -215,7 +222,7 @@ La ejecución crea un docente de demostración con un correo único.
 ## Pendiente
 
 - Nombres del resto del catálogo de permisos (hoy solo `CREAR_CASOS`).
-- Política de contraseñas (longitud mínima) y límite de intentos de ingreso.
+- Guardar el límite de intentos fuera de la memoria si el sistema llega a usar varios servidores.
 - Pantallas del frontend (cuando exista el proyecto de React).
 - Umbral de ingreso tardío (RF-22), con la profesora.
 - `Usuario.contrasenaHash` opcional en el esquema (Stefanía).
