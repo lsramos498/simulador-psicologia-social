@@ -47,6 +47,16 @@ export function crearRutasParticipacion(obtenerServicio) {
     }
   });
 
+  router.get('/sesiones/:sesionId/progreso', autenticar, async (req, res) => {
+    try {
+      const servicio = await obtenerServicio();
+      const data = await servicio.consultarProgreso(Number(req.params.sesionId), req.usuario.id);
+      return res.status(200).json({ data });
+    } catch (error) {
+      return responder(res, error);
+    }
+  });
+
   return router;
 }
 

@@ -85,3 +85,72 @@ test('HTTP error de persistencia devuelve 500 sin detalles SQL', async () => {
   assert.equal(res.status, 500);
   assert.doesNotMatch(JSON.stringify(res.body), /detalle-SQL/);
 });
+
+function consultarProgreso(app, sesionId = 1) {
+  return request(app).get(`/api/participacion/sesiones/${sesionId}/progreso`)
+    .set('Authorization', `Bearer ${token}`);
+}
+
+test('GET progreso devuelve 200 con el formato data y la identidad autenticada', async () => {
+  const res = await consultarProgreso(preparar()).query({ estudianteId: 99 });
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.body, { data: {
+    estadoRecorrido: 'determinado', totalPreguntas: 2, preguntasRespondidas: 1,
+    preguntasPendientes: 1, decisionesPendientesIds: [5]
+  } });
+});
+
+test('GET progreso sin autenticación no consulta persistencia', async () => {
+  let consultas = 0;
+  const app = preparar({ obtenerSesion: async () => { consultas++; return null; } });
+  await request(app).get('/api/participacion/sesiones/1/progreso').expect(401);
+  assert.equal(consultas, 0);
+});
+
+test('GET progreso con token inválido devuelve 401', async () => {
+  await request(preparar()).get('/api/participacion/sesiones/1/progreso')
+    .set('Authorization', 'Bearer invalido').expect(401);
+});
+
+for (const [nombre, sesion, status, codigo] of [
+  ['ajena', { estudianteId: 8, casoId: 9 }, 403, 'SESION_AJENA'],
+  ['inexistente', null, 404, 'SESION_NO_EXISTE']
+]) {
+  test(`GET progreso de sesión ${nombre} devuelve ${status}`, async () => {
+    let lecturas = 0;
+    const app = preparar({ obtenerSesion: async () => sesion,
+      obtenerDecisionesAplicables: async () => { lecturas++; return []; } });
+    const res = await consultarProgreso(app);
+    assert.equal(res.status, status);
+    assert.equal(res.body.codigo, codigo);
+    assert.equal(lecturas, 0);
+  });
+}
+
+for (const id of ['abc', '0', '-1', '1.5', '2147483648']) {
+  test(`GET progreso rechaza identificador inválido ${id}`, async () => {
+    let consultas = 0;
+    const app = preparar({ obtenerSesion: async () => { consultas++; return null; } });
+    const res = await consultarProgreso(app, id);
+    assert.equal(res.status, 400);
+    assert.equal(consultas, 0);
+  });
+}
+
+test('GET progreso permite consultar sesión propia finalizada sin escribir', async () => {
+  let escrituras = 0;
+  const app = preparar({
+    obtenerSesion: async () => ({ estudianteId: 7, casoId: 9, estado: 'Finalizado' }),
+    insertarRespuesta: async () => { escrituras++; return 10; },
+    actualizarRespuesta: async () => { escrituras++; return 1; }
+  });
+  await consultarProgreso(app).expect(200);
+  assert.equal(escrituras, 0);
+});
+
+test('GET progreso conserva el manejo de fallos internos sin revelar SQL', async () => {
+  const app = preparar({ obtenerDecisionesAplicables: async () => { throw new Error('detalle-SQL-progreso-simulado'); } });
+  const res = await consultarProgreso(app);
+  assert.equal(res.status, 500);
+  assert.deepEqual(res.body, { error: 'Ocurrió un error interno al procesar la solicitud.' });
+});
