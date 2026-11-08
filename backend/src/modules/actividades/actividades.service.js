@@ -530,12 +530,19 @@ export function crearServicioActividades(
   };
 }
 
-async function cambiarEstadoActividad(repositorio, actividadId, docenteId, estado) {
+async function cambiarEstadoActividad(
+  repositorio,
+  actividadId,
+  docenteId,
+  estado
+) {
   validarId(actividadId, 'actividadId');
   validarId(docenteId, 'docenteId');
 
   if (typeof repositorio.actualizarEstado !== 'function') {
-    throw new TypeError('El repositorio no puede actualizar el estado de la actividad.');
+    throw new TypeError(
+      'El repositorio no puede actualizar el estado de la actividad.'
+    );
   }
 
   const actividad = await repositorio.obtenerActividadPorId(actividadId);
@@ -556,15 +563,25 @@ async function cambiarEstadoActividad(repositorio, actividadId, docenteId, estad
     );
   }
 
-  if (actividad.estado === ESTADOS_ACTIVIDAD.CERRADA && estado === ESTADOS_ACTIVIDAD.INICIADA) {
+  const transicionesPermitidas = {
+    [ESTADOS_ACTIVIDAD.PROGRAMADA]: ESTADOS_ACTIVIDAD.INICIADA,
+    [ESTADOS_ACTIVIDAD.INICIADA]: ESTADOS_ACTIVIDAD.CERRADA
+  };
+
+  const estadoEsperado = transicionesPermitidas[actividad.estado];
+
+  if (estadoEsperado !== estado) {
     throw errorActividad(
-      'ACTIVIDAD_CERRADA',
-      'Una actividad cerrada no se puede iniciar.',
+      'TRANSICION_INVALIDA',
+      `No se puede cambiar una actividad de ${actividad.estado} a ${estado}.`,
       409
     );
   }
 
-  const filas = await repositorio.actualizarEstado(actividadId, estado);
+  const filas = await repositorio.actualizarEstado(
+    actividadId,
+    estado
+  );
 
   if (!filas) {
     throw errorActividad(

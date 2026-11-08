@@ -373,8 +373,10 @@ test('Guarda el hash y convoca a cada estudiante con el código en claro', async
   ]);
 });
 
-test('Iniciar y cerrar registran el estado de la actividad', async () => {
+test('Valida las transiciones permitidas de estado de una actividad', async () => {
   let estado = 'Programada';
+  let actualizaciones = 0;
+
   const servicio = crearServicioActividades({
     async enTransaccion() {
       throw new Error('no debe abrir transacción');
@@ -386,19 +388,64 @@ test('Iniciar y cerrar registran el estado de la actividad', async () => {
       return [];
     },
     async actualizarEstado(_id, nuevo) {
+      actualizaciones++;
       estado = nuevo;
       return 1;
     }
-  }, () => ({ codigo: 'CODIGO', codigoHash: 'hash-CODIGO' }));
+  }, () => ({
+    codigo: 'CODIGO',
+    codigoHash: 'hash-CODIGO'
+  }));
 
-  assert.equal((await servicio.iniciar(4, 2)).estado, 'Iniciada');
-  assert.equal((await servicio.cerrar(4, 2)).estado, 'Cerrada');
+  // Programada -> Iniciada: permitido.
+  assert.equal(
+    (await servicio.iniciar(4, 2)).estado,
+    'Iniciada'
+  );
+
+  // Iniciada -> Iniciada: rechazado.
+  await assert.rejects(
+    () => servicio.iniciar(4, 2),
+    { codigo: 'TRANSICION_INVALIDA', statusCode: 409 }
+  );
+
+  // Programada -> Cerrada: rechazado.
+  estado = 'Programada';
+
+  await assert.rejects(
+    () => servicio.cerrar(4, 2),
+    { codigo: 'TRANSICION_INVALIDA', statusCode: 409 }
+  );
+
+  // Iniciada -> Cerrada: permitido.
+  estado = 'Iniciada';
+
+  assert.equal(
+    (await servicio.cerrar(4, 2)).estado,
+    'Cerrada'
+  );
+
+  // Cerrada -> Iniciada: rechazado.
+  await assert.rejects(
+    () => servicio.iniciar(4, 2),
+    { codigo: 'TRANSICION_INVALIDA', statusCode: 409 }
+  );
+
+  // Cerrada -> Cerrada: rechazado.
+  await assert.rejects(
+    () => servicio.cerrar(4, 2),
+    { codigo: 'TRANSICION_INVALIDA', statusCode: 409 }
+  );
+
+  // Un docente diferente no puede modificar la actividad.
   await assert.rejects(
     () => servicio.iniciar(4, 9),
-    { codigo: 'ACTIVIDAD_AJENA' }
+    { codigo: 'ACTIVIDAD_AJENA', statusCode: 403 }
   );
-});
 
+  // Solo se ejecutaron las dos transiciones válidas.
+  assert.equal(actualizaciones, 2);
+});
 test('Consulta una actividad con sus estudiantes autorizados', async () => {
   const estudiantes = [
     { id: 1, estudianteId: 20, estado: 'Autorizado' }
