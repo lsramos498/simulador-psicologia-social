@@ -1,5 +1,4 @@
 import { registrarRespuesta } from './registrarRespuesta.js';
-import { puedeModificarRespuesta } from './puedeModificarRespuesta.js';
 import { ESTADOS_SESION } from '../sesiones/sesion.state.js';
 
 function errorParticipacion(codigo, mensaje) {
@@ -21,16 +20,31 @@ function comprobarPropietario(sesion, estudianteId) {
   }
 }
 
-// estudianteId es provisional: el llamador deberá obtenerlo de autenticación.
+function comprobarRespuesta(respuesta) {
+  const { opcionId, fechaRespuesta, fechaModificacion } = respuesta;
+  const fechaValida = (fecha) => fecha instanceof Date && Number.isFinite(fecha.getTime());
+  const pendienteValida = opcionId === null && fechaRespuesta === null && fechaModificacion === null;
+  const respondidaValida = Number.isSafeInteger(opcionId) && opcionId > 0 && opcionId <= 2147483647
+    && fechaValida(fechaRespuesta)
+    && (fechaModificacion === null || (fechaValida(fechaModificacion)
+      && fechaModificacion >= fechaRespuesta));
+  if (!pendienteValida && !respondidaValida) {
+    throw errorParticipacion('RESPUESTA_INCONSISTENTE', 'La respuesta guardada requiere revisión de integridad.');
+  }
+}
+
+// Integración con autenticación: el router entrega req.usuario.id, nunca el ID del cuerpo.
 export function crearServicioParticipacion(repositorio) {
   return {
     async registrar(datos, estudianteId) {
       const respuesta = registrarRespuesta(datos);
-      [estudianteId, ...Object.values(respuesta)].forEach(validarId);
+      validarId(estudianteId);
       try {
+        // El repositorio confirma el commit antes de devolver; aquí aún no se publican eventos.
         return await repositorio.enTransaccion(async (transaccion) => {
           const sesion = await transaccion.obtenerSesion(respuesta.sesionId, true);
           comprobarPropietario(sesion, estudianteId);
+          // INTEGRACIÓN CON STATE: consulta los estados de Laura, sin ejecutar transiciones.
           if (sesion.estado !== ESTADOS_SESION.EN_CURSO) {
             throw errorParticipacion('ESTADO_NO_PERMITIDO', 'Solo se puede responder en una sesión En curso.');
           }
@@ -39,13 +53,16 @@ export function crearServicioParticipacion(repositorio) {
           }
           const existente = await transaccion.obtenerRespuesta(respuesta.sesionId, respuesta.decisionId);
           if (existente) {
-            if (!puedeModificarRespuesta(sesion.estado === ESTADOS_SESION.FINALIZADO)) {
-              throw errorParticipacion(
-                'RESPUESTA_NO_MODIFICABLE',
-                'La respuesta ya no se puede cambiar.'
+            comprobarRespuesta(existente);
+            if (existente.opcionId !== respuesta.opcionId) {
+              const filas = await transaccion.actualizarRespuesta(
+                existente.id, respuesta.opcionId, respuesta.sesionId,
+                respuesta.decisionId, existente.opcionId === null
               );
+              if (filas !== 1) {
+                throw errorParticipacion('RESPUESTA_INCONSISTENTE', 'No se pudo actualizar la respuesta esperada.');
+              }
             }
-            await transaccion.actualizarRespuesta(existente.id, respuesta.opcionId);
             return { id: existente.id, ...respuesta };
           }
           const id = await transaccion.insertarRespuesta(respuesta);

@@ -23,8 +23,10 @@ export function crearRepositorioParticipacion(pool) {
       },
       async obtenerRespuesta(sesionId, decisionId) {
         const [filas] = await conexion.execute(`
-          SELECT id FROM RespuestaEstudiante
+          SELECT id, opcion_id AS opcionId, fechaRespuesta, fechaModificacion
+          FROM RespuestaEstudiante
           WHERE sesion_id = ? AND decision_id = ?
+          FOR UPDATE
         `, [sesionId, decisionId]);
         return filas[0] ?? null;
       },
@@ -36,12 +38,16 @@ export function crearRepositorioParticipacion(pool) {
         `, [sesionId, decisionId, opcionId]);
         return resultado.insertId;
       },
-      async actualizarRespuesta(respuestaId, opcionId) {
+      async actualizarRespuesta(respuestaId, opcionId, sesionId, decisionId, primeraRespuesta = false) {
+        // La sesión permanece bloqueada hasta el commit; el cierre debe respetar ese bloqueo.
+        const fechas = primeraRespuesta
+          ? 'fechaRespuesta = CURRENT_TIMESTAMP, fechaModificacion = NULL'
+          : 'fechaModificacion = CURRENT_TIMESTAMP';
         const [resultado] = await conexion.execute(`
           UPDATE RespuestaEstudiante
-          SET opcion_id = ?, fechaModificacion = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `, [opcionId, respuestaId]);
+          SET opcion_id = ?, ${fechas}
+          WHERE id = ? AND sesion_id = ? AND decision_id = ?
+        `, [opcionId, respuestaId, sesionId, decisionId]);
         return resultado.affectedRows;
       },
       async consultarRespuestas(sesionId) {

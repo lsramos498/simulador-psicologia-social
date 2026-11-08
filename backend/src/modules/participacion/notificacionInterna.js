@@ -1,4 +1,5 @@
 
+// Apoyo al observador de prueba: construye el aviso, sin guardarlo ni enviarlo.
 function crearNotificacionInterna(evento) {
   if (!evento || evento.tipo !== 'participacionFinalizada') {
     return null;

@@ -35,3 +35,15 @@ test('Rechaza identificadores incorrectos', () => {
     opcionId: 4
   }));
 });
+
+for (const campo of ['sesionId', 'decisionId', 'opcionId']) {
+  for (const valor of [undefined, null, '2', 1.5, 0, -1, 2147483648, NaN, Infinity]) {
+    test(`Rechaza ${campo}=${valor} como error de entrada`, () => {
+      assert.throws(() => registrarRespuesta({ sesionId: 1, decisionId: 2, opcionId: 3, [campo]: valor }), TypeError);
+    });
+  }
+}
+test('Acepta el límite INT y descarta identidad enviada en el cuerpo', () => {
+  assert.deepEqual(registrarRespuesta({ sesionId: 2147483647, decisionId: 2, opcionId: 3, estudianteId: 99 }),
+    { sesionId: 2147483647, decisionId: 2, opcionId: 3 });
+});

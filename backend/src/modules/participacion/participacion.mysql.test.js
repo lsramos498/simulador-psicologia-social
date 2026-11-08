@@ -75,6 +75,7 @@ test('MySQL: registro y consulta en proyecto_nuclear_test', {
   const otraDecisionId = await insertar('Decision', 'escena_id, pregunta, `orden`', [escenaId, 'Otra pregunta', 2]);
   const opcionId = await insertar('OpcionDecision', 'decision_id, texto, esCorrecta, `orden`', [decisionId, 'Opción', true, 1]);
   const otraOpcionId = await insertar('OpcionDecision', 'decision_id, texto, esCorrecta, `orden`', [otraDecisionId, 'Otra opción', false, 1]);
+  const opcionAlternativaId = await insertar('OpcionDecision', 'decision_id, texto, esCorrecta, `orden`', [decisionId, 'Alternativa', false, 2]);
   const otroCasoId = await insertar('Caso',
     'creador_id, titulo, desarrolloSituacional, contextoHistoria, tiempoEstimadoSegundos, fechaCreacion',
     [estudianteId, 'Otro caso', 'Situación', 'Contexto', 600, fecha]);
@@ -141,16 +142,65 @@ test('MySQL: registro y consulta en proyecto_nuclear_test', {
     assert.equal(Object.hasOwn(respuesta, 'esCorrecta'), false);
     assert.equal(await cantidad(), 1);
   });
-  await t.test('Una respuesta en curso se puede cambiar y dos registros concurrentes producen una sola fila', async () => {
-    const cambiada = await servicio.registrar(datos, estudianteId);
-    assert.equal(cambiada.opcionId, opcionId);
-    const segunda = { sesionId, decisionId: otraDecisionId, opcionId: otraOpcionId };
-    const resultados = await Promise.allSettled([
-      servicio.registrar(segunda, estudianteId), servicio.registrar(segunda, estudianteId)
-    ]);
-    assert.equal(resultados.filter((resultado) => resultado.status === 'fulfilled').length, 1);
-    assert.equal(resultados.find((resultado) => resultado.status === 'rejected').reason.codigo, 'RESPUESTA_DUPLICADA');
+  await t.test('Cambio real conserva fecha inicial; repetición no altera fechas', async () => {
+    const [antes] = await servicio.consultar(sesionId, estudianteId);
+    const cambiada = await servicio.registrar({ ...datos, opcionId: opcionAlternativaId }, estudianteId);
+    assert.equal(cambiada.id, antes.id);
+    const [despues] = await servicio.consultar(sesionId, estudianteId);
+    assert.equal(despues.opcionId, opcionAlternativaId);
+    assert.deepEqual(despues.fechaRespuesta, antes.fechaRespuesta);
+    assert.ok(despues.fechaModificacion instanceof Date);
+    assert.ok(despues.fechaModificacion >= despues.fechaRespuesta);
+    await servicio.registrar({ ...datos, opcionId: opcionAlternativaId }, estudianteId);
+    assert.deepEqual((await servicio.consultar(sesionId, estudianteId))[0], despues);
+  });
+  await t.test('Completa una fila pendiente sin duplicarla', async () => {
+    const [pendiente] = await pool.execute(
+      'INSERT INTO RespuestaEstudiante (sesion_id, decision_id) VALUES (?, ?)', [sesionId, otraDecisionId]);
+    const respuesta = await servicio.registrar({ sesionId, decisionId: otraDecisionId, opcionId: otraOpcionId }, estudianteId);
+    assert.equal(respuesta.id, pendiente.insertId);
+    const fila = (await servicio.consultar(sesionId, estudianteId)).find(r => r.id === respuesta.id);
+    assert.ok(fila.fechaRespuesta instanceof Date);
+    assert.equal(fila.fechaModificacion, null);
     assert.equal(await cantidad(), 2);
-    assert.equal((await servicio.consultar(sesionId, estudianteId)).find((respuesta) => respuesta.decisionId === decisionId).opcionId, opcionId);
+  });
+  await t.test('Cambios concurrentes conservan una fila por decisión', async () => {
+    const resultados = await Promise.all([
+      servicio.registrar(datos, estudianteId),
+      servicio.registrar({ ...datos, opcionId: opcionAlternativaId }, estudianteId)
+    ]);
+    assert.equal(resultados[0].id, resultados[1].id);
+    assert.equal(await cantidad(), 2);
+    const fila = (await servicio.consultar(sesionId, estudianteId)).find(r => r.decisionId === decisionId);
+    assert.ok([opcionId, opcionAlternativaId].includes(fila.opcionId));
+  });
+  await t.test('Respuesta incoherente se rechaza sin reparación silenciosa', async () => {
+    const [antes] = await servicio.consultar(sesionId, estudianteId);
+    try {
+      await pool.execute('UPDATE RespuestaEstudiante SET fechaRespuesta = NULL WHERE id = ?', [antes.id]);
+      await assert.rejects(servicio.registrar(datos, estudianteId), { codigo: 'RESPUESTA_INCONSISTENTE' });
+      const [[fila]] = await pool.execute('SELECT fechaRespuesta FROM RespuestaEstudiante WHERE id = ?', [antes.id]);
+      assert.equal(fila.fechaRespuesta, null);
+    } finally {
+      await pool.execute('UPDATE RespuestaEstudiante SET fechaRespuesta = ? WHERE id = ?', [antes.fechaRespuesta, antes.id]);
+    }
+  });
+  await t.test('Finalización y respuesta concurrentes usan el bloqueo de sesión', async () => {
+    const cierre = await pool.getConnection();
+    try {
+      await cierre.beginTransaction();
+      await cierre.execute('SELECT id FROM SesionSimulacion WHERE id = ? FOR UPDATE', [sesionId]);
+      await cierre.execute("UPDATE SesionSimulacion SET estado = 'Finalizado' WHERE id = ?", [sesionId]);
+      const intento = servicio.registrar(datos, estudianteId);
+      const rechazo = assert.rejects(intento, { codigo: 'ESTADO_NO_PERMITIDO' });
+      await cierre.commit();
+      await rechazo;
+      const conservadas = await servicio.consultar(sesionId, estudianteId);
+      await assert.rejects(servicio.registrar({ ...datos, opcionId: opcionAlternativaId }, estudianteId), { codigo: 'ESTADO_NO_PERMITIDO' });
+      assert.deepEqual(await servicio.consultar(sesionId, estudianteId), conservadas);
+    } finally {
+      await cierre.rollback();
+      cierre.release();
+    }
   });
 });

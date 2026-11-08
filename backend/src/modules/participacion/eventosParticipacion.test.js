@@ -6,9 +6,11 @@ import { EventosParticipacion } from './eventosParticipacion.js';
 import { crearNotificacionInterna } from './notificacionInterna.js';
 
 test('Observer crea una notificación al finalizar una participación', () => {
+  // PATRÓN OBSERVER: instancia el emisor para esta prueba aislada.
   const eventos = new EventosParticipacion();
   const notificaciones = [];
 
+  // PATRÓN OBSERVER: suscribe una función que reacciona construyendo el aviso.
   eventos.suscribir((evento) => {
     const notificacion = crearNotificacionInterna(evento);
 
@@ -17,6 +19,7 @@ test('Observer crea una notificación al finalizar una participación', () => {
     }
   });
 
+  // PATRÓN OBSERVER: publica un evento simulado; no procede de una operación MySQL.
   eventos.notificar({
     tipo: 'participacionFinalizada',
     estudianteId: 1
@@ -62,6 +65,7 @@ test('No notifica después de desuscribir un observador', () => {
   const eventos = new EventosParticipacion();
   let notificacionesRecibidas = 0;
 
+  // PATRÓN OBSERVER: este observador cuenta los eventos recibidos.
   const observador = () => {
     notificacionesRecibidas++;
   };
@@ -69,6 +73,7 @@ test('No notifica después de desuscribir un observador', () => {
   eventos.suscribir(observador);
   eventos.notificar({ tipo: 'participacionFinalizada' });
 
+  // PATRÓN OBSERVER: comprueba que el observador retirado ya no reacciona.
   eventos.desuscribir(observador);
   eventos.notificar({ tipo: 'participacionFinalizada' });
 

@@ -7,11 +7,11 @@ function registrarRespuesta(datos) {
   const { sesionId, decisionId, opcionId } = datos;
 
   if (
-    !Number.isInteger(sesionId) || sesionId <= 0 ||
-    !Number.isInteger(decisionId) || decisionId <= 0 ||
-    !Number.isInteger(opcionId) || opcionId <= 0
+    [sesionId, decisionId, opcionId].some(
+      (id) => !Number.isSafeInteger(id) || id <= 0 || id > 2147483647
+    )
   ) {
-    throw new Error(
+    throw new TypeError(
       'La sesión, la decisión y la opción deben tener identificadores válidos'
     );
   }
