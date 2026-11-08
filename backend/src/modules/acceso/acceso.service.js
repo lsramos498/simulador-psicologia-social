@@ -34,7 +34,13 @@ function errorAcceso(mensaje, statusCode) {
   return error;
 }
 
-export function crearServicioAcceso(repositorio, { reloj = () => new Date() } = {}) {
+export function crearServicioAcceso(
+  repositorio,
+  {
+    reloj = () => new Date(),
+    iniciarSesion = null
+  } = {}
+) {
   if (!repositorio || typeof repositorio.buscarAccesoPorCodigoHash !== 'function') {
     throw new TypeError('Se requiere el repositorio de acceso');
   }
@@ -62,7 +68,13 @@ export function crearServicioAcceso(repositorio, { reloj = () => new Date() } = 
         throw errorAcceso('El usuario no tiene el rol Estudiante', 403);
       }
 
-      // 4. Entregar el token de sesión.
+            // 4. Crear o recuperar la sesión individual del estudiante.
+      // Esta dependencia se inyecta desde la configuración del backend.
+      if (iniciarSesion !== null) {
+        await iniciarSesion({ actividadId, estudianteId });
+      }
+
+      // 5. Entregar el token de sesión.
       const token = firmarToken({ ...usuario, actividadId });
 
       return {

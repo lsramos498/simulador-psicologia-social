@@ -4,6 +4,8 @@ import { crearServicioAcceso } from '../modules/acceso/acceso.service.js';
 import { crearRepositorioAdministracion } from '../modules/acceso/administracion.repository.js';
 import { crearServicioAdministracion } from '../modules/acceso/administracion.service.js';
 import { crearRutasAdministracion } from './administracion.routes.js';
+import { crearRepositorioSesiones } from '../modules/sesiones/sesiones.repository.js';
+import { crearServicioSesiones } from '../modules/sesiones/sesiones.service.js';
 
 /**
  * Rutas del módulo de acceso (Sofía Gallego — acceso y permisos).
@@ -86,7 +88,15 @@ let servicioAdministracion;
 async function obtenerServicioPorDefecto() {
   if (!servicioPorDefecto) {
     const { pool } = await import('../config/database.js');
-    servicioPorDefecto = crearServicioAcceso(crearRepositorioAcceso(pool));
+        const repositorioSesiones = crearRepositorioSesiones(pool);
+    const servicioSesiones = crearServicioSesiones(repositorioSesiones);
+
+    servicioPorDefecto = crearServicioAcceso(
+      crearRepositorioAcceso(pool),
+      {
+        iniciarSesion: (datos) => servicioSesiones.iniciarSesion(datos)
+      }
+    );
   }
   return servicioPorDefecto;
 }
