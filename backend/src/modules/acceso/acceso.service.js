@@ -6,6 +6,8 @@ import {
   validarAccesoEstudiante
 } from './codigos.js';
 import { hashearContrasena, verificarContrasena } from './contrasenas.js';
+import { crearErrorHttp } from './errores.js';
+import { crearLimiteIntentos } from './limiteIntentos.js';
 import { firmarToken } from './tokens.js';
 
 /**
@@ -28,15 +30,34 @@ async function obtenerHashFicticio() {
   return hashFicticio;
 }
 
-function errorAcceso(mensaje, statusCode) {
-  const error = new Error(mensaje);
-  error.statusCode = statusCode;
-  return error;
-}
-
-export function crearServicioAcceso(repositorio, { reloj = () => new Date() } = {}) {
+export function crearServicioAcceso(repositorio, {
+  reloj = () => new Date(),
+  limiteIntentos = crearLimiteIntentos()
+} = {}) {
   if (!repositorio || typeof repositorio.buscarAccesoPorCodigoHash !== 'function') {
     throw new TypeError('Se requiere el repositorio de acceso');
+  }
+
+  /**
+   * Aplica el límite de intentos a un ingreso: si el correo está bloqueado
+   * responde 429 sin revisar credenciales; si las credenciales fallan (401)
+   * suma un fallo; si el ingreso es correcto, borra el contador.
+   */
+  async function conLimiteDeIntentos(clave, ingresar) {
+    if (limiteIntentos.estaBloqueado(clave)) {
+      throw crearErrorHttp('Demasiados intentos fallidos. Intente de nuevo más tarde', 429);
+    }
+
+    try {
+      const resultado = await ingresar();
+      limiteIntentos.reiniciar(clave);
+      return resultado;
+    } catch (error) {
+      if (error.statusCode === 401) {
+        limiteIntentos.registrarFallo(clave);
+      }
+      throw error;
+    }
   }
 
   return {
@@ -45,30 +66,32 @@ export function crearServicioAcceso(repositorio, { reloj = () => new Date() } = 
       const codigo = normalizarCodigo(credenciales?.codigo);
 
       if (!correo || !codigo) {
-        throw errorAcceso('El correo institucional y el código de autorización son obligatorios', 400);
+        throw crearErrorHttp('El correo institucional y el código de autorización son obligatorios', 400);
       }
 
-      // 1. Buscar la convocatoria por el hash del código (nunca por el código en claro).
-      const registro = await repositorio.buscarAccesoPorCodigoHash(hashearCodigoAutorizacion(codigo));
+      return conLimiteDeIntentos(`codigo:${correo}`, async () => {
+        // 1. Buscar la convocatoria por el hash del código (nunca por el código en claro).
+        const registro = await repositorio.buscarAccesoPorCodigoHash(hashearCodigoAutorizacion(codigo));
 
-      // 2. Aplicar las reglas: código, correo, estado, ventana y sesión.
-      const { estudianteId, actividadId } = validarAccesoEstudiante({ correo, codigo }, registro, reloj());
+        // 2. Aplicar las reglas: código, correo, estado, ventana y sesión.
+        const { estudianteId, actividadId } = validarAccesoEstudiante({ correo, codigo }, registro, reloj());
 
-      // 3. Roles y permisos desde la base de datos (fuente confiable del servidor).
-      const { roles, permisos } = await repositorio.obtenerRolesYPermisos(estudianteId);
-      const usuario = { id: estudianteId, roles, permisos };
+        // 3. Roles y permisos desde la base de datos (fuente confiable del servidor).
+        const { roles, permisos } = await repositorio.obtenerRolesYPermisos(estudianteId);
+        const usuario = { id: estudianteId, roles, permisos };
 
-      if (!tieneRol(usuario, ROLES.ESTUDIANTE)) {
-        throw errorAcceso('El usuario no tiene el rol Estudiante', 403);
-      }
+        if (!tieneRol(usuario, ROLES.ESTUDIANTE)) {
+          throw crearErrorHttp('El usuario no tiene el rol Estudiante', 403);
+        }
 
-      // 4. Entregar el token de sesión.
-      const token = firmarToken({ ...usuario, actividadId });
+        // 4. Entregar el token de sesión.
+        const token = firmarToken({ ...usuario, actividadId });
 
-      return {
-        token,
-        usuario: { id: estudianteId, roles, actividadId }
-      };
+        return {
+          token,
+          usuario: { id: estudianteId, roles, actividadId }
+        };
+      });
     },
 
     async ingresarConContrasena(credenciales) {
@@ -76,37 +99,39 @@ export function crearServicioAcceso(repositorio, { reloj = () => new Date() } = 
       const contrasena = credenciales?.contrasena;
 
       if (!correo || typeof contrasena !== 'string' || contrasena === '') {
-        throw errorAcceso('El correo institucional y la contraseña son obligatorios', 400);
+        throw crearErrorHttp('El correo institucional y la contraseña son obligatorios', 400);
       }
 
-      // 1. Buscar al usuario y comprobar la contraseña contra su hash.
-      const usuarioBd = await repositorio.buscarUsuarioPorCorreo(correo);
-      const hashGuardado = usuarioBd?.contrasenaHash ?? await obtenerHashFicticio();
-      const contrasenaValida = await verificarContrasena(contrasena, hashGuardado);
+      return conLimiteDeIntentos(`contrasena:${correo}`, async () => {
+        // 1. Buscar al usuario y comprobar la contraseña contra su hash.
+        const usuarioBd = await repositorio.buscarUsuarioPorCorreo(correo);
+        const hashGuardado = usuarioBd?.contrasenaHash ?? await obtenerHashFicticio();
+        const contrasenaValida = await verificarContrasena(contrasena, hashGuardado);
 
-      // Mismo mensaje si el correo no existe o la contraseña es incorrecta.
-      if (!usuarioBd || !contrasenaValida) {
-        throw errorAcceso('Correo o contraseña no válidos', 401);
-      }
+        // Mismo mensaje si el correo no existe o la contraseña es incorrecta.
+        if (!usuarioBd || !contrasenaValida) {
+          throw crearErrorHttp('Correo o contraseña no válidos', 401);
+        }
 
-      if (!usuarioBd.activo) {
-        throw errorAcceso('La cuenta está inactiva', 403);
-      }
+        if (!usuarioBd.activo) {
+          throw crearErrorHttp('La cuenta está inactiva', 403);
+        }
 
-      // 2. Roles y permisos desde la base de datos.
-      const { roles, permisos } = await repositorio.obtenerRolesYPermisos(usuarioBd.id);
-      const usuario = { id: usuarioBd.id, roles, permisos };
+        // 2. Roles y permisos desde la base de datos.
+        const { roles, permisos } = await repositorio.obtenerRolesYPermisos(usuarioBd.id);
+        const usuario = { id: usuarioBd.id, roles, permisos };
 
-      // Los estudiantes ingresan con su código, no con contraseña.
-      if (!tieneRol(usuario, ROLES.DOCENTE, ROLES.ADMINISTRADOR)) {
-        throw errorAcceso('Este ingreso es solo para docentes y administradores', 403);
-      }
+        // Los estudiantes ingresan con su código, no con contraseña.
+        if (!tieneRol(usuario, ROLES.DOCENTE, ROLES.ADMINISTRADOR)) {
+          throw crearErrorHttp('Este ingreso es solo para docentes y administradores', 403);
+        }
 
-      // 3. Entregar el token de sesión.
-      return {
-        token: firmarToken(usuario),
-        usuario
-      };
+        // 3. Entregar el token de sesión.
+        return {
+          token: firmarToken(usuario),
+          usuario
+        };
+      });
     }
   };
 }
