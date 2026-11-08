@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   hashearContrasena,
+  validarPoliticaContrasena,
   verificarContrasena
 } from '../src/modules/acceso/contrasenas.js';
 
@@ -68,4 +69,16 @@ test('rechaza un hash con el contenido alterado', async () => {
   const partes = hash.split('$');
   partes[5] = Buffer.alloc(64, 1).toString('base64');
   assert.equal(await verificarContrasena(CONTRASENA, partes.join('$')), false);
+});
+// ---------- Política de contraseñas ----------
+
+test('la política acepta una contraseña con 8 caracteres, letras y números', () => {
+  assert.deepEqual(validarPoliticaContrasena('Clave2026'), []);
+});
+
+test('la política rechaza contraseñas cortas, sin letras o sin números', () => {
+  assert.deepEqual(validarPoliticaContrasena('Ab1'), ['al menos 8 caracteres']);
+  assert.deepEqual(validarPoliticaContrasena('12345678'), ['al menos una letra']);
+  assert.deepEqual(validarPoliticaContrasena('solotexto'), ['al menos un número']);
+  assert.deepEqual(validarPoliticaContrasena(12345678), ['debe ser un texto']);
 });
