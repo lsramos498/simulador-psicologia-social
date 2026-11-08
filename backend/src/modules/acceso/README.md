@@ -129,6 +129,18 @@ router.get('/admin', autenticar, requiereRol('Administrador'), listar);
 (los estudiantes también tienen `actividadId`). La identidad siempre sale de `req.usuario`,
 nunca del cuerpo de la petición.
 
+**Limitar al estudiante a la actividad de su código** (para la ruta de inicio de sesión del estudiante, módulo de actividades):
+
+```js
+import { requiereActividadAutorizada } from '../modules/acceso/autorizar.middleware.js';
+
+router.post('/:id/sesiones', autenticar, requiereActividadAutorizada(), iniciarSesion);
+```
+
+Si el usuario es Estudiante y la actividad de la ruta (`req.params.id` por defecto) no es la `actividadId`
+de su token, responde `403`. Docentes y administradores pasan; su control lo hace el módulo de actividades.
+Integración con la ruta de inicio de sesión del estudiante: pendiente de coordinar con Laura.
+
 **Proteger una operación de negocio** (patrón Proxy):
 
 ```js
