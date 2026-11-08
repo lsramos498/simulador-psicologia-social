@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { autenticar } from '../modules/acceso/autenticar.middleware.js';
 import { requiereRol } from '../modules/acceso/autorizar.middleware.js';
 import { ROLES } from '../modules/acceso/autorizacion.js';
+import { responderErrorHttp } from '../modules/acceso/errores.js';
 
 /**
  * Rutas de administración (Sofía Gallego — acceso y permisos). RF-03.
@@ -28,11 +29,7 @@ export function crearRutasAdministracion(obtenerServicio) {
         const data = await accion(servicio, req);
         return res.status(estado).json({ data });
       } catch (error) {
-        if (error.statusCode) {
-          return res.status(error.statusCode).json({ error: error.message });
-        }
-        console.error('Error en administración:', error.code || error.message);
-        return res.status(500).json({ error: 'Error interno del servidor' });
+        return responderErrorHttp(res, error, 'administración');
       }
     };
   }
