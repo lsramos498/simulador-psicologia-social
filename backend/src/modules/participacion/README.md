@@ -199,3 +199,80 @@ esquema y base real y contar con autorización de las escrituras y limpieza.
 - Los resultados de conexiones simuladas no certifican persistencia ni bloqueos reales.
 - La prueba MySQL de cierre usa una transacción controlada; no invoca el cierre real de Laura.
   Su integración con Sesiones sigue pendiente de verificación; RF-10 no se declara totalmente integrado.
+
+## RF-11: progreso integrado en Participación
+
+Fuente: hoja oficial `16 oct`, RF-11 (fila 12), y confirmación de Stefanía:
+el recorrido actual es lineal, sin ramificaciones ni asignación individual de preguntas.
+Todas las decisiones del caso asociado a la sesión son aplicables. Seleccionar una opción
+cambia la consecuencia narrativa y la explicación, no la siguiente pregunta.
+
+### Persistencia y cálculo
+
+- `participacion.repository.js`, `obtenerSesion()`: obtiene el caso mediante
+  `SesionSimulacion.actividad_id → ActividadProgramada.caso_id`.
+- `obtenerDecisionesAplicables(casoId)`: consulta `Decision → Escena → Caso`, ordenando
+  primero por escena y luego por pregunta. Es el punto para adaptar la aplicabilidad
+  si en el futuro el equipo incorpora recorridos distintos; no hay ramificación nueva aquí.
+- `consultarRespuestasParaProgreso(sesionId, casoId)`: limita las filas a esa sesión y caso,
+  admite opciones nulas y exige que una opción seleccionada pertenezca a su decisión.
+  No consulta corrección, puntuación ni explicaciones.
+- `calcularProgreso()`: recibe los IDs aplicables y las respuestas; cuenta cada decisión
+  una sola vez. Son pendientes las decisiones sin fila o con opción nula.
+  No se infiere aplicabilidad a partir de lo que el estudiante ya respondió.
+
+Se conserva la API anterior `calcularProgreso(total, respondidas)`. La entrada por colecciones
+acepta Array o Set de IDs y un Array de respuestas con `decisionId/opcionId` o sus nombres SQL.
+Un recorrido desconocido (`null` o `undefined`) devuelve `estadoRecorrido: 'indeterminado'`
+y cantidades nulas. Un conjunto conocido vacío devuelve cantidades cero, sin afirmar finalización.
+No se calcula porcentaje ni calificación.
+
+### Servicio, transacción y HTTP
+
+`crearServicioParticipacion().consultarProgreso(sesionId, estudianteId)` comprueba propietario
+y consulta los datos dentro de una transacción con bloqueo de sesión. Permite consulta propia
+también después de finalizar, sin modificar el estado. No concede consultas docentes nuevas.
+
+`registrar()` mantiene las validaciones, el bloqueo y las reglas de RF-10. Tras insertar,
+modificar o repetir una selección, calcula progreso con la misma conexión y lo devuelve
+únicamente después del commit. Si la consulta de progreso falla, se revierte la operación;
+no se responde éxito sin progreso ni se oculta el error.
+
+El resultado conserva `id`, `sesionId`, `decisionId` y `opcionId`, y añade `progreso`:
+
+```json
+{
+  "id": 10,
+  "sesionId": 1,
+  "decisionId": 2,
+  "opcionId": 3,
+  "progreso": {
+    "estadoRecorrido": "determinado",
+    "totalPreguntas": 2,
+    "preguntasRespondidas": 1,
+    "preguntasPendientes": 1,
+    "decisionesPendientesIds": [5]
+  }
+}
+```
+
+El router existente ya entrega ese objeto como `data` y mantiene HTTP 201. La consulta de
+respuestas existente conserva su formato. No se modificó `routes/participacion.routes.js`:
+el endpoint dedicado GET de progreso queda pendiente de autorización específica.
+
+Tener cero pendientes no finaliza la sesión. La integración con el cierre real de Laura
+continúa pendiente, y no se agregan temporizadores, evaluación, eventos ni notificaciones.
+
+### Verificación de esta integración
+
+- Referencia inicial: 173 pruebas de Participación aprobadas, sin MySQL.
+- Regresión integrada: 184 aprobadas, 0 fallidas y 0 omitidas, incluidas las pruebas HTTP
+  del router existente con persistencia simulada.
+- Suite general sin activar MySQL: 450 aprobadas, 0 fallidas y 2 suites MySQL omitidas.
+  Las 184 de Participación están incluidas en esas 450; no se suman nuevamente.
+- Se prueban consulta propia/ajena/inexistente, IDs, pendientes nulas y sin fila,
+  conjuntos de distintos tamaños, consulta finalizada, modificación sin aumento,
+  rollback ante fallo de progreso y entrega posterior al commit.
+- Las consultas parametrizadas, filtros y orden se verifican con conexiones simuladas.
+- Esta versión integrada no se ha probado con escrituras MySQL. Las nueve subpruebas reales
+  documentadas en RF-10 corresponden a la versión anterior y no certifican esta integración.

@@ -1,4 +1,5 @@
 import { registrarRespuesta } from './registrarRespuesta.js';
+import { calcularProgreso } from './calcularProgreso.js';
 import { ESTADOS_SESION } from '../sesiones/sesion.state.js';
 
 function errorParticipacion(codigo, mensaje) {
@@ -33,6 +34,12 @@ function comprobarRespuesta(respuesta) {
   }
 }
 
+async function obtenerProgreso(repositorio, sesionId, casoId) {
+  const decisiones = await repositorio.obtenerDecisionesAplicables(casoId);
+  const respuestas = await repositorio.consultarRespuestasParaProgreso(sesionId, casoId);
+  return calcularProgreso(decisiones, respuestas);
+}
+
 // Integración con autenticación: el router entrega req.usuario.id, nunca el ID del cuerpo.
 export function crearServicioParticipacion(repositorio) {
   return {
@@ -52,6 +59,7 @@ export function crearServicioParticipacion(repositorio) {
             throw errorParticipacion('OPCION_INVALIDA', 'La decisión debe pertenecer al caso y la opción a la decisión.');
           }
           const existente = await transaccion.obtenerRespuesta(respuesta.sesionId, respuesta.decisionId);
+          let id;
           if (existente) {
             comprobarRespuesta(existente);
             if (existente.opcionId !== respuesta.opcionId) {
@@ -63,10 +71,12 @@ export function crearServicioParticipacion(repositorio) {
                 throw errorParticipacion('RESPUESTA_INCONSISTENTE', 'No se pudo actualizar la respuesta esperada.');
               }
             }
-            return { id: existente.id, ...respuesta };
+            id = existente.id;
+          } else {
+            id = await transaccion.insertarRespuesta(respuesta);
           }
-          const id = await transaccion.insertarRespuesta(respuesta);
-          return { id, ...respuesta };
+          const progreso = await obtenerProgreso(transaccion, respuesta.sesionId, sesion.casoId);
+          return { id, ...respuesta, progreso };
         });
       } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
@@ -74,6 +84,15 @@ export function crearServicioParticipacion(repositorio) {
         }
         throw error;
       }
+    },
+    async consultarProgreso(sesionId, estudianteId) {
+      [sesionId, estudianteId].forEach(validarId);
+      return repositorio.enTransaccion(async (transaccion) => {
+        // Comparte el bloqueo de RF-10 para leer respuestas y estado sin cambios concurrentes.
+        const sesion = await transaccion.obtenerSesion(sesionId, true);
+        comprobarPropietario(sesion, estudianteId);
+        return obtenerProgreso(transaccion, sesionId, sesion.casoId);
+      });
     },
     async consultar(sesionId, estudianteId) {
       [sesionId, estudianteId].forEach(validarId);

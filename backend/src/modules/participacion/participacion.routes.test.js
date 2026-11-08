@@ -19,6 +19,8 @@ function preparar(cambios = {}) {
     obtenerSesion: async () => ({ estudianteId: 7, estado: 'En curso', casoId: 9 }),
     opcionValida: async () => true, obtenerRespuesta: async () => null,
     insertarRespuesta: async () => 10, consultarRespuestas: async () => [{ id: 10, ...datos }],
+    obtenerDecisionesAplicables: async () => [2, 5],
+    consultarRespuestasParaProgreso: async () => [datos],
     ...cambios
   };
   repo.enTransaccion = async operacion => operacion(repo);
@@ -34,6 +36,10 @@ test('HTTP usa identidad del token e ignora estudianteId del cliente', async () 
   const res = await enviar(preparar(), { ...datos, estudianteId: 99 });
   assert.equal(res.status, 201);
   assert.equal(res.body.data.id, 10);
+  assert.deepEqual(res.body.data.progreso, {
+    estadoRecorrido: 'determinado', totalPreguntas: 2, preguntasRespondidas: 1,
+    preguntasPendientes: 1, decisionesPendientesIds: [5]
+  });
 });
 for (const cuerpo of [{}, { ...datos, opcionId: null }, { ...datos, opcionId: '3' }, { ...datos, sesionId: 2147483648 }]) {
   test(`HTTP datos inválidos devuelven 400: ${JSON.stringify(cuerpo)}`, async () => {
@@ -69,6 +75,10 @@ test('HTTP modifica a otra opción válida mediante el router existente', async 
   const res = await enviar(app, { ...datos, opcionId: 4 });
   assert.equal(res.status, 201);
   assert.equal(opcion, 4);
+  assert.deepEqual(res.body.data.progreso, {
+    estadoRecorrido: 'determinado', totalPreguntas: 2, preguntasRespondidas: 1,
+    preguntasPendientes: 1, decisionesPendientesIds: [5]
+  });
 });
 test('HTTP error de persistencia devuelve 500 sin detalles SQL', async () => {
   const res = await enviar(preparar({ insertarRespuesta: async () => { throw new Error('detalle-SQL-simulado'); } }));

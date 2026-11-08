@@ -14,6 +14,8 @@ function preparar(cambios = {}) {
     insertarRespuesta: async (respuesta) => { llamadas.push(respuesta); return 10; },
     actualizarRespuesta: async () => 1,
     consultarRespuestas: async () => [{ id: 10, ...datos }],
+    obtenerDecisionesAplicables: async () => [2],
+    consultarRespuestasParaProgreso: async () => [datos],
     ...cambios
   };
   repositorio.enTransaccion = async (operacion) => operacion(repositorio);
@@ -22,7 +24,9 @@ function preparar(cambios = {}) {
 
 test('El servicio registra una respuesta válida', async () => {
   const { servicio, llamadas } = preparar();
-  assert.deepEqual(await servicio.registrar(datos, 7), { id: 10, ...datos });
+  assert.deepEqual(await servicio.registrar(datos, 7), { id: 10, ...datos,
+    progreso: { estadoRecorrido: 'determinado', totalPreguntas: 1,
+      preguntasRespondidas: 1, preguntasPendientes: 0, decisionesPendientesIds: [] } });
   assert.deepEqual(llamadas, [datos]);
 });
 
@@ -183,6 +187,8 @@ function prepararConcurrencia() {
     },
     opcionValida: async () => true,
     obtenerRespuesta: async () => fila,
+    obtenerDecisionesAplicables: async () => [2],
+    consultarRespuestasParaProgreso: async () => fila ? [{ ...fila, decisionId: 2 }] : [],
     insertarRespuesta: async (respuesta) => {
       inserciones++;
       fila = { id: 10, opcionId: respuesta.opcionId, fechaRespuesta: new Date(), fechaModificacion: null };
@@ -215,4 +221,117 @@ test('Respuesta confirmada primero se conserva después del cierre', async () =>
   await cierre;
   await assert.rejects(c.servicio.registrar({ ...datos, opcionId: 4 }, 7), { codigo: 'ESTADO_NO_PERMITIDO' });
   assert.equal(c.leer().fila.opcionId, 3);
+});
+
+test('Consulta progreso usa el caso de la sesión y el mismo contexto transaccional', async () => {
+  const llamadas = [];
+  const { servicio } = preparar({
+    obtenerSesion: async (id, bloquear) => {
+      llamadas.push(['sesion', id, bloquear]);
+      return { estudianteId: 7, casoId: 9, estado: 'En curso' };
+    },
+    obtenerDecisionesAplicables: async (casoId) => { llamadas.push(['caso', casoId]); return [2, 5, 8]; },
+    consultarRespuestasParaProgreso: async (...args) => {
+      llamadas.push(['respuestas', ...args]);
+      return [{ decisionId: 2, opcionId: 3 }, { decisionId: 5, opcionId: null }];
+    }
+  });
+  assert.deepEqual(await servicio.consultarProgreso(1, 7), {
+    estadoRecorrido: 'determinado', totalPreguntas: 3, preguntasRespondidas: 1,
+    preguntasPendientes: 2, decisionesPendientesIds: [5, 8]
+  });
+  assert.deepEqual(llamadas, [['sesion', 1, true], ['caso', 9], ['respuestas', 1, 9]]);
+});
+
+for (const [nombre, sesion, codigo] of [
+  ['ajena', { estudianteId: 8, casoId: 9 }, 'SESION_AJENA'],
+  ['inexistente', null, 'SESION_NO_EXISTE']
+]) {
+  test(`Progreso de sesión ${nombre} no consulta contenido ni respuestas`, async () => {
+    let lecturas = 0;
+    const { servicio } = preparar({ obtenerSesion: async () => sesion,
+      obtenerDecisionesAplicables: async () => { lecturas++; return []; },
+      consultarRespuestasParaProgreso: async () => { lecturas++; return []; } });
+    await assert.rejects(servicio.consultarProgreso(1, 7), { codigo });
+    assert.equal(lecturas, 0);
+  });
+}
+
+test('Consulta de progreso rechaza IDs inválidos', async () => {
+  for (const [sesionId, estudianteId] of [['1', 7], [0, 7], [1, null], [1, -1]]) {
+    await assert.rejects(preparar().servicio.consultarProgreso(sesionId, estudianteId), TypeError);
+  }
+});
+
+test('Progreso vacío y conteos diferentes según el caso recibido', async () => {
+  for (const ids of [[], [2], [2, 5, 8, 10]]) {
+    const { servicio } = preparar({ obtenerDecisionesAplicables: async () => ids,
+      consultarRespuestasParaProgreso: async () => [] });
+    const progreso = await servicio.consultarProgreso(1, 7);
+    assert.equal(progreso.totalPreguntas, ids.length);
+    assert.equal(progreso.preguntasRespondidas, 0);
+    assert.deepEqual(progreso.decisionesPendientesIds, ids);
+  }
+});
+
+test('Consultar progreso de sesión finalizada no ejecuta cambios de estado', async () => {
+  const sesion = Object.freeze({ estudianteId: 7, casoId: 9, estado: 'Finalizado' });
+  const { servicio } = preparar({ obtenerSesion: async () => sesion });
+  assert.equal((await servicio.consultarProgreso(1, 7)).preguntasRespondidas, 1);
+  assert.equal(sesion.estado, 'Finalizado');
+});
+
+test('Registrar, modificar y repetir devuelven progreso posterior a la escritura', async () => {
+  const c = prepararConcurrencia();
+  const primera = await c.servicio.registrar(datos, 7);
+  const modificada = await c.servicio.registrar({ ...datos, opcionId: 4 }, 7);
+  const repetida = await c.servicio.registrar({ ...datos, opcionId: 4 }, 7);
+  assert.equal(primera.progreso.preguntasRespondidas, 1);
+  assert.deepEqual(modificada.progreso, primera.progreso);
+  assert.deepEqual(repetida.progreso, primera.progreso);
+  assert.equal(c.leer().inserciones, 1);
+});
+
+test('Fallo al consultar progreso después de insertar provoca rollback y no devuelve éxito', async () => {
+  const pasos = [];
+  const error = new Error('fallo de lectura simulado');
+  const conexion = {
+    beginTransaction: async () => pasos.push('inicio'),
+    commit: async () => pasos.push('commit'),
+    rollback: async () => pasos.push('rollback'), release: () => pasos.push('release'),
+    execute: async (sql) => {
+      if (sql.includes('FROM SesionSimulacion')) return [[{ estudianteId: 7, casoId: 9, estado: 'En curso' }]];
+      if (sql.includes('SELECT o.id')) return [[{ id: 3 }]];
+      if (sql.includes('FROM RespuestaEstudiante')) return [[]];
+      if (sql.includes('INSERT INTO')) { pasos.push('insertar'); return [{ insertId: 10 }]; }
+      throw error;
+    }
+  };
+  const servicio = crearServicioParticipacion(crearRepositorioParticipacion({ getConnection: async () => conexion }));
+  await assert.rejects(servicio.registrar(datos, 7), (actual) => actual === error);
+  assert.deepEqual(pasos, ['inicio', 'insertar', 'rollback', 'release']);
+});
+
+test('Respuesta y progreso solo se entregan después del commit', async () => {
+  const pasos = [];
+  let confirmar;
+  const espera = new Promise((resolve) => { confirmar = resolve; });
+  const tx = {
+    obtenerSesion: async () => ({ estudianteId: 7, casoId: 9, estado: 'En curso' }),
+    opcionValida: async () => true, obtenerRespuesta: async () => null,
+    insertarRespuesta: async () => 10, obtenerDecisionesAplicables: async () => [2],
+    consultarRespuestasParaProgreso: async () => { pasos.push('calculo'); return [datos]; }
+  };
+  const servicio = crearServicioParticipacion({ enTransaccion: async (operacion) => {
+    const resultado = await operacion(tx);
+    await espera;
+    pasos.push('commit');
+    return resultado;
+  } });
+  const resultado = servicio.registrar(datos, 7).then((respuesta) => { pasos.push('entrega'); return respuesta; });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(pasos, ['calculo']);
+  confirmar();
+  assert.equal((await resultado).progreso.preguntasRespondidas, 1);
+  assert.deepEqual(pasos, ['calculo', 'commit', 'entrega']);
 });

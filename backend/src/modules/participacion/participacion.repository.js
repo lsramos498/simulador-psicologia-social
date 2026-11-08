@@ -21,6 +21,29 @@ export function crearRepositorioParticipacion(pool) {
         `, [casoId, decisionId, opcionId]);
         return filas.length > 0;
       },
+      async obtenerDecisionesAplicables(casoId) {
+        // Casos confirma un recorrido lineal: todas sus decisiones son aplicables actualmente.
+        const [filas] = await conexion.execute(`
+          SELECT d.id FROM Decision d
+          JOIN Escena e ON e.id = d.escena_id
+          WHERE e.caso_id = ?
+          ORDER BY e.\`orden\`, e.id, d.\`orden\`, d.id
+        `, [casoId]);
+        return filas.map((fila) => fila.id);
+      },
+      async consultarRespuestasParaProgreso(sesionId, casoId) {
+        const [filas] = await conexion.execute(`
+          SELECT r.decision_id AS decisionId, r.opcion_id AS opcionId
+          FROM RespuestaEstudiante r
+          JOIN Decision d ON d.id = r.decision_id
+          JOIN Escena e ON e.id = d.escena_id
+          LEFT JOIN OpcionDecision o ON o.id = r.opcion_id AND o.decision_id = d.id
+          WHERE r.sesion_id = ? AND e.caso_id = ?
+            AND (r.opcion_id IS NULL OR o.id IS NOT NULL)
+          ORDER BY r.id
+        `, [sesionId, casoId]);
+        return filas;
+      },
       async obtenerRespuesta(sesionId, decisionId) {
         const [filas] = await conexion.execute(`
           SELECT id, opcion_id AS opcionId, fechaRespuesta, fechaModificacion

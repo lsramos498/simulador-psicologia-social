@@ -58,3 +58,23 @@ test('Rollback fallido conserva error original y libera conexión', async () => 
   await assert.rejects(repo.enTransaccion(async () => { throw original; }), e => e === original && e.cause === rollback);
   assert.equal(liberada, true);
 });
+
+test('Decisiones aplicables se obtienen por caso y en orden de escena y pregunta', async () => {
+  const { repo, llamadas } = preparar([{ id: 8 }, { id: 2 }]);
+  assert.deepEqual(await repo.obtenerDecisionesAplicables(9), [8, 2]);
+  assert.deepEqual(llamadas[0].parametros, [9]);
+  assert.match(llamadas[0].sql, /JOIN Escena e ON e.id = d.escena_id/);
+  assert.match(llamadas[0].sql, /WHERE e.caso_id = \?/);
+  assert.match(llamadas[0].sql, /ORDER BY e.`orden`, e.id, d.`orden`, d.id/);
+});
+
+test('Respuestas para progreso filtran sesión y caso, preservando opciones nulas válidas', async () => {
+  const filas = [{ decisionId: 2, opcionId: 3 }, { decisionId: 5, opcionId: null }];
+  const { repo, llamadas } = preparar(filas);
+  assert.deepEqual(await repo.consultarRespuestasParaProgreso(1, 9), filas);
+  assert.deepEqual(llamadas[0].parametros, [1, 9]);
+  assert.match(llamadas[0].sql, /r.sesion_id = \? AND e.caso_id = \?/);
+  assert.match(llamadas[0].sql, /o.decision_id = d.id/);
+  assert.match(llamadas[0].sql, /r.opcion_id IS NULL OR o.id IS NOT NULL/);
+  assert.doesNotMatch(llamadas[0].sql, /esCorrecta|puntuacion|explicacion/);
+});
