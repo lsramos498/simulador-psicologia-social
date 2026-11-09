@@ -5,11 +5,13 @@ import casosRoutes from './routes/casos.routes.js';
 import accesoRoutes from './routes/acceso.routes.js';
 import actividadesRoutes from './routes/actividades.routes.js';
 import participacionRoutes from './routes/participacion.routes.js';
+import sesionesRoutes from './routes/sesiones.routes.js';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use('/api/sesiones', sesionesRoutes);
 
 app.get('/', (_req, res) => {
   res.status(200).json({

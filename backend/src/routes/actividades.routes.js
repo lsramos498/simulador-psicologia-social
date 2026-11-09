@@ -22,13 +22,16 @@ async function obtenerServicioPorDefecto() {
     const { crearRepositorioActividades } = await import('../modules/actividades/actividades.repository.js');
     const { crearServicioActividades } = await import('../modules/actividades/actividades.service.js');
     const { crearCodigoAutorizacion } = await import('../modules/acceso/codigos.js');
-    const { crearServicioNotificaciones } = await import('../modules/notificaciones/notificaciones.service.js');
-    const notificaciones = crearServicioNotificaciones({
-      async enviar() {
-        // El correo real todavía no tiene transporte configurado.
-        // crearMensaje ya armó el aviso antes de llegar aquí.
-      }
-    });
+    const { crearServicioNotificaciones } = await import(
+      '../modules/notificaciones/notificaciones.service.js'
+    );
+
+    const { crearTransporteSMTP } = await import(
+      '../modules/notificaciones/notificaciones.smtp.js'
+    );
+
+    const transporte = crearTransporteSMTP();
+    const notificaciones = crearServicioNotificaciones(transporte);
 
     servicioPorDefecto = crearServicioActividades(
       crearRepositorioActividades(pool),
@@ -57,3 +60,7 @@ const servicioLazy = {
 };
 
 export default crearRutasActividades(servicioLazy);
+export async function ejecutarCierreAutomaticoActividades() {
+  const servicio = await obtenerServicioPorDefecto();
+  return servicio.cerrarVencidas();
+}
