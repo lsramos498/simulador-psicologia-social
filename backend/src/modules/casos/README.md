@@ -55,8 +55,11 @@ Todas las mutaciones exigen JWT + permiso `CREAR_CASOS`. La gestión de un caso 
 | `POST` | `/api/casos/construir` | Crear con Builder (agregado completo) |
 | `PATCH` | `/api/casos/:id` | Actualizar datos básicos (borrador propio) |
 | `POST` | `/api/casos/:id/escenas` | Agregar escena |
+| `PATCH` | `/api/casos/:id/escenas/:escenaId` | Editar escena (borrador propio) |
 | `POST` | `/api/casos/:id/escenas/:escenaId/decisiones` | Agregar pregunta |
+| `PATCH` | `/api/casos/:id/decisiones/:decisionId` | Editar pregunta (borrador propio) |
 | `POST` | `/api/casos/:id/decisiones/:decisionId/opciones` | Agregar opción + explicación |
+| `PATCH` | `/api/casos/:id/opciones/:opcionId` | Editar opción y explicación |
 | `POST` | `/api/casos/:id/personajes` | Agregar personaje |
 | `POST` | `/api/casos/:id/escenas/:escenaId/personajes` | Asociar personaje a escena |
 | `PUT` | `/api/casos/:id/rubrica` | Asociar/actualizar rúbrica (RF-17) |
