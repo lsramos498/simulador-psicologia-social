@@ -182,6 +182,25 @@ export function crearServicioCasos(repositorio) {
       });
     },
 
+    async actualizarDecision(casoId, decisionId, datos, actor) {
+      const id = exigirId(casoId, 'El caso');
+      const idDecision = exigirId(decisionId, 'La pregunta');
+      const decision = datosActualizacionDecision(datos);
+
+      return repositorio.enTransaccion(async (tx) => {
+        await exigirBorradorEditable(tx, id, actor);
+        const actual = await tx.obtenerDecision(idDecision);
+        if (!actual || actual.casoId !== id) {
+          throw errorCaso('DECISION_NO_EXISTE', 'La pregunta no pertenece a este caso.', 404);
+        }
+        const filas = await tx.actualizarDecision(idDecision, decision);
+        if (!filas) {
+          throw errorCaso('DECISION_NO_EXISTE', 'No se pudo actualizar la pregunta.', 404);
+        }
+        return tx.obtenerCompleto(id);
+      });
+    },
+
     async agregarOpcion(casoId, decisionId, datos, actor) {
       const id = exigirId(casoId, 'El caso');
       const idDecision = exigirId(decisionId, 'La pregunta');
