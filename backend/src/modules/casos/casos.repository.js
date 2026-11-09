@@ -258,6 +258,33 @@ export function crearRepositorioCasos(pool) {
         return opcionId;
       },
 
+      async actualizarOpcion(opcionId, opcion) {
+        const [resultado] = await conexion.execute(
+          `UPDATE OpcionDecision
+           SET texto = ?, esCorrecta = ?, consecuencia = ?, \`orden\` = ?
+           WHERE id = ?`,
+          [opcion.texto, opcion.esCorrecta, opcion.consecuencia, opcion.orden, opcionId]
+        );
+
+        const [retro] = await conexion.execute(
+          `UPDATE Retroalimentacion
+           SET explicacion = ?, fundamentoTeorico = ?
+           WHERE opcion_id = ?`,
+          [opcion.explicacion, opcion.fundamentoTeorico, opcionId]
+        );
+
+        if (!retro.affectedRows) {
+          await conexion.execute(
+            `INSERT INTO Retroalimentacion (
+               decision_id, opcion_id, explicacion, fundamentoTeorico
+             ) VALUES (NULL, ?, ?, ?)`,
+            [opcionId, opcion.explicacion, opcion.fundamentoTeorico]
+          );
+        }
+
+        return resultado.affectedRows;
+      },
+
       async asociarPersonaje(escenaId, personajeId) {
         await conexion.execute(
           `INSERT INTO EscenaPersonaje (escena_id, personaje_id)
