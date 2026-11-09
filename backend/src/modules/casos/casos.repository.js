@@ -200,6 +200,16 @@ export function crearRepositorioCasos(pool) {
         return resultado.insertId;
       },
 
+      async actualizarEscena(escenaId, escena) {
+        const [resultado] = await conexion.execute(
+          `UPDATE Escena
+           SET nombre = ?, contexto = ?, \`orden\` = ?, esFinal = ?
+           WHERE id = ?`,
+          [escena.nombre, escena.contexto, escena.orden, escena.esFinal, escenaId]
+        );
+        return resultado.affectedRows;
+      },
+
       async insertarDecision(escenaId, decision) {
         const [resultado] = await conexion.execute(
           `INSERT INTO Decision (escena_id, pregunta, \`orden\`, ayuda)
