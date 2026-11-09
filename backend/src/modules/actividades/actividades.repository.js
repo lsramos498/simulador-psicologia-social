@@ -190,18 +190,18 @@
       }
     },
 
-    async actualizarEstado(actividadId, estado) {
+    async actualizarEstado(actividadId, estado, estadoAnterior) {
       const [resultado] = await pool.execute(
         `UPDATE ActividadProgramada
          SET estado = ?
-         WHERE id = ?`,
-        [estado, actividadId]
+         WHERE id = ? AND estado = ?`,
+        [estado, actividadId, estadoAnterior]
       );
 
       return resultado.affectedRows;
     },
 
-        async cerrarActividadesVencidas(fechaActual) {
+      async cerrarActividadesVencidas(fechaActual) {
       const [resultado] = await pool.execute(
         `UPDATE ActividadProgramada
          SET estado = 'Cerrada'

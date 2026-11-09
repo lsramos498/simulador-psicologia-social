@@ -408,7 +408,8 @@ test('Valida las transiciones permitidas de estado de una actividad', async () =
       return [];
     },
 
-    async actualizarEstado(_id, nuevo) {
+    async actualizarEstado(_id, nuevo, estadoAnterior) {
+      assert.equal(estadoAnterior, estado);
       actualizaciones++;
       estado = nuevo;
       return 1;
@@ -466,6 +467,29 @@ test('Valida las transiciones permitidas de estado de una actividad', async () =
 
   // Solo se ejecutaron las dos transiciones válidas.
   assert.equal(actualizaciones, 2);
+});
+
+
+test('Rechaza una transición si el estado cambió concurrentemente en la base de datos', async () => {
+  const servicio = crearServicioActividades({
+    async enTransaccion() {
+      throw new Error('No debe abrir transacción.');
+    },
+    async obtenerActividadPorId() {
+      return { id: 4, docenteId: 2, estado: 'Programada' };
+    },
+    async listarEstudiantesAutorizados() {
+      return [];
+    },
+    async actualizarEstado() {
+      return 0;
+    }
+  }, () => ({ codigo: 'CODIGO', codigoHash: 'HASH' }));
+
+  await assert.rejects(
+    servicio.iniciar(4, 2),
+    { codigo: 'ESTADO_MODIFICADO_CONCURRENTEMENTE', statusCode: 409 }
+  );
 });
 
 test('Consulta una actividad con sus estudiantes autorizados', async () => {
