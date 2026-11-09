@@ -138,3 +138,14 @@ test('la aplicación expone POST /api/acceso/estudiantes/ingreso', async () => {
   const res = await request(app).post('/api/acceso/estudiantes/ingreso').send({}).expect(400);
   assert.match(res.body.error, /obligatorios/);
 });
+// ---------- Límite de intentos (fuerza bruta) ----------
+
+test('después de 5 códigos incorrectos responde 429 para ese correo', async () => {
+  const appPrueba = crearAppDePrueba({ convocatoria: null });
+  for (let i = 0; i < 5; i += 1) {
+    await ingresar(appPrueba, { correo: CORREO, codigo: CODIGO }).expect(401);
+  }
+
+  const res = await ingresar(appPrueba, { correo: CORREO, codigo: CODIGO }).expect(429);
+  assert.match(res.body.error, /Demasiados intentos/);
+});

@@ -105,6 +105,16 @@ test('rechaza con 400 un correo con formato inválido', async () => {
   await esperarError(servicio.crearDocente({ ...DOCENTE, correo: 'sin-arroba' }, ADMIN_ID), 400, /correo/);
 });
 
+test('rechaza con 400 una contraseña que no cumple la política, sin crear el docente', async () => {
+  const repo = crearRepositorioFalso();
+  const servicio = crearServicioAdministracion(repo);
+  await esperarError(servicio.crearDocente({ ...DOCENTE, contrasena: 'corta1' }, ADMIN_ID), 400,
+    /al menos 8 caracteres/);
+  await esperarError(servicio.crearDocente({ ...DOCENTE, contrasena: 'sinnumeros' }, ADMIN_ID), 400,
+    /al menos un número/);
+  assert.equal(repo.bd.usuarios.length, 1); // solo el administrador inicial
+});
+
 test('rechaza con 409 un correo que ya existe', async () => {
   const servicio = crearServicioAdministracion(crearRepositorioFalso());
   await esperarError(

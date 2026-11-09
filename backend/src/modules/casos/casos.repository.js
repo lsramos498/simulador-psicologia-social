@@ -129,6 +129,18 @@ export function crearRepositorioCasos(pool) {
         return filas[0] ?? null;
       },
 
+      async obtenerOpcion(opcionId) {
+        const [filas] = await conexion.execute(
+          `SELECT o.id, o.decision_id AS decisionId, e.caso_id AS casoId
+           FROM OpcionDecision o
+           INNER JOIN Decision d ON d.id = o.decision_id
+           INNER JOIN Escena e ON e.id = d.escena_id
+           WHERE o.id = ?`,
+          [opcionId]
+        );
+        return filas[0] ?? null;
+      },
+
       async insertarCaso(caso) {
         const [resultado] = await conexion.execute(
           `INSERT INTO Caso (
@@ -200,6 +212,16 @@ export function crearRepositorioCasos(pool) {
         return resultado.insertId;
       },
 
+      async actualizarEscena(escenaId, escena) {
+        const [resultado] = await conexion.execute(
+          `UPDATE Escena
+           SET nombre = ?, contexto = ?, \`orden\` = ?, esFinal = ?
+           WHERE id = ?`,
+          [escena.nombre, escena.contexto, escena.orden, escena.esFinal, escenaId]
+        );
+        return resultado.affectedRows;
+      },
+
       async insertarDecision(escenaId, decision) {
         const [resultado] = await conexion.execute(
           `INSERT INTO Decision (escena_id, pregunta, \`orden\`, ayuda)
@@ -207,6 +229,16 @@ export function crearRepositorioCasos(pool) {
           [escenaId, decision.pregunta, decision.orden, decision.ayuda]
         );
         return resultado.insertId;
+      },
+
+      async actualizarDecision(decisionId, decision) {
+        const [resultado] = await conexion.execute(
+          `UPDATE Decision
+           SET pregunta = ?, \`orden\` = ?, ayuda = ?
+           WHERE id = ?`,
+          [decision.pregunta, decision.orden, decision.ayuda, decisionId]
+        );
+        return resultado.affectedRows;
       },
 
       async insertarOpcion(decisionId, opcion) {
@@ -224,6 +256,33 @@ export function crearRepositorioCasos(pool) {
           [opcionId, opcion.explicacion, opcion.fundamentoTeorico]
         );
         return opcionId;
+      },
+
+      async actualizarOpcion(opcionId, opcion) {
+        const [resultado] = await conexion.execute(
+          `UPDATE OpcionDecision
+           SET texto = ?, esCorrecta = ?, consecuencia = ?, \`orden\` = ?
+           WHERE id = ?`,
+          [opcion.texto, opcion.esCorrecta, opcion.consecuencia, opcion.orden, opcionId]
+        );
+
+        const [retro] = await conexion.execute(
+          `UPDATE Retroalimentacion
+           SET explicacion = ?, fundamentoTeorico = ?
+           WHERE opcion_id = ?`,
+          [opcion.explicacion, opcion.fundamentoTeorico, opcionId]
+        );
+
+        if (!retro.affectedRows) {
+          await conexion.execute(
+            `INSERT INTO Retroalimentacion (
+               decision_id, opcion_id, explicacion, fundamentoTeorico
+             ) VALUES (NULL, ?, ?, ?)`,
+            [opcionId, opcion.explicacion, opcion.fundamentoTeorico]
+          );
+        }
+
+        return resultado.affectedRows;
       },
 
       async asociarPersonaje(escenaId, personajeId) {

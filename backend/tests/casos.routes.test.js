@@ -112,6 +112,49 @@ test('POST /api/casos/:id/publicar devuelve las reglas que faltan', async () => 
   assert.match(response.body.errores[0], /rúbrica/);
 });
 
+test('PATCH /api/casos/:id envía el docente autenticado al servicio', async () => {
+  let actorRecibido = null;
+  const app = appCon({
+    async actualizar(_id, _datos, actor) {
+      actorRecibido = actor;
+      return { id: 2, titulo: 'Actualizado', estado: 'Borrador' };
+    }
+  });
+
+  await request(app)
+    .patch('/api/casos/2')
+    .set('Authorization', `Bearer ${tokenDe(5, ['CREAR_CASOS'])}`)
+    .send({
+      titulo: 'Actualizado',
+      desarrolloSituacional: 'Hay una discusión.',
+      contextoHistoria: 'Curso.',
+      tiempoEstimadoSegundos: 480
+    })
+    .expect(200);
+
+  assert.equal(actorRecibido.id, 5);
+});
+
+test('POST /api/casos/:id/publicar responde 403 cuando el caso es ajeno', async () => {
+  const app = appCon({
+    async publicar() {
+      const error = new Error(
+        'Solo el docente creador o un administrador pueden gestionar este caso.'
+      );
+      error.statusCode = 403;
+      error.codigo = 'CASO_AJENO';
+      throw error;
+    }
+  });
+
+  const response = await request(app)
+    .post('/api/casos/2/publicar')
+    .set('Authorization', `Bearer ${tokenDe(5, ['CREAR_CASOS'])}`)
+    .expect(403);
+
+  assert.equal(response.body.codigo, 'CASO_AJENO');
+});
+
 test('un estudiante autenticado no recibe la opción esperada ni su explicación', async () => {
   const app = appCon({
     async obtener() {
