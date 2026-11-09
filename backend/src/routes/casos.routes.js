@@ -130,6 +130,16 @@ export function crearRutasCasos(obtenerServicio) {
     return res.status(201).json({ data: caso });
   }));
 
+  router.patch('/:id/decisiones/:decisionId', ...docente, (req, res) => ejecutar(res, async (servicio) => {
+    const caso = await servicio.actualizarDecision(
+      req.params.id,
+      req.params.decisionId,
+      req.body,
+      req.usuario
+    );
+    return res.status(200).json({ data: caso });
+  }));
+
   router.post('/:id/decisiones/:decisionId/opciones', ...docente, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.agregarOpcion(
       req.params.id,
