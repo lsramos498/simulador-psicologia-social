@@ -217,6 +217,25 @@ export function crearServicioCasos(repositorio) {
       });
     },
 
+    async actualizarOpcion(casoId, opcionId, datos, actor) {
+      const id = exigirId(casoId, 'El caso');
+      const idOpcion = exigirId(opcionId, 'La opción');
+      const opcion = normalizarOpcion(datos);
+
+      return repositorio.enTransaccion(async (tx) => {
+        await exigirBorradorEditable(tx, id, actor);
+        const actual = await tx.obtenerOpcion(idOpcion);
+        if (!actual || actual.casoId !== id) {
+          throw errorCaso('OPCION_NO_EXISTE', 'La opción no pertenece a este caso.', 404);
+        }
+        const filas = await tx.actualizarOpcion(idOpcion, opcion);
+        if (!filas) {
+          throw errorCaso('OPCION_NO_EXISTE', 'No se pudo actualizar la opción.', 404);
+        }
+        return tx.obtenerCompleto(id);
+      });
+    },
+
     async agregarPersonaje(casoId, datos, actor) {
       const id = exigirId(casoId, 'El caso');
       const personaje = normalizarPersonaje(datos);
