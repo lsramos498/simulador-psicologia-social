@@ -31,6 +31,8 @@ Resultado global: **56** pruebas unitarias del módulo (suite `test:unit`) + **7
 | CP-CASOS-10 | RF-05/RF-02 | Casos | Docente ajeno no publica | Mock creadorId distinto | `publicar` con otro docente | creadorId 9, actor 5 | 403 `CASO_AJENO` | 403 `CASO_AJENO` | **Aprobado** | unitarias + routes | Corrección de seguridad 2026-11-08 |
 | CP-CASOS-11 | RF-02 | Casos | Rutas exigen permiso `CREAR_CASOS` | App de prueba | `POST /api/casos` sin permiso | Token sin permiso | 403 | 403 | **Aprobado** | `casos.routes.test.js` | — |
 | CP-CASOS-12 | RF-07/RF-08 | Casos | Estudiante no ve claves | App de prueba | `GET /api/casos/:id` | Rol Estudiante | Sin `esCorrecta` ni explicación | Campos ocultos | **Aprobado** | routes | — |
+| CP-CASOS-13 | RF-06 | Casos | Editar escena en borrador | Mock servicio | `actualizarEscena` / PATCH escenas | Nombre y contexto nuevos | Nombre recortado guardado | Nombre recortado | **Aprobado** | `casos.edicion.*.test.js` | 2026-11-08 |
+| CP-CASOS-14 | RF-07/RF-08 | Casos | Editar opción y explicación | Mock servicio | `actualizarOpcion` | Texto + explicación | Persistencia de ambos | Persistencia de ambos | **Aprobado** | edicion service/routes | 2026-11-08 |
 
 ## Pendiente de consolidar (otras integrantes)
 

@@ -3,6 +3,8 @@ import { construirCaso } from './caso.builder.js';
 import { errorCaso } from './caso.errores.js';
 import {
   ESTADOS_CASO,
+  datosActualizacionDecision,
+  datosActualizacionEscena,
   normalizarDecision,
   normalizarEscena,
   normalizarOpcion,
@@ -145,6 +147,25 @@ export function crearServicioCasos(repositorio) {
       });
     },
 
+    async actualizarEscena(casoId, escenaId, datos, actor) {
+      const id = exigirId(casoId, 'El caso');
+      const idEscena = exigirId(escenaId, 'La escena');
+      const escena = datosActualizacionEscena(datos);
+
+      return repositorio.enTransaccion(async (tx) => {
+        await exigirBorradorEditable(tx, id, actor);
+        const actual = await tx.obtenerEscena(idEscena);
+        if (!actual || actual.casoId !== id) {
+          throw errorCaso('ESCENA_NO_EXISTE', 'La escena no pertenece a este caso.', 404);
+        }
+        const filas = await tx.actualizarEscena(idEscena, escena);
+        if (!filas) {
+          throw errorCaso('ESCENA_NO_EXISTE', 'No se pudo actualizar la escena.', 404);
+        }
+        return tx.obtenerCompleto(id);
+      });
+    },
+
     async agregarDecision(casoId, escenaId, datos, actor) {
       const id = exigirId(casoId, 'El caso');
       const idEscena = exigirId(escenaId, 'La escena');
@@ -161,6 +182,25 @@ export function crearServicioCasos(repositorio) {
       });
     },
 
+    async actualizarDecision(casoId, decisionId, datos, actor) {
+      const id = exigirId(casoId, 'El caso');
+      const idDecision = exigirId(decisionId, 'La pregunta');
+      const decision = datosActualizacionDecision(datos);
+
+      return repositorio.enTransaccion(async (tx) => {
+        await exigirBorradorEditable(tx, id, actor);
+        const actual = await tx.obtenerDecision(idDecision);
+        if (!actual || actual.casoId !== id) {
+          throw errorCaso('DECISION_NO_EXISTE', 'La pregunta no pertenece a este caso.', 404);
+        }
+        const filas = await tx.actualizarDecision(idDecision, decision);
+        if (!filas) {
+          throw errorCaso('DECISION_NO_EXISTE', 'No se pudo actualizar la pregunta.', 404);
+        }
+        return tx.obtenerCompleto(id);
+      });
+    },
+
     async agregarOpcion(casoId, decisionId, datos, actor) {
       const id = exigirId(casoId, 'El caso');
       const idDecision = exigirId(decisionId, 'La pregunta');
@@ -173,6 +213,25 @@ export function crearServicioCasos(repositorio) {
           throw errorCaso('DECISION_NO_EXISTE', 'La pregunta no pertenece a este caso.', 404);
         }
         await tx.insertarOpcion(idDecision, opcion);
+        return tx.obtenerCompleto(id);
+      });
+    },
+
+    async actualizarOpcion(casoId, opcionId, datos, actor) {
+      const id = exigirId(casoId, 'El caso');
+      const idOpcion = exigirId(opcionId, 'La opción');
+      const opcion = normalizarOpcion(datos);
+
+      return repositorio.enTransaccion(async (tx) => {
+        await exigirBorradorEditable(tx, id, actor);
+        const actual = await tx.obtenerOpcion(idOpcion);
+        if (!actual || actual.casoId !== id) {
+          throw errorCaso('OPCION_NO_EXISTE', 'La opción no pertenece a este caso.', 404);
+        }
+        const filas = await tx.actualizarOpcion(idOpcion, opcion);
+        if (!filas) {
+          throw errorCaso('OPCION_NO_EXISTE', 'No se pudo actualizar la opción.', 404);
+        }
         return tx.obtenerCompleto(id);
       });
     },

@@ -8,7 +8,7 @@
     "start": "node src/server.js",
     "test": "node --test",
     "test:unit": "node --test tests/casos.unitarias.test.js tests/caso.builder.test.js tests/caso.validacion.test.js tests/casos.service.test.js tests/casos.test.js tests/casos.repository.test.js",
-    "test:casos": "node --test tests/casos.unitarias.test.js tests/caso.builder.test.js tests/caso.validacion.test.js tests/casos.service.test.js tests/casos.test.js tests/casos.repository.test.js tests/casos.routes.test.js",
+    "test:casos": "node --test tests/casos.unitarias.test.js tests/caso.builder.test.js tests/caso.validacion.test.js tests/casos.service.test.js tests/casos.test.js tests/casos.repository.test.js tests/casos.routes.test.js tests/caso.edicion.validacion.test.js tests/casos.edicion.service.test.js tests/casos.edicion.routes.test.js",
     "db:check": "node scripts/check-db-connection.js",
     "db:seed": "node scripts/seed-inicial.js"
   },

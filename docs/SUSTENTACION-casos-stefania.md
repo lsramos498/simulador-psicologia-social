@@ -57,3 +57,6 @@ Responsabilidades separadas (construcción, validación, casos de uso, persisten
 
 **¿Qué antipatrón corregiste?**  
 La gestión de casos ajenos: ahora solo el creador o un administrador pueden modificar/publicar/archivar.
+
+**¿Se puede editar el contenido después de crearlo?**  
+Sí, en borrador propio: `PATCH` de escenas, preguntas y opciones (con explicación). Los publicados no se editan.
