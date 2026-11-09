@@ -147,6 +147,25 @@ export function crearServicioCasos(repositorio) {
       });
     },
 
+    async actualizarEscena(casoId, escenaId, datos, actor) {
+      const id = exigirId(casoId, 'El caso');
+      const idEscena = exigirId(escenaId, 'La escena');
+      const escena = datosActualizacionEscena(datos);
+
+      return repositorio.enTransaccion(async (tx) => {
+        await exigirBorradorEditable(tx, id, actor);
+        const actual = await tx.obtenerEscena(idEscena);
+        if (!actual || actual.casoId !== id) {
+          throw errorCaso('ESCENA_NO_EXISTE', 'La escena no pertenece a este caso.', 404);
+        }
+        const filas = await tx.actualizarEscena(idEscena, escena);
+        if (!filas) {
+          throw errorCaso('ESCENA_NO_EXISTE', 'No se pudo actualizar la escena.', 404);
+        }
+        return tx.obtenerCompleto(id);
+      });
+    },
+
     async agregarDecision(casoId, escenaId, datos, actor) {
       const id = exigirId(casoId, 'El caso');
       const idEscena = exigirId(escenaId, 'La escena');
