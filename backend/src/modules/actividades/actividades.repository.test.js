@@ -363,3 +363,23 @@ test('No utiliza una transacción para ejecutar el cierre automático', async ()
   assert.equal(entorno.llamadasConexion.length, 0);
   assert.deepEqual(entorno.eventos, []);
 });
+
+test('Actualiza el estado solo si coincide con el estado anterior esperado', async () => {
+  const entorno = crearEntorno({
+    responderPool: async () => [{ affectedRows: 1 }, []]
+  });
+  const repositorio = crearRepositorioActividades(entorno.pool);
+
+  const filas = await repositorio.actualizarEstado(
+    50,
+    'Iniciada',
+    'Programada'
+  );
+
+  assert.equal(filas, 1);
+  assert.match(entorno.llamadasPool[0].sql, /WHERE id = \? AND estado = \?/);
+  assert.deepEqual(
+    entorno.llamadasPool[0].parametros,
+    ['Iniciada', 50, 'Programada']
+  );
+});
