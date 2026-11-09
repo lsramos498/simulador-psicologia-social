@@ -1,4 +1,5 @@
-﻿import test from 'node:test';
+﻿
+import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { crearServicioActividades } from './actividades.service.js';
@@ -36,6 +37,9 @@ function preparar({
   const eventosTransaccion = [];
   const actividadesInsertadas = [];
   const autorizacionesInsertadas = [];
+  const fechasCierreAutomatico = [];
+
+  let actividadesCerradasAutomaticamente = 0;
   let indiceCodigo = 0;
   let indiceAutorizacion = 1;
 
@@ -100,6 +104,12 @@ function preparar({
     async listarEstudiantesAutorizados(id) {
       llamadas.push('listarEstudiantesAutorizados');
       return autorizados;
+    },
+
+    async cerrarActividadesVencidas(fechaActual) {
+      llamadas.push('cerrarActividadesVencidas');
+      fechasCierreAutomatico.push(fechaActual);
+      return actividadesCerradasAutomaticamente;
     }
   };
 
@@ -118,7 +128,12 @@ function preparar({
     llamadas,
     eventosTransaccion,
     actividadesInsertadas,
-    autorizacionesInsertadas
+    autorizacionesInsertadas,
+    fechasCierreAutomatico,
+
+    establecerActividadesCerradas(cantidad) {
+      actividadesCerradasAutomaticamente = cantidad;
+    }
   };
 }
 
@@ -141,10 +156,12 @@ test('Registra una actividad válida y autoriza sus estudiantes', async () => {
 
   assert.equal(contexto.actividadesInsertadas.length, 1);
   assert.equal(contexto.autorizacionesInsertadas.length, 2);
+
   assert.deepEqual(
     contexto.autorizacionesInsertadas.map((item) => item.codigoAutorizacion),
     ['hash-CODIGO20', 'hash-CODIGO21']
   );
+
   assert.deepEqual(contexto.eventosTransaccion, ['inicio', 'commit']);
 });
 
@@ -342,6 +359,7 @@ test('Rechaza códigos de autorización duplicados', async () => {
 
 test('Guarda el hash y convoca a cada estudiante con el código en claro', async () => {
   const enviados = [];
+
   const contexto = preparar({
     caso: {
       estado: 'Publicado',
@@ -381,12 +399,15 @@ test('Valida las transiciones permitidas de estado de una actividad', async () =
     async enTransaccion() {
       throw new Error('no debe abrir transacción');
     },
+
     async obtenerActividadPorId() {
       return { id: 4, docenteId: 2, estado };
     },
+
     async listarEstudiantesAutorizados() {
       return [];
     },
+
     async actualizarEstado(_id, nuevo) {
       actualizaciones++;
       estado = nuevo;
@@ -446,6 +467,7 @@ test('Valida las transiciones permitidas de estado de una actividad', async () =
   // Solo se ejecutaron las dos transiciones válidas.
   assert.equal(actualizaciones, 2);
 });
+
 test('Consulta una actividad con sus estudiantes autorizados', async () => {
   const estudiantes = [
     { id: 1, estudianteId: 20, estado: 'Autorizado' }
@@ -467,3 +489,62 @@ test('Rechaza la consulta de una actividad inexistente', async () => {
     { codigo: 'ACTIVIDAD_NO_EXISTE' }
   );
 });
+
+// Pruebas de cierre automático de RF-19.
+
+test('Cierra automáticamente las actividades vencidas', async () => {
+  const contexto = preparar();
+
+  contexto.establecerActividadesCerradas(2);
+
+  const cantidad = await contexto.servicio.cerrarVencidas();
+
+  assert.equal(cantidad, 2);
+
+  assert.deepEqual(
+    contexto.fechasCierreAutomatico,
+    ['2026-11-01 08:00:00']
+  );
+
+  assert.ok(
+    contexto.llamadas.includes('cerrarActividadesVencidas')
+  );
+});
+
+test('Devuelve cero cuando no hay actividades vencidas', async () => {
+  const contexto = preparar();
+
+  contexto.establecerActividadesCerradas(0);
+
+  const cantidad = await contexto.servicio.cerrarVencidas();
+
+  assert.equal(cantidad, 0);
+});
+
+test('Rechaza el cierre automático si el repositorio no lo implementa', async () => {
+  const repositorio = {
+    async enTransaccion() {},
+
+    async obtenerActividadPorId() {
+      return null;
+    },
+
+    async listarEstudiantesAutorizados() {
+      return [];
+    }
+  };
+
+  const servicio = crearServicioActividades(
+    repositorio,
+    () => ({
+      codigo: 'CODIGO',
+      codigoHash: 'hash-CODIGO'
+    })
+  );
+
+  await assert.rejects(
+    servicio.cerrarVencidas(),
+    TypeError
+  );
+});
+

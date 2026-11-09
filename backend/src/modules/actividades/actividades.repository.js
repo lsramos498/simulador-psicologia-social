@@ -201,6 +201,18 @@
       return resultado.affectedRows;
     },
 
+        async cerrarActividadesVencidas(fechaActual) {
+      const [resultado] = await pool.execute(
+        `UPDATE ActividadProgramada
+         SET estado = 'Cerrada'
+         WHERE estado = 'Iniciada'
+           AND fechaFin <= DATE_SUB(?, INTERVAL 24 HOUR)`,
+        [fechaActual]
+      );
+
+      return resultado.affectedRows;
+    },
+
     async obtenerActividadPorId(actividadId) {
       const [filas] = await pool.execute(
         `SELECT

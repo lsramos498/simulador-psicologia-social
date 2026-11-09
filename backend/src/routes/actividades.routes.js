@@ -60,3 +60,7 @@ const servicioLazy = {
 };
 
 export default crearRutasActividades(servicioLazy);
+export async function ejecutarCierreAutomaticoActividades() {
+  const servicio = await obtenerServicioPorDefecto();
+  return servicio.cerrarVencidas();
+}

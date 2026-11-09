@@ -504,6 +504,21 @@ export function crearServicioActividades(
       );
     },
 
+async cerrarVencidas() {
+  if (typeof repositorio.cerrarActividadesVencidas !== 'function') {
+    throw new TypeError(
+      'El repositorio no puede cerrar actividades vencidas.'
+    );
+  }
+
+  const fechaActual = normalizarFecha(
+    reloj(),
+    'fechaActual'
+  );
+
+  return repositorio.cerrarActividadesVencidas(fechaActual);
+},
+
     async consultarPorId(actividadId) {
       validarId(actividadId, 'actividadId');
 
