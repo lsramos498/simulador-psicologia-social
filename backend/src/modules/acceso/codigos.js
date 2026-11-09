@@ -1,5 +1,6 @@
 import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
 import { ESTADOS_SESION } from '../sesiones/sesion.state.js';
+import { crearErrorHttp } from './errores.js';
 
 /**
  * Códigos de autorización de la convocatoria (Sofía Gallego — acceso y permisos).
@@ -29,12 +30,6 @@ export const ESTADOS_AUTORIZACION = Object.freeze({
 const ALFABETO = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const LONGITUD_CODIGO = 8;
 const LONGITUD_MINIMA_SECRETO = 32;
-
-function errorAcceso(mensaje, statusCode) {
-  const error = new Error(mensaje);
-  error.statusCode = statusCode;
-  return error;
-}
 
 function obtenerSecreto() {
   const secreto = process.env.CODIGO_AUTORIZACION_SECRETO;
@@ -126,7 +121,7 @@ export function validarAccesoEstudiante(credenciales, registro, ahora = new Date
   const codigo = normalizarCodigo(credenciales?.codigo);
 
   if (!correo || !codigo) {
-    throw errorAcceso('El correo institucional y el código de autorización son obligatorios', 400);
+    throw crearErrorHttp('El correo institucional y el código de autorización son obligatorios', 400);
   }
 
   const { autorizacion, estudiante, actividad, sesion } = registro ?? {};
@@ -141,31 +136,31 @@ export function validarAccesoEstudiante(credenciales, registro, ahora = new Date
     normalizarCorreo(estudiante.correoInstitucional) === correo;
 
   if (!credencialesValidas) {
-    throw errorAcceso('Correo o código de autorización no válidos', 401);
+    throw crearErrorHttp('Correo o código de autorización no válidos', 401);
   }
 
   if (!estudiante.activo) {
-    throw errorAcceso('La cuenta del estudiante está inactiva', 403);
+    throw crearErrorHttp('La cuenta del estudiante está inactiva', 403);
   }
 
   if (autorizacion.estado !== ESTADOS_AUTORIZACION.AUTORIZADO) {
-    throw errorAcceso('El estudiante no está autorizado para esta convocatoria', 403);
+    throw crearErrorHttp('El estudiante no está autorizado para esta convocatoria', 403);
   }
 
   if (!actividad || autorizacion.actividad_id !== actividad.id) {
-    throw errorAcceso('La convocatoria asociada al código no existe', 404);
+    throw crearErrorHttp('La convocatoria asociada al código no existe', 404);
   }
 
   if (ahora < new Date(actividad.fechaInicio)) {
-    throw errorAcceso('La actividad todavía no ha comenzado', 403);
+    throw crearErrorHttp('La actividad todavía no ha comenzado', 403);
   }
 
   if (ahora > new Date(actividad.fechaFin)) {
-    throw errorAcceso('La actividad ya terminó', 403);
+    throw crearErrorHttp('La actividad ya terminó', 403);
   }
 
   if (sesion && sesion.estado === ESTADOS_SESION.FINALIZADO) {
-    throw errorAcceso('La participación en esta actividad ya fue finalizada', 403);
+    throw crearErrorHttp('La participación en esta actividad ya fue finalizada', 403);
   }
 
   return {

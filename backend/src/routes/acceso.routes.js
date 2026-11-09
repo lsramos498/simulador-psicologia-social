@@ -4,6 +4,7 @@ import { crearServicioAcceso } from '../modules/acceso/acceso.service.js';
 import { crearRepositorioAdministracion } from '../modules/acceso/administracion.repository.js';
 import { crearServicioAdministracion } from '../modules/acceso/administracion.service.js';
 import { crearRutasAdministracion } from './administracion.routes.js';
+import { responderErrorHttp } from '../modules/acceso/errores.js';
 
 /**
  * Rutas del módulo de acceso (Sofía Gallego — acceso y permisos).
@@ -25,15 +26,6 @@ function esTextoConContenido(valor) {
   return typeof valor === 'string' && valor.trim() !== '';
 }
 
-function responderError(res, error, contexto) {
-  if (error.statusCode) {
-    return res.status(error.statusCode).json({ error: error.message });
-  }
-  // No se envían detalles internos al cliente.
-  console.error(`Error en ${contexto}:`, error.code || error.message);
-  return res.status(500).json({ error: 'Error interno del servidor' });
-}
-
 export function crearRutasAcceso(obtenerServicio) {
   const router = Router();
 
@@ -52,7 +44,7 @@ export function crearRutasAcceso(obtenerServicio) {
       const resultado = await servicio.ingresarEstudiante({ correo, codigo });
       return res.status(200).json(resultado);
     } catch (error) {
-      return responderError(res, error, 'ingreso de estudiante');
+      return responderErrorHttp(res, error, 'ingreso de estudiante');
     }
   });
 
@@ -71,7 +63,7 @@ export function crearRutasAcceso(obtenerServicio) {
       const resultado = await servicio.ingresarConContrasena({ correo, contrasena });
       return res.status(200).json(resultado);
     } catch (error) {
-      return responderError(res, error, 'ingreso con contraseña');
+      return responderErrorHttp(res, error, 'ingreso con contraseña');
     }
   });
 

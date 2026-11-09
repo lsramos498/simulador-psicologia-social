@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { autenticar } from '../modules/acceso/autenticar.middleware.js';
 import { ROLES, tienePermiso, tieneRol } from '../modules/acceso/autorizacion.js';
 import { requierePermiso } from '../modules/acceso/autorizar.middleware.js';
+import { crearServicioProtegido } from '../modules/acceso/servicioProtegido.proxy.js';
 import { crearRepositorioCasos } from '../modules/casos/casos.repository.js';
 import { crearServicioCasos } from '../modules/casos/casos.service.js';
 
@@ -90,8 +91,11 @@ export function crearRutasCasos(obtenerServicio) {
     return res.status(201).json({ data: caso });
   }));
 
-  router.post('/', ...docente, (req, res) => ejecutar(res, async (servicio) => {
-    const caso = await servicio.crear({ ...datosEntrada(req), creadorId: req.usuario.id });
+  // Crear un caso se protege con el patrón Proxy (no con requierePermiso),
+  // para no duplicar la verificación del permiso CREAR_CASOS.
+  router.post('/', autenticar, (req, res) => ejecutar(res, async (servicio) => {
+    const casos = crearServicioProtegido(servicio, req.usuario, { crear: 'CREAR_CASOS' });
+    const caso = await casos.crear({ ...datosEntrada(req), creadorId: req.usuario.id });
     return res.status(201).json({ data: caso });
   }));
 
