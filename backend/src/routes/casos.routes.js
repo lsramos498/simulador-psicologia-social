@@ -150,6 +150,16 @@ export function crearRutasCasos(obtenerServicio) {
     return res.status(201).json({ data: caso });
   }));
 
+  router.patch('/:id/opciones/:opcionId', ...docente, (req, res) => ejecutar(res, async (servicio) => {
+    const caso = await servicio.actualizarOpcion(
+      req.params.id,
+      req.params.opcionId,
+      req.body,
+      req.usuario
+    );
+    return res.status(200).json({ data: caso });
+  }));
+
   router.post('/:id/personajes', ...docente, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.agregarPersonaje(req.params.id, req.body, req.usuario);
     return res.status(201).json({ data: caso });
