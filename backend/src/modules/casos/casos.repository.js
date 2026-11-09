@@ -129,6 +129,18 @@ export function crearRepositorioCasos(pool) {
         return filas[0] ?? null;
       },
 
+      async obtenerOpcion(opcionId) {
+        const [filas] = await conexion.execute(
+          `SELECT o.id, o.decision_id AS decisionId, e.caso_id AS casoId
+           FROM OpcionDecision o
+           INNER JOIN Decision d ON d.id = o.decision_id
+           INNER JOIN Escena e ON e.id = d.escena_id
+           WHERE o.id = ?`,
+          [opcionId]
+        );
+        return filas[0] ?? null;
+      },
+
       async insertarCaso(caso) {
         const [resultado] = await conexion.execute(
           `INSERT INTO Caso (
@@ -217,6 +229,16 @@ export function crearRepositorioCasos(pool) {
           [escenaId, decision.pregunta, decision.orden, decision.ayuda]
         );
         return resultado.insertId;
+      },
+
+      async actualizarDecision(decisionId, decision) {
+        const [resultado] = await conexion.execute(
+          `UPDATE Decision
+           SET pregunta = ?, \`orden\` = ?, ayuda = ?
+           WHERE id = ?`,
+          [decision.pregunta, decision.orden, decision.ayuda, decisionId]
+        );
+        return resultado.affectedRows;
       },
 
       async insertarOpcion(decisionId, opcion) {
