@@ -3,6 +3,8 @@ import { construirCaso } from './caso.builder.js';
 import { errorCaso } from './caso.errores.js';
 import {
   ESTADOS_CASO,
+  datosActualizacionDecision,
+  datosActualizacionEscena,
   normalizarDecision,
   normalizarEscena,
   normalizarOpcion,
