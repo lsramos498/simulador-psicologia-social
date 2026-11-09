@@ -154,3 +154,71 @@ test('GET progreso conserva el manejo de fallos internos sin revelar SQL', async
   assert.equal(res.status, 500);
   assert.deepEqual(res.body, { error: 'Ocurrió un error interno al procesar la solicitud.' });
 });
+
+for (const [metodo, ruta] of [
+  ['post', '/api/participacion/respuestas'],
+  ['get', '/api/participacion/sesiones/1/respuestas'],
+  ['get', '/api/participacion/sesiones/1/progreso']
+]) {
+  test(`TypeError interno en ${metodo.toUpperCase()} ${ruta} devuelve 500 sin detalles`, async (t) => {
+    const privado = 'SQL, credencial y detalle interno ficticios';
+    const logs = [];
+    t.mock.method(console, 'error', (...args) => { logs.push(args); });
+    const app = preparar({ obtenerSesion: async () => { throw new TypeError(privado); } });
+    const peticion = request(app)[metodo](ruta).set('Authorization', `Bearer ${token}`);
+    const res = await (metodo === 'post' ? peticion.send(datos) : peticion);
+    assert.equal(res.status, 500);
+    assert.deepEqual(res.body, { error: 'Ocurrió un error interno al procesar la solicitud.' });
+    assert.equal(logs.length, 1);
+    assert.ok(!JSON.stringify(logs).includes(privado));
+  });
+}
+
+test('TypeError al obtener el servicio no se clasifica como entrada inválida', async (t) => {
+  t.mock.method(console, 'error', () => {});
+  const app = express();
+  app.use('/api/participacion', crearRutasParticipacion(async () => {
+    throw new TypeError('Fallo interno ficticio de composición');
+  }));
+  const res = await consultarProgreso(app);
+  assert.equal(res.status, 500);
+  assert.deepEqual(res.body, { error: 'Ocurrió un error interno al procesar la solicitud.' });
+});
+
+test('Datos inválidos devueltos por persistencia producen 500, no 400 del cliente', async (t) => {
+  t.mock.method(console, 'error', () => {});
+  const app = preparar({ consultarRespuestasParaProgreso: async () => [{ decisionId: 2, opcionId: '3' }] });
+  const res = await consultarProgreso(app);
+  assert.equal(res.status, 500);
+  assert.deepEqual(res.body, { error: 'Ocurrió un error interno al procesar la solicitud.' });
+});
+
+test('Cuerpo inválido conserva 400 y mensaje público sin invocar el servicio', async () => {
+  let llamadas = 0;
+  const app = express();
+  app.use(express.json());
+  app.use('/api/participacion', crearRutasParticipacion(async () => { llamadas++; return {}; }));
+  const res = await enviar(app, {});
+  assert.equal(res.status, 400);
+  assert.deepEqual(res.body, { error: 'La sesión, la decisión y la opción deben tener identificadores válidos' });
+  assert.equal(llamadas, 0);
+});
+
+for (const recurso of ['respuestas', 'progreso']) {
+  test(`ID de sesión inválido en ${recurso} conserva 400 y formato público`, async () => {
+    let llamadas = 0;
+    const app = express();
+    app.use('/api/participacion', crearRutasParticipacion(async () => { llamadas++; return {}; }));
+    const res = await request(app).get(`/api/participacion/sesiones/abc/${recurso}`)
+      .set('Authorization', `Bearer ${token}`);
+    assert.equal(res.status, 400);
+    assert.deepEqual(res.body, { error: 'El identificador debe ser un entero positivo válido para INT de MySQL.' });
+    assert.equal(llamadas, 0);
+  });
+}
+
+test('Autenticación se ejecuta antes de la validación de entrada', async () => {
+  const app = preparar();
+  await request(app).post('/api/participacion/respuestas').send({}).expect(401);
+  await request(app).get('/api/participacion/sesiones/abc/progreso').expect(401);
+});
