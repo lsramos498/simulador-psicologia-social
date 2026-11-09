@@ -101,27 +101,37 @@ export function crearRutasCasos(obtenerServicio) {
   }));
 
   router.patch('/:id', ...docente, (req, res) => ejecutar(res, async (servicio) => {
-    const caso = await servicio.actualizar(req.params.id, req.body);
+    const caso = await servicio.actualizar(req.params.id, req.body, req.usuario);
     return res.status(200).json({ data: caso });
   }));
 
   router.post('/:id/escenas', ...docente, (req, res) => ejecutar(res, async (servicio) => {
-    const caso = await servicio.agregarEscena(req.params.id, req.body);
+    const caso = await servicio.agregarEscena(req.params.id, req.body, req.usuario);
     return res.status(201).json({ data: caso });
   }));
 
   router.post('/:id/escenas/:escenaId/decisiones', ...docente, (req, res) => ejecutar(res, async (servicio) => {
-    const caso = await servicio.agregarDecision(req.params.id, req.params.escenaId, req.body);
+    const caso = await servicio.agregarDecision(
+      req.params.id,
+      req.params.escenaId,
+      req.body,
+      req.usuario
+    );
     return res.status(201).json({ data: caso });
   }));
 
   router.post('/:id/decisiones/:decisionId/opciones', ...docente, (req, res) => ejecutar(res, async (servicio) => {
-    const caso = await servicio.agregarOpcion(req.params.id, req.params.decisionId, req.body);
+    const caso = await servicio.agregarOpcion(
+      req.params.id,
+      req.params.decisionId,
+      req.body,
+      req.usuario
+    );
     return res.status(201).json({ data: caso });
   }));
 
   router.post('/:id/personajes', ...docente, (req, res) => ejecutar(res, async (servicio) => {
-    const caso = await servicio.agregarPersonaje(req.params.id, req.body);
+    const caso = await servicio.agregarPersonaje(req.params.id, req.body, req.usuario);
     return res.status(201).json({ data: caso });
   }));
 
@@ -129,23 +139,24 @@ export function crearRutasCasos(obtenerServicio) {
     const caso = await servicio.asociarPersonaje(
       req.params.id,
       req.params.escenaId,
-      req.body?.personajeId
+      req.body?.personajeId,
+      req.usuario
     );
     return res.status(201).json({ data: caso });
   }));
 
   router.put('/:id/rubrica', ...docente, (req, res) => ejecutar(res, async (servicio) => {
-    const caso = await servicio.guardarRubrica(req.params.id, req.body);
+    const caso = await servicio.guardarRubrica(req.params.id, req.body, req.usuario);
     return res.status(200).json({ data: caso });
   }));
 
   router.post('/:id/publicar', ...docente, (req, res) => ejecutar(res, async (servicio) => {
-    const caso = await servicio.publicar(req.params.id);
+    const caso = await servicio.publicar(req.params.id, req.usuario);
     return res.status(200).json({ data: caso });
   }));
 
   router.post('/:id/archivar', ...docente, (req, res) => ejecutar(res, async (servicio) => {
-    const caso = await servicio.archivar(req.params.id);
+    const caso = await servicio.archivar(req.params.id, req.usuario);
     return res.status(200).json({ data: caso });
   }));
 
