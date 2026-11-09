@@ -15,45 +15,125 @@ test('MySQL: registro y consulta en proyecto_nuclear_test', {
     override: true,
     quiet: true
   });
-  if (configuracion.error) throw new Error('Se requiere backend/.env.test local para las pruebas MySQL.');
-  for (const nombre of ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD']) {
-    assert.ok(configuracion.parsed[nombre]?.trim(), `Falta ${nombre} en la configuración de pruebas.`);
+  assert.ok(!configuracion.error, 'Se requiere la configuración privada de pruebas.');
+  for (const [nombre, esperado] of Object.entries({
+    DB_HOST: '127.0.0.1', DB_PORT: '3307',
+    DB_NAME: 'proyecto_nuclear_test', DB_USER: 'lumina_test'
+  })) {
+    // No incluir valores recibidos ni credenciales en errores de configuración.
+    assert.ok(configuracion.parsed[nombre] === esperado, `Destino no autorizado: ${nombre}`);
+    assert.ok(process.env[nombre] === esperado, `Entorno no autorizado: ${nombre}`);
   }
-  assert.equal(configuracion.parsed.DB_NAME, 'proyecto_nuclear_test', 'La base de pruebas debe ser explícita.');
-  assert.equal(process.env.DB_NAME, 'proyecto_nuclear_test');
-  assert.equal(process.env.DB_HOST, '127.0.0.1');
-  assert.equal(process.env.DB_PORT, '3307');
-  assert.notEqual(process.env.DB_USER?.toLowerCase(), 'root', 'No ejecutar con root.');
+  assert.ok(configuracion.parsed.DB_PASSWORD?.trim(), 'Falta la contraseña privada de pruebas.');
 
-  // Reutilizar exactamente la conexión del equipo, con configuración de pruebas.
   const { pool } = await import('../../config/database.js');
+  const tablas = ['Usuario', 'EspacioAcademico', 'Caso', 'Rubrica', 'Escena',
+    'Decision', 'OpcionDecision', 'ActividadProgramada', 'EstudianteAutorizado',
+    'SesionSimulacion', 'RespuestaEstudiante'];
   const creados = [];
   let sesionId;
+  let destinoValidado = false;
+  let referencia;
+
+  async function inventario() {
+    const resultado = new Map();
+    for (const tabla of tablas) {
+      const [filas] = await pool.execute(`SELECT id FROM ${tabla} ORDER BY id`);
+      resultado.set(tabla, filas.map((fila) => fila.id));
+    }
+    return resultado;
+  }
+
+  function recordar(tabla, id) {
+    assert.ok(tablas.includes(tabla) && Number.isSafeInteger(id) && id > 0);
+    if (!creados.some((fila) => fila.tabla === tabla && fila.id === id)) {
+      creados.push({ tabla, id });
+    }
+  }
+
+  function falloSeguro(error) {
+    return typeof error?.code === 'string' && /^[A-Z0-9_]+$/.test(error.code)
+      ? error.code : 'FALLO_PRUEBA';
+  }
+
   t.after(async () => {
+    const errores = [];
+    const pendientes = [];
     try {
-      if (sesionId) {
-        await pool.execute('DELETE FROM RespuestaEstudiante WHERE sesion_id = ?', [sesionId]);
+      if (!destinoValidado) return;
+      const sesiones = creados.filter((fila) => fila.tabla === 'SesionSimulacion');
+      // Recupera también respuestas cuyo INSERT ocurrió antes de un fallo del servicio.
+      for (const sesion of sesiones) {
+        try {
+          const [filas] = await pool.execute(
+            'SELECT id FROM RespuestaEstudiante WHERE sesion_id = ?', [sesion.id]);
+          for (const fila of filas) recordar('RespuestaEstudiante', fila.id);
+        } catch (error) {
+          errores.push({ tabla: 'RespuestaEstudiante', sesionId: sesion.id, codigo: falloSeguro(error) });
+        }
       }
-      // Solo IDs creados por esta ejecución; orden inverso de las claves foráneas.
-      for (const { tabla, id } of [...creados].reverse()) {
-        await pool.execute(`DELETE FROM ${tabla} WHERE id = ?`, [id]);
+      const respuestas = creados.filter((fila) => fila.tabla === 'RespuestaEstudiante').reverse();
+      const auxiliares = creados.filter((fila) => fila.tabla !== 'RespuestaEstudiante').reverse();
+      // Limpieza por IDs concretos: primero respuestas, después dependencias en orden inverso.
+      for (const fila of [...respuestas, ...auxiliares]) {
+        try {
+          await pool.execute(`DELETE FROM ${fila.tabla} WHERE id = ?`, [fila.id]);
+        } catch (error) {
+          errores.push({ ...fila, codigo: falloSeguro(error) });
+        }
       }
+      // Si falla una operación, se siguen comprobando los demás IDs sin borrados generales.
+      for (const fila of creados) {
+        try {
+          const [filas] = await pool.execute(`SELECT id FROM ${fila.tabla} WHERE id = ?`, [fila.id]);
+          if (filas.length) pendientes.push(fila);
+        } catch {
+          pendientes.push({ ...fila, verificacion: 'no disponible' });
+        }
+      }
+      let diferencias = [];
+      if (referencia) {
+        try {
+          const despues = await inventario();
+          for (const tabla of tablas) {
+            const antes = new Set(referencia.get(tabla));
+            const ahora = new Set(despues.get(tabla));
+            const agregados = [...ahora].filter((id) => !antes.has(id));
+            const faltantes = [...antes].filter((id) => !ahora.has(id));
+            if (agregados.length || faltantes.length) diferencias.push({ tabla, agregados, faltantes });
+          }
+        } catch (error) {
+          errores.push({ operacion: 'inventario final', codigo: falloSeguro(error) });
+        }
+      }
+      if (errores.length || pendientes.length || diferencias.length) {
+        t.diagnostic(JSON.stringify({ limpieza: 'incompleta o no verificable', errores, pendientes,
+          diferencias, idsCreados: creados }));
+        assert.fail('Revisar los IDs informados antes de repetir la suite; no se hará limpieza general.');
+      }
+      t.diagnostic(`Limpieza confirmada: ${creados.length} IDs controlados, sin residuos ni diferencias en once tablas.`);
     } finally {
       await pool.end();
     }
   });
-  const [[base]] = await pool.query('SELECT DATABASE() AS nombre');
-  assert.equal(base.nombre, 'proyecto_nuclear_test');
 
-  // Tablas fijas del esquema aprobado; los nombres nunca vienen del usuario.
+  try {
+    const [[identidad]] = await pool.query(
+      'SELECT DATABASE() AS base, CURRENT_USER() AS cuenta, @@port AS puerto');
+    assert.ok(identidad.base === 'proyecto_nuclear_test', 'Base efectiva no autorizada.');
+    assert.ok(identidad.cuenta === 'lumina_test@127.0.0.1', 'Cuenta efectiva no autorizada.');
+    assert.ok(identidad.puerto === 3307, 'Puerto efectivo no autorizado.');
+  } catch (error) {
+    throw new Error(`No se pudo validar la conexión de pruebas (${falloSeguro(error)}); no se crearán fixtures.`);
+  }
+  destinoValidado = true;
+  referencia = await inventario();
+
   async function insertar(tabla, columnas, valores) {
-    const permitidas = ['Usuario', 'EspacioAcademico', 'Caso', 'Rubrica', 'Escena',
-      'Decision', 'OpcionDecision', 'ActividadProgramada', 'EstudianteAutorizado', 'SesionSimulacion'];
-    assert.ok(permitidas.includes(tabla));
+    assert.ok(tablas.includes(tabla));
     const [resultado] = await pool.execute(
-      `INSERT INTO ${tabla} (${columnas}) VALUES (${valores.map(() => '?').join(', ')})`, valores
-    );
-    creados.push({ tabla, id: resultado.insertId });
+      `INSERT INTO ${tabla} (${columnas}) VALUES (${valores.map(() => '?').join(', ')})`, valores);
+    recordar(tabla, resultado.insertId);
     return resultado.insertId;
   }
 
