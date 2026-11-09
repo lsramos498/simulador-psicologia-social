@@ -547,4 +547,3 @@ test('Rechaza el cierre automático si el repositorio no lo implementa', async (
     TypeError
   );
 });
-

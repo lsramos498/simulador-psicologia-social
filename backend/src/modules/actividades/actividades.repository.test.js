@@ -363,4 +363,3 @@ test('No utiliza una transacción para ejecutar el cierre automático', async ()
   assert.equal(entorno.llamadasConexion.length, 0);
   assert.deepEqual(entorno.eventos, []);
 });
-

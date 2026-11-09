@@ -177,7 +177,7 @@ describe('Servicio de sesiones', () => {
     );
   });
 
-  
+
   test('crea un nuevo intento cuando todavía hay intentos disponibles', async () => {
     const { servicio, datos } = crearContexto({
       actividad: { intentosPermitidos: 3 },
