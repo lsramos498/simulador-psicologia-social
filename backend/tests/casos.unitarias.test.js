@@ -14,6 +14,9 @@ import {
 } from '../src/modules/casos/caso.validacion.js';
 import { crearServicioCasos } from '../src/modules/casos/casos.service.js';
 
+const docente = { id: 5, roles: ['Docente'], permisos: ['CREAR_CASOS'] };
+const admin = { id: 1, roles: ['Administrador'] };
+
 function datosBasicos(extra = {}) {
   return {
     creadorId: 5,
@@ -28,6 +31,7 @@ function datosBasicos(extra = {}) {
 function casoPublicable() {
   return {
     id: 1,
+    creadorId: 5,
     estado: 'Borrador',
     escenas: [
       {
@@ -68,7 +72,7 @@ function repositorio(extra = {}) {
       return operacion(repo);
     },
     async obtenerPorId() {
-      return { id: 1, estado: 'Borrador' };
+      return { id: 1, creadorId: 5, estado: 'Borrador' };
     },
     ...extra
   };
@@ -218,7 +222,7 @@ test('publicar cambia el borrador completo a Publicado', async () => {
     }
   }));
 
-  const publicado = await servicio.publicar(1);
+  const publicado = await servicio.publicar(1, docente);
 
   assert.equal(publicado.estado, 'Publicado');
   assert.deepEqual(cambios, [{ id: 1, estado: 'Publicado' }]);
@@ -227,12 +231,12 @@ test('publicar cambia el borrador completo a Publicado', async () => {
 test('no se puede volver a archivar un caso archivado', async () => {
   const servicio = crearServicioCasos(repositorio({
     async obtenerPorId() {
-      return { id: 1, estado: 'Archivado' };
+      return { id: 1, creadorId: 5, estado: 'Archivado' };
     }
   }));
 
   await assert.rejects(
-    () => servicio.archivar(1),
+    () => servicio.archivar(1, docente),
     (error) => error.codigo === 'CASO_YA_ARCHIVADO'
   );
 });
@@ -254,7 +258,7 @@ test('la opción debe pertenecer a una pregunta del mismo caso', async () => {
       esCorrecta: true,
       orden: 1,
       explicacion: 'Reconoce el conflicto.'
-    }),
+    }, docente),
     (error) => error.codigo === 'DECISION_NO_EXISTE'
   );
   assert.equal(inserto, false);
@@ -271,7 +275,7 @@ test('un personaje de otro caso no se asocia a la escena', async () => {
   }));
 
   await assert.rejects(
-    () => servicio.asociarPersonaje(1, 2, 7),
+    () => servicio.asociarPersonaje(1, 2, 7, docente),
     (error) => error.codigo === 'PERSONAJE_AJENO' && error.statusCode === 422
   );
 });
@@ -299,7 +303,7 @@ test('guardar la rúbrica solo ocurre si el caso sigue en borrador', async () =>
         ]
       }
     ]
-  });
+  }, docente);
 
   assert.equal(guardada.nombre, 'Rúbrica de aula');
   assert.equal(caso.rubrica.nombre, 'Rúbrica de aula');
@@ -426,7 +430,7 @@ test('actualizar un borrador guarda el título recortado', async () => {
     }
   }));
 
-  const caso = await servicio.actualizar(1, datosBasicos({ titulo: '  Nuevo título  ' }));
+  const caso = await servicio.actualizar(1, datosBasicos({ titulo: '  Nuevo título  ' }), docente);
 
   assert.equal(guardado.titulo, 'Nuevo título');
   assert.equal(caso.titulo, 'Nuevo título');
@@ -435,12 +439,12 @@ test('actualizar un borrador guarda el título recortado', async () => {
 test('actualizar rechaza un caso que ya no está en borrador', async () => {
   const servicio = crearServicioCasos(repositorio({
     async obtenerPorId() {
-      return { id: 1, estado: 'Publicado' };
+      return { id: 1, creadorId: 5, estado: 'Publicado' };
     }
   }));
 
   await assert.rejects(
-    () => servicio.actualizar(1, datosBasicos()),
+    () => servicio.actualizar(1, datosBasicos(), docente),
     (error) => error.codigo === 'CASO_NO_EDITABLE'
   );
 });
@@ -457,7 +461,7 @@ test('archivar un borrador lo deja en Archivado', async () => {
     }
   }));
 
-  const caso = await servicio.archivar(1);
+  const caso = await servicio.archivar(1, docente);
 
   assert.equal(caso.estado, 'Archivado');
   assert.deepEqual(cambios, [{ id: 1, estado: 'Archivado', anterior: 'Borrador' }]);
@@ -478,7 +482,7 @@ test('una escena nueva no puede traer personajes todavía', async () => {
       orden: 1,
       esFinal: false,
       personajes: ['Ana']
-    }),
+    }, docente),
     (error) => error.codigo === 'PERSONAJES_EN_ESCENA'
   );
   assert.equal(inserto, false);
@@ -492,7 +496,7 @@ test('la pregunta debe pertenecer a una escena del mismo caso', async () => {
   }));
 
   await assert.rejects(
-    () => servicio.agregarDecision(1, 2, { pregunta: '¿Qué hace?', orden: 1 }),
+    () => servicio.agregarDecision(1, 2, { pregunta: '¿Qué hace?', orden: 1 }, docente),
     (error) => error.codigo === 'ESCENA_NO_EXISTE'
   );
 });
@@ -508,7 +512,7 @@ test('agregar un personaje guarda el nombre recortado', async () => {
     }
   }));
 
-  const caso = await servicio.agregarPersonaje(1, { nombre: '  Ana  ' });
+  const caso = await servicio.agregarPersonaje(1, { nombre: '  Ana  ' }, docente);
 
   assert.equal(guardado.nombre, 'Ana');
   assert.equal(guardado.rolSocial, null);
@@ -523,7 +527,7 @@ test('no se publica un caso que ya no está en borrador', async () => {
   }));
 
   await assert.rejects(
-    () => servicio.publicar(1),
+    () => servicio.publicar(1, docente),
     (error) => error.codigo === 'CASO_NO_PUBLICABLE'
   );
 });
@@ -662,7 +666,7 @@ test('archivar un caso publicado lo deja en Archivado', async () => {
   const cambios = [];
   const servicio = crearServicioCasos(repositorio({
     async obtenerPorId() {
-      return { id: 1, estado: 'Publicado' };
+      return { id: 1, creadorId: 5, estado: 'Publicado' };
     },
     async actualizarEstado(id, estado, anterior) {
       cambios.push({ id, estado, anterior });
@@ -673,7 +677,7 @@ test('archivar un caso publicado lo deja en Archivado', async () => {
     }
   }));
 
-  const caso = await servicio.archivar(1);
+  const caso = await servicio.archivar(1, docente);
 
   assert.equal(caso.estado, 'Archivado');
   assert.deepEqual(cambios, [{ id: 1, estado: 'Archivado', anterior: 'Publicado' }]);
@@ -695,7 +699,7 @@ test('agregar una escena en borrador la guarda sin personajes', async () => {
     contexto: 'Inicio de clase',
     orden: 1,
     esFinal: false
-  });
+  }, docente);
 
   assert.equal(guardada.nombre, 'Aula');
   assert.deepEqual(guardada.personajes, []);
@@ -710,7 +714,7 @@ test('publicar un caso que no existe avisa que no se encontró', async () => {
   }));
 
   await assert.rejects(
-    () => servicio.publicar(3),
+    () => servicio.publicar(3, docente),
     (error) => error.codigo === 'CASO_NO_EXISTE' && error.statusCode === 404
   );
 });
@@ -733,7 +737,7 @@ test('construir rechaza un docente que no está activo', async () => {
 test('no se guarda la rúbrica de un caso publicado', async () => {
   const servicio = crearServicioCasos(repositorio({
     async obtenerPorId() {
-      return { id: 1, estado: 'Publicado' };
+      return { id: 1, creadorId: 5, estado: 'Publicado' };
     }
   }));
 
@@ -746,7 +750,7 @@ test('no se guarda la rúbrica de un caso publicado', async () => {
         puntajeMaximo: 5,
         niveles: [{ nombre: 'Inicial', descripcion: 'Describe.', puntaje: 2, orden: 1 }]
       }]
-    }),
+    }, docente),
     (error) => error.codigo === 'CASO_NO_EDITABLE'
   );
 });
@@ -766,9 +770,9 @@ test('asociar un personaje del mismo caso deja el vínculo', async () => {
     async obtenerCompleto(id) {
       return { id, escenas: [{ id: 2, personajes: [7] }] };
     }
-  }));
+  }, docente));
 
-  const caso = await servicio.asociarPersonaje(1, 2, 7);
+  const caso = await servicio.asociarPersonaje(1, 2, 7, docente);
 
   assert.deepEqual(vinculo, { escenaId: 2, personajeId: 7 });
   assert.deepEqual(caso.escenas[0].personajes, [7]);
@@ -787,4 +791,41 @@ test('crear no guarda un caso sin título', async () => {
     (error) => error.codigo === 'ESTRUCTURA_INVALIDA'
   );
   assert.equal(guardo, false);
+});
+
+test('un docente no puede publicar el caso de otra compañera', async () => {
+  const servicio = crearServicioCasos(repositorio({
+    async obtenerCompleto() {
+      return { ...casoPublicable(), creadorId: 9 };
+    },
+    async actualizarEstado() {
+      throw new Error('no debería publicar');
+    }
+  }));
+
+  await assert.rejects(
+    () => servicio.publicar(1, docente),
+    (error) => error.codigo === 'CASO_AJENO' && error.statusCode === 403
+  );
+});
+
+test('un administrador sí puede archivar un caso ajeno', async () => {
+  const cambios = [];
+  const servicio = crearServicioCasos(repositorio({
+    async obtenerPorId() {
+      return { id: 1, creadorId: 9, estado: 'Publicado' };
+    },
+    async actualizarEstado(id, estado, anterior) {
+      cambios.push({ id, estado, anterior });
+      return 1;
+    },
+    async obtenerCompleto(id) {
+      return { id, estado: 'Archivado' };
+    }
+  }));
+
+  const caso = await servicio.archivar(1, admin);
+
+  assert.equal(caso.estado, 'Archivado');
+  assert.deepEqual(cambios, [{ id: 1, estado: 'Archivado', anterior: 'Publicado' }]);
 });
