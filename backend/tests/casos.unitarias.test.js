@@ -659,7 +659,26 @@ test('listar sin filtro consulta todos y con filtro usa el docente', async () =>
   assert.deepEqual(await servicio.listar(), []);
   assert.deepEqual(await servicio.listar(''), []);
   assert.deepEqual(await servicio.listar(5), []);
-  assert.deepEqual(filtros, [null, null, 5]);
+  assert.deepEqual(await servicio.listar({ estado: 'Publicado' }), []);
+  assert.deepEqual(filtros, [
+    { creadorId: null, estado: null },
+    { creadorId: null, estado: null },
+    { creadorId: 5, estado: null },
+    { creadorId: null, estado: 'Publicado' }
+  ]);
+});
+
+test('listar rechaza un estado que no existe en el dominio', async () => {
+  const servicio = crearServicioCasos(repositorio({
+    async listar() {
+      return [];
+    }
+  }));
+
+  await assert.rejects(
+    () => servicio.listar({ estado: 'BorradorX' }),
+    (error) => error.codigo === 'ESTADO_INVALIDO' && error.statusCode === 400
+  );
 });
 
 test('archivar un caso publicado lo deja en Archivado', async () => {

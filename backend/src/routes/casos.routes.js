@@ -82,7 +82,10 @@ export function crearRutasCasos(obtenerServicio) {
   }
 
   router.get('/', autenticar, (req, res) => ejecutar(res, async (servicio) => {
-    const data = await servicio.listar(req.query.creadorId);
+    const data = await servicio.listar({
+      creadorId: req.query.creadorId,
+      estado: req.query.estado
+    });
     return res.status(200).json({ total: data.length, data });
   }));
 
