@@ -11,6 +11,19 @@ import { randomUUID } from 'node:crypto';
  *
  * Usa backend/.env. Todo ocurre en una transacción con rollback:
  * no deja datos permanentes.
+ *
+ * Qué demuestra (flujo de punta a punta con el servicio y el repositorio reales):
+ *  1. Crea un docente activo como creador (fixture con correo único por corrida).
+ *  2. `construir` guarda el agregado completo (Builder → validación → MySQL).
+ *  3. `obtener` recupera escenas, opciones con explicación y rúbrica.
+ *  4. `publicar` rechaza (422) un borrador incompleto y no cambia su estado.
+ *  5. `publicar` acepta el caso completo y `listar` lo devuelve como Publicado.
+ *
+ * Por qué existe además de las pruebas unitarias: estas últimas usan un pool
+ * simulado y no detectan errores de SQL ni de esquema; esta prueba sí.
+ * Cómo se evita dejar datos: el pool que recibe el repositorio es un envoltorio
+ * sobre UNA conexión con `beginTransaction`; sus `commit`/`rollback` internos
+ * son vacíos y el único ROLLBACK real se hace en `t.after`.
  */
 
 test('MySQL real: construir, rechazar publicación incompleta, publicar y listar', {

@@ -1,13 +1,39 @@
+/**
+ * Repositorio MySQL de casos (Stefanía Díaz — casos académicos).
+ * RF-05 a RF-09: persistencia de casos, personajes, escenas, preguntas y opciones.
+ * RF-17: persistencia de la rúbrica (criterios y niveles de desempeño).
+ *
+ * Solo accede a datos: no decide reglas de negocio (eso es de casos.service.js).
+ * Recibe el pool de mysql2 desde afuera, así las pruebas pueden usar un pool
+ * simulado sin MySQL.
+ *
+ * Decisiones de diseño:
+ *  - Todas las consultas son parametrizadas (`?`): nunca se concatenan valores
+ *    del usuario, lo que evita inyección SQL.
+ *  - Las mismas consultas funcionan sobre el pool (lectura suelta) o sobre una
+ *    conexión con transacción (`enTransaccion`), por eso viven en `consultas()`.
+ *  - Los UPDATE de estado y de datos básicos del caso incluyen el estado esperado en el WHERE,
+ *    y devuelven `affectedRows` para que el servicio detecte carreras.
+ */
 import { errorCaso } from './caso.errores.js';
 
+// MySQL devuelve los BOOLEAN/TINYINT como 0 o 1; el API los entrega como true/false.
 function aBooleano(valor) {
   return valor === true || valor === 1;
 }
 
+// Los DECIMAL llegan como texto desde mysql2; se convierten a número (null se conserva).
 function aNumero(valor) {
   return valor == null ? null : Number(valor);
 }
 
+/**
+ * Traduce errores técnicos de MySQL a errores de dominio. Hoy solo cubre
+ * ER_DUP_ENTRY (UNIQUE violado: mismo orden o mismo nombre) → `DUPLICADO` 409.
+ * Cualquier otro error se devuelve igual y la ruta lo responderá como 500.
+ * @param {Error & { code?: string }} error
+ * @returns {Error} Error de dominio o el original.
+ */
 function traducirMysql(error) {
   if (error?.code !== 'ER_DUP_ENTRY') {
     return error;
@@ -19,6 +45,10 @@ function traducirMysql(error) {
   );
 }
 
+/**
+ * Convierte una fila de la tabla Caso al objeto del API, con las listas de
+ * personajes y escenas vacías y la rúbrica en null (las llena `obtenerCompleto`).
+ */
 function mapCaso(fila) {
   return {
     id: fila.id,
@@ -36,6 +66,15 @@ function mapCaso(fila) {
   };
 }
 
+/**
+ * Ejecuta una consulta `... IN (?, ?, ...)` armando los marcadores según la
+ * cantidad de ids. Con una lista vacía devuelve [] sin consultar (un `IN ()`
+ * vacío sería un error de sintaxis en MySQL).
+ * @param {object} conexion  Pool o conexión de mysql2.
+ * @param {number[]} ids  Valores para el IN.
+ * @param {string} sql  Consulta que termina justo antes del paréntesis del IN.
+ * @returns {Promise<object[]>} Filas encontradas.
+ */
 async function consultarPorIds(conexion, ids, sql) {
   if (!ids.length) {
     return [];
@@ -45,13 +84,37 @@ async function consultarPorIds(conexion, ids, sql) {
   return filas;
 }
 
+/**
+ * Fábrica del repositorio de casos.
+ *
+ * El objeto devuelto expone las mismas consultas que recibe el callback de
+ * `enTransaccion` (ver `consultas`), más `enTransaccion` en sí. Las lecturas
+ * sueltas se hacen sobre el pool; las escrituras deben hacerse dentro de
+ * `enTransaccion` para que sean atómicas.
+ *
+ * @param {object} pool  Pool de mysql2/promise (requiere `execute` y `getConnection`).
+ * @returns {object} Repositorio de casos.
+ * @throws {TypeError} Si `pool` no tiene la forma esperada.
+ */
 export function crearRepositorioCasos(pool) {
   if (!pool || typeof pool.execute !== 'function' || typeof pool.getConnection !== 'function') {
     throw new TypeError('Se requiere un pool de MySQL.');
   }
 
+    /**
+     * Construye el conjunto de consultas sobre una conexión dada (pool o
+     * conexión transaccional). Así el mismo código sirve dentro y fuera de una
+     * transacción. `this` apunta a este objeto, por eso los métodos compuestos
+     * (p. ej. guardarCasoCompleto) llaman a los demás con `this.`.
+     * @param {object} conexion  Pool o conexión con `execute`.
+     */
   function consultas(conexion) {
     return {
+      /**
+       * Busca un usuario y confirma que esté activo.
+       * @param {number} usuarioId
+       * @returns {Promise<{ id: number }|null>} null si no existe o está inactivo.
+       */
       async obtenerUsuarioActivo(usuarioId) {
         const [filas] = await conexion.execute(
           `SELECT id, activo
@@ -67,6 +130,14 @@ export function crearRepositorioCasos(pool) {
         return { id: fila.id };
       },
 
+      /**
+       * Lista casos en resumen, del más reciente al más antiguo. Ambos filtros son
+       * opcionales (null = sin filtrar). Incluye `rubricaId` de la rúbrica activa
+       * más reciente (o null) para que Actividades sepa qué rúbrica usar.
+       * @param {{ creadorId?: number|null, estado?: string|null }} [filtros]
+       * @returns {Promise<Array<{ id: number, creadorId: number, titulo: string, estado: string,
+       *   tiempoEstimadoSegundos: number, fechaCreacion: Date, rubricaId: number|null }>>}
+       */
       async listar({ creadorId = null, estado = null } = {}) {
         const [filas] = await conexion.execute(
           `SELECT c.id, c.creador_id AS creadorId, c.titulo, c.estado,
@@ -95,6 +166,14 @@ export function crearRepositorioCasos(pool) {
         }));
       },
 
+      /**
+       * Obtiene solo los datos básicos de un caso (sin escenas ni rúbrica).
+       * @param {number} casoId
+       * @param {boolean} [bloquear=false]  Si es true usa `FOR UPDATE` para bloquear
+       *   la fila hasta el fin de la transacción (evita ediciones simultáneas).
+       *   Solo tiene sentido dentro de `enTransaccion`.
+       * @returns {Promise<object|null>} El caso o null si no existe.
+       */
       async obtenerPorId(casoId, bloquear = false) {
         const [filas] = await conexion.execute(
           `SELECT id, creador_id AS creadorId, titulo, desarrolloSituacional,
@@ -107,6 +186,7 @@ export function crearRepositorioCasos(pool) {
         return filas[0] ? mapCaso(filas[0]) : null;
       },
 
+      /** Devuelve `{ id, casoId }` de la escena, para verificar a qué caso pertenece (o null). */
       async obtenerEscena(escenaId) {
         const [filas] = await conexion.execute(
           `SELECT id, caso_id AS casoId
@@ -117,6 +197,7 @@ export function crearRepositorioCasos(pool) {
         return filas[0] ?? null;
       },
 
+      /** Devuelve `{ id, casoId }` de la pregunta, resolviendo el caso por su escena (o null). */
       async obtenerDecision(decisionId) {
         const [filas] = await conexion.execute(
           `SELECT d.id, e.caso_id AS casoId
@@ -128,6 +209,7 @@ export function crearRepositorioCasos(pool) {
         return filas[0] ?? null;
       },
 
+      /** Devuelve `{ id, casoId }` del personaje, para verificar su caso (o null). */
       async obtenerPersonaje(personajeId) {
         const [filas] = await conexion.execute(
           `SELECT id, caso_id AS casoId
@@ -138,6 +220,7 @@ export function crearRepositorioCasos(pool) {
         return filas[0] ?? null;
       },
 
+      /** Devuelve `{ id, decisionId, casoId }` de la opción, resolviendo el caso por pregunta y escena (o null). */
       async obtenerOpcion(opcionId) {
         const [filas] = await conexion.execute(
           `SELECT o.id, o.decision_id AS decisionId, e.caso_id AS casoId
@@ -150,6 +233,12 @@ export function crearRepositorioCasos(pool) {
         return filas[0] ?? null;
       },
 
+      /**
+       * Inserta un caso nuevo siempre en estado 'Borrador'.
+       * @param {{ creadorId: number, titulo: string, desarrolloSituacional: string,
+       *   contextoHistoria: string, tiempoEstimadoSegundos: number }} caso
+       * @returns {Promise<number>} Id del caso creado.
+       */
       async insertarCaso(caso) {
         const [resultado] = await conexion.execute(
           `INSERT INTO Caso (
@@ -168,6 +257,10 @@ export function crearRepositorioCasos(pool) {
         return resultado.insertId;
       },
 
+      /**
+       * Actualiza los datos básicos de un caso, solo si sigue en 'Borrador'.
+       * @returns {Promise<number>} Filas afectadas (0 si ya no era Borrador o no existe).
+       */
       async actualizarCaso(casoId, datos) {
         const [resultado] = await conexion.execute(
           `UPDATE Caso
@@ -186,6 +279,14 @@ export function crearRepositorioCasos(pool) {
         return resultado.affectedRows;
       },
 
+      /**
+       * Cambia el estado de un caso solo si está en `estadoActual` (compare-and-set).
+       * Así dos publicaciones o archivados simultáneos no se pisan.
+       * @param {number} casoId
+       * @param {string} estado  Estado nuevo.
+       * @param {string} estadoActual  Estado que debe tener el caso en este momento.
+       * @returns {Promise<number>} Filas afectadas (0 si el estado ya había cambiado).
+       */
       async actualizarEstado(casoId, estado, estadoActual) {
         const [resultado] = await conexion.execute(
           `UPDATE Caso
@@ -196,6 +297,7 @@ export function crearRepositorioCasos(pool) {
         return resultado.affectedRows;
       },
 
+      /** Inserta un personaje en el caso. @returns {Promise<number>} Id del personaje. */
       async insertarPersonaje(casoId, personaje) {
         const [resultado] = await conexion.execute(
           `INSERT INTO Personaje (
@@ -212,6 +314,7 @@ export function crearRepositorioCasos(pool) {
         return resultado.insertId;
       },
 
+      /** Inserta una escena (solo la escena, no sus preguntas). @returns {Promise<number>} Id de la escena. */
       async insertarEscena(casoId, escena) {
         const [resultado] = await conexion.execute(
           `INSERT INTO Escena (caso_id, nombre, contexto, \`orden\`, esFinal)
@@ -221,6 +324,7 @@ export function crearRepositorioCasos(pool) {
         return resultado.insertId;
       },
 
+      /** Actualiza nombre, contexto, orden y marca final. @returns {Promise<number>} Filas afectadas. */
       async actualizarEscena(escenaId, escena) {
         const [resultado] = await conexion.execute(
           `UPDATE Escena
@@ -231,6 +335,7 @@ export function crearRepositorioCasos(pool) {
         return resultado.affectedRows;
       },
 
+      /** Inserta una pregunta en la escena (sin opciones). @returns {Promise<number>} Id de la pregunta. */
       async insertarDecision(escenaId, decision) {
         const [resultado] = await conexion.execute(
           `INSERT INTO Decision (escena_id, pregunta, \`orden\`, ayuda)
@@ -240,6 +345,7 @@ export function crearRepositorioCasos(pool) {
         return resultado.insertId;
       },
 
+      /** Actualiza pregunta, orden y ayuda. @returns {Promise<number>} Filas afectadas. */
       async actualizarDecision(decisionId, decision) {
         const [resultado] = await conexion.execute(
           `UPDATE Decision
@@ -250,6 +356,11 @@ export function crearRepositorioCasos(pool) {
         return resultado.affectedRows;
       },
 
+      /**
+       * Inserta una opción y su retroalimentación (explicación y fundamento teórico)
+       * en la tabla Retroalimentacion. Ambas inserciones deben ir en la misma transacción.
+       * @returns {Promise<number>} Id de la opción.
+       */
       async insertarOpcion(decisionId, opcion) {
         const [resultado] = await conexion.execute(
           `INSERT INTO OpcionDecision (
@@ -267,6 +378,11 @@ export function crearRepositorioCasos(pool) {
         return opcionId;
       },
 
+      /**
+       * Actualiza la opción y su retroalimentación; si la opción no tenía
+       * retroalimentación previa, la crea.
+       * @returns {Promise<number>} Filas afectadas en OpcionDecision.
+       */
       async actualizarOpcion(opcionId, opcion) {
         const [resultado] = await conexion.execute(
           `UPDATE OpcionDecision
@@ -294,6 +410,7 @@ export function crearRepositorioCasos(pool) {
         return resultado.affectedRows;
       },
 
+      /** Vincula un personaje con una escena (tabla EscenaPersonaje). Falla con ER_DUP_ENTRY si ya estaba vinculado. */
       async asociarPersonaje(escenaId, personajeId) {
         await conexion.execute(
           `INSERT INTO EscenaPersonaje (escena_id, personaje_id)
@@ -302,6 +419,15 @@ export function crearRepositorioCasos(pool) {
         );
       },
 
+      /**
+       * Guarda la rúbrica del caso como una NUEVA versión activa (RF-17):
+       * calcula la versión siguiente, desactiva las anteriores y escribe criterios
+       * y niveles. Los criterios se reutilizan por nombre (CriterioEvaluacion es un
+       * catálogo único); si no existen se crean. Debe ejecutarse en transacción.
+       * @param {number} casoId
+       * @param {{ nombre: string, descripcion: string|null, criterios: object[] }} rubrica  Ya validada.
+       * @returns {Promise<number>} Id de la rúbrica creada.
+       */
       async guardarRubrica(casoId, rubrica) {
         const [versiones] = await conexion.execute(
           `SELECT COALESCE(MAX(version), 0) AS version
@@ -372,6 +498,15 @@ export function crearRepositorioCasos(pool) {
         return rubricaId;
       },
 
+      /**
+       * Guarda el agregado completo en este orden: caso → personajes → escenas
+       * (con sus personajes asociados, preguntas y opciones) → rúbrica. Reconstruye
+       * la asociación escena-personaje a partir del nombre (sin distinguir
+       * mayúsculas). Debe llamarse dentro de `enTransaccion` para que sea todo o nada.
+       * @param {object} caso  Caso validado por `validarCaso` / `CasoBuilder.build()`.
+       * @returns {Promise<object>} El caso completo recién guardado.
+       * @throws {Error} `PERSONAJE_AJENO` (422) si una escena nombra un personaje inexistente.
+       */
       async guardarCasoCompleto(caso) {
         const casoId = await this.insertarCaso(caso);
         const personajesPorNombre = new Map();
@@ -410,6 +545,18 @@ export function crearRepositorioCasos(pool) {
         return this.obtenerCompleto(casoId);
       },
 
+      /**
+       * Arma el caso completo: datos básicos, personajes, escenas ordenadas, preguntas,
+       * opciones con su explicación, personajes por escena y rúbrica activa con sus
+       * criterios y niveles. Usa una consulta por tabla (con IN) y une los resultados
+       * en memoria, para evitar una consulta por cada escena o pregunta (problema N+1).
+       *
+       * Nota: devuelve `esCorrecta` y las explicaciones; ocultarlos a estudiantes
+       * es responsabilidad de la ruta (`routes/casos.routes.js`).
+       * @param {number} casoId
+       * @param {boolean} [bloquear=false]  Bloquea la fila del caso (FOR UPDATE).
+       * @returns {Promise<object|null>} El caso completo o null si no existe.
+       */
       async obtenerCompleto(casoId, bloquear = false) {
         const caso = await this.obtenerPorId(casoId, bloquear);
         if (!caso) {
@@ -572,6 +719,15 @@ export function crearRepositorioCasos(pool) {
 
   return {
     ...repositorio,
+    /**
+     * Ejecuta `operacion` dentro de una transacción MySQL: toma una conexión,
+     * hace BEGIN, y al terminar COMMIT; si algo falla hace ROLLBACK y relanza el
+     * error (traducido por `traducirMysql`). Siempre libera la conexión.
+     * @template T
+     * @param {(tx: object) => Promise<T>} operacion  Recibe las consultas ligadas a la conexión.
+     * @returns {Promise<T>} Lo que devuelva `operacion`.
+     * @throws {Error} El error original (o `DUPLICADO` 409) tras el rollback.
+     */
     async enTransaccion(operacion) {
       const conexion = await pool.getConnection();
       try {

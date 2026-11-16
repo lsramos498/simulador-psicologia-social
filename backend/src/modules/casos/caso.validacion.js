@@ -1,13 +1,40 @@
+/**
+ * Validación y normalización del agregado Caso (Stefanía Díaz — casos académicos).
+ * RF-05 a RF-09: datos básicos, personajes, escenas, preguntas y opciones con
+ * explicación. RF-17: rúbrica con criterios y niveles de desempeño.
+ *
+ * Reglas generales de este archivo:
+ *  - Las funciones `normalizar*` y `validar*` son puras: no consultan la base
+ *    de datos ni modifican el objeto recibido; devuelven una copia limpia.
+ *  - Acumulan TODOS los problemas en una lista y lanzan un único
+ *    `errorValidacion` (HTTP 422), para que el docente corrija todo de una vez.
+ *  - Los textos se recortan con trim() y se comparan sin distinguir mayúsculas
+ *    (locale 'es') al detectar nombres repetidos.
+ */
 import { errorValidacion } from './caso.errores.js';
 
+/**
+ * Estados posibles de un caso. Coinciden con el ENUM `Caso.estado` de MySQL.
+ * Borrador (editable) → Publicado (no editable) → Archivado.
+ */
 export const ESTADOS_CASO = Object.freeze({
   BORRADOR: 'Borrador',
   PUBLICADO: 'Publicado',
   ARCHIVADO: 'Archivado'
 });
 
+// Máximo de un INT con signo de MySQL: evita ids y valores que la base rechazaría.
 const MAX_INT = 2147483647;
 
+/**
+ * Lee un campo de texto: valida el tipo, recorta espacios y revisa el largo.
+ * No lanza: agrega el problema a `errores` para reportarlos todos juntos.
+ * @param {*} valor  Valor recibido del cliente.
+ * @param {string} etiqueta  Nombre legible para el mensaje (p. ej. 'El título').
+ * @param {string[]} errores  Lista acumuladora de mensajes.
+ * @param {{ requerido?: boolean, maximo?: number|null }} [opciones]
+ * @returns {string|null} Texto recortado, o null si falta o es inválido.
+ */
 function leerTexto(valor, etiqueta, errores, { requerido = true, maximo = null } = {}) {
   if (typeof valor !== 'string') {
     if (valor == null || valor === '') {
@@ -35,6 +62,11 @@ function leerTexto(valor, etiqueta, errores, { requerido = true, maximo = null }
   return limpio;
 }
 
+/**
+ * Lee un entero dentro de un rango (por defecto 1 a MAX_INT).
+ * No acepta textos numéricos como "5": deben llegar como número JSON.
+ * @returns {number|null} El entero válido o null (con mensaje en `errores`).
+ */
 function leerEntero(valor, etiqueta, errores, { minimo = 1, maximo = MAX_INT } = {}) {
   if (!Number.isInteger(valor) || valor < minimo || valor > maximo) {
     errores.push(`${etiqueta} debe ser un entero entre ${minimo} y ${maximo}.`);
@@ -43,6 +75,10 @@ function leerEntero(valor, etiqueta, errores, { minimo = 1, maximo = MAX_INT } =
   return valor;
 }
 
+/**
+ * Exige un booleano estricto (true/false). No convierte 0, 1 ni "true".
+ * @returns {boolean} El valor, o false si era inválido (con mensaje en `errores`).
+ */
 function leerBooleano(valor, etiqueta, errores) {
   if (typeof valor !== 'boolean') {
     errores.push(`${etiqueta} debe ser verdadero o falso.`);
@@ -51,6 +87,11 @@ function leerBooleano(valor, etiqueta, errores) {
   return valor;
 }
 
+/**
+ * Lee un número decimal y lo redondea a 2 decimales, igual que las columnas
+ * DECIMAL de la base de datos (puntajes y ponderaciones).
+ * @returns {number|null} El número redondeado o null (con mensaje en `errores`).
+ */
 function leerDecimal(valor, etiqueta, errores, { minimo = 0, maximo = 999999.99 } = {}) {
   if (typeof valor !== 'number' || !Number.isFinite(valor)) {
     errores.push(`${etiqueta} debe ser un número.`);
@@ -64,6 +105,13 @@ function leerDecimal(valor, etiqueta, errores, { minimo = 0, maximo = 999999.99 
   return redondeado;
 }
 
+/**
+ * Detecta elementos de una misma lista con el mismo `orden`, porque la base
+ * de datos tiene restricciones UNIQUE sobre el orden dentro de su padre.
+ * @param {Array<{orden: number|null}>} items  Elementos ya normalizados.
+ * @param {string} etiqueta  Plural para el mensaje ('escenas', 'opciones'…).
+ * @returns {string[]} Cero o un mensaje de error.
+ */
 function ordenesRepetidos(items, etiqueta) {
   const vistos = new Set();
   const repetidos = [];
@@ -80,6 +128,14 @@ function ordenesRepetidos(items, etiqueta) {
     : [];
 }
 
+/**
+ * Valida el id del docente creador del caso.
+ * Solo revisa el formato; que el usuario exista y esté activo lo comprueba
+ * el servicio consultando la base de datos.
+ * @param {number} creadorId  Id positivo del usuario.
+ * @returns {number} El mismo id, ya validado.
+ * @throws {Error} `ESTRUCTURA_INVALIDA` (422) si no es un entero válido.
+ */
 export function validarCreador(creadorId) {
   const errores = [];
   const id = leerEntero(creadorId, 'El docente creador', errores);
@@ -89,6 +145,15 @@ export function validarCreador(creadorId) {
   return id;
 }
 
+/**
+ * Valida los datos básicos del caso (RF-05 a RF-09): título, desarrollo situacional,
+ * contexto de la historia y tiempo estimado. No revisa personajes ni escenas.
+ * @param {{ titulo: string, desarrolloSituacional: string, contextoHistoria: string,
+ *   tiempoEstimadoSegundos: number }} datos
+ * @returns {{ titulo: string, desarrolloSituacional: string, contextoHistoria: string,
+ *   tiempoEstimadoSegundos: number }} Datos normalizados (textos recortados).
+ * @throws {Error} `ESTRUCTURA_INVALIDA` (422) con la lista de problemas.
+ */
 export function validarDatosBasicos(datos) {
   const errores = [];
   if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
@@ -124,6 +189,14 @@ export function validarDatosBasicos(datos) {
   };
 }
 
+/**
+ * Normaliza un personaje del caso (RF-05 a RF-09). Solo el nombre es obligatorio;
+ * rol social, perfil y pautas de comportamiento son opcionales.
+ * @param {{ nombre: string, rolSocial?: string, perfil?: string, pautasComportamiento?: string }} datos
+ * @returns {{ nombre: string, rolSocial: string|null, perfil: string|null,
+ *   pautasComportamiento: string|null }}
+ * @throws {Error} `ESTRUCTURA_INVALIDA` (422) si los datos no son válidos.
+ */
 export function normalizarPersonaje(datos) {
   const errores = [];
   if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
@@ -150,6 +223,15 @@ export function normalizarPersonaje(datos) {
   return { nombre, rolSocial, perfil, pautasComportamiento };
 }
 
+/**
+ * Normaliza una opción de respuesta de una pregunta (RF-05 a RF-09).
+ * `esCorrecta` marca la opción esperada; `explicacion` es obligatoria porque
+ * es la retroalimentación pedagógica que verá el estudiante al responder.
+ * @param {{ texto: string, esCorrecta: boolean, orden: number, explicacion: string,
+ *   consecuencia?: string, fundamentoTeorico?: string }} datos
+ * @returns {object} Opción con textos recortados y opcionales en null.
+ * @throws {Error} `ESTRUCTURA_INVALIDA` (422) si falta algún dato obligatorio.
+ */
 export function normalizarOpcion(datos) {
   const errores = [];
   if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
@@ -177,6 +259,14 @@ export function normalizarOpcion(datos) {
   return { texto, esCorrecta, consecuencia, orden, explicacion, fundamentoTeorico };
 }
 
+/**
+ * Normaliza una pregunta (en la base de datos, "Decision") junto con sus
+ * opciones anidadas (RF-05 a RF-09). Verifica que las opciones no repitan `orden`.
+ * Las opciones son opcionales aquí; la cantidad mínima se exige al publicar.
+ * @param {{ pregunta: string, orden: number, ayuda?: string, opciones?: object[] }} datos
+ * @returns {{ pregunta: string, orden: number, ayuda: string|null, opciones: object[] }}
+ * @throws {Error} `ESTRUCTURA_INVALIDA` (422) si algún dato es inválido.
+ */
 export function normalizarDecision(datos) {
   const errores = [];
   if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
@@ -203,6 +293,12 @@ export function normalizarDecision(datos) {
   return { pregunta, orden, ayuda, opciones };
 }
 
+/**
+ * Extrae los nombres de los personajes de una escena. Acepta tanto cadenas
+ * ('Ana') como objetos ({ nombre: 'Ana' }).
+ * @returns {string[]|null} Lista de nombres (vacío si no hay) o null si
+ *   `personajes` no es una lista.
+ */
 function nombresDePersonajes(personajes) {
   if (personajes == null) {
     return [];
@@ -262,6 +358,16 @@ export function datosActualizacionDecision(datos) {
   return { pregunta, orden, ayuda };
 }
 
+/**
+ * Normaliza una escena completa con sus personajes (por nombre) y preguntas
+ * (RF-05 a RF-09). Verifica que las preguntas no repitan `orden`. Que los personajes
+ * pertenezcan al caso se comprueba después, en `validarCaso`.
+ * @param {{ nombre: string, contexto: string, orden: number, esFinal?: boolean,
+ *   personajes?: Array<string|{nombre: string}>, decisiones?: object[] }} datos
+ * @returns {{ nombre: string, contexto: string, orden: number, esFinal: boolean,
+ *   personajes: string[], decisiones: object[] }}
+ * @throws {Error} `ESTRUCTURA_INVALIDA` (422) si algún dato es inválido.
+ */
 export function normalizarEscena(datos) {
   const errores = [];
   if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
@@ -302,6 +408,12 @@ export function normalizarEscena(datos) {
   };
 }
 
+/**
+ * Normaliza un nivel de desempeño de un criterio de rúbrica.
+ * A diferencia de las demás, NO lanza: devuelve sus errores para que
+ * `normalizarRubrica` los junte con los del resto de la rúbrica.
+ * @returns {{ errores: string[], nivel: object|null }}
+ */
 function normalizarNivel(datos) {
   const errores = [];
   if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
@@ -322,6 +434,18 @@ function normalizarNivel(datos) {
   };
 }
 
+/**
+ * Normaliza la rúbrica del caso (RF-17). Reglas que aplica:
+ *  - al menos un criterio, sin nombres repetidos;
+ *  - cada criterio con al menos un nivel de desempeño, sin `orden` repetido;
+ *  - el puntaje de cada nivel no supera el puntaje máximo de su criterio;
+ *  - la suma de las ponderaciones de los criterios debe ser exactamente 100.
+ * @param {{ nombre: string, descripcion?: string, criterios: Array<{ nombre: string,
+ *   descripcion?: string, ponderacion: number, puntajeMaximo: number,
+ *   niveles: Array<{ nombre: string, descripcion: string, puntaje: number, orden: number }> }> }} datos
+ * @returns {{ nombre: string, descripcion: string|null, criterios: object[] }}
+ * @throws {Error} `ESTRUCTURA_INVALIDA` (422) con todos los problemas hallados.
+ */
 export function normalizarRubrica(datos) {
   const errores = [];
   if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
@@ -422,6 +546,18 @@ export function normalizarRubrica(datos) {
   return { nombre, descripcion, criterios };
 }
 
+/**
+ * Valida el agregado completo del caso (RF-05 a RF-09 y RF-17) y lo devuelve
+ * normalizado. Es lo que ejecuta `CasoBuilder.build()`.
+ * Reglas propias de este nivel (además de las de cada parte):
+ *  - los nombres de personajes no se repiten;
+ *  - las escenas no repiten `orden`;
+ *  - todo personaje asociado a una escena debe existir en el caso.
+ * La rúbrica es opcional aquí; para publicar sí es obligatoria.
+ * @param {object} datos  Caso con creadorId, datos básicos, personajes, escenas y rubrica.
+ * @returns {object} Caso normalizado, sin persistir.
+ * @throws {Error} `ESTRUCTURA_INVALIDA` (422) con la lista de problemas.
+ */
 export function validarCaso(datos) {
   if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
     throw errorValidacion(['Los datos del caso no son válidos.']);
@@ -480,10 +616,20 @@ export function validarCaso(datos) {
   };
 }
 
+// MySQL devuelve el booleano como 0/1 y el cliente como true/false; se aceptan ambos.
 function opcionMarcadaCorrecta(opcion) {
   return opcion.esCorrecta === true || opcion.esCorrecta === 1;
 }
 
+/**
+ * Comprueba que un caso ya guardado esté completo antes de publicarlo.
+ * Exige: al menos una escena y una pregunta; en cada pregunta, al menos dos
+ * opciones, una opción esperada y una explicación por opción; y una rúbrica
+ * válida (se revalida con `normalizarRubrica`).
+ * No devuelve nada: si todo está bien termina sin error.
+ * @param {object} caso  Caso completo tal como lo entrega el repositorio.
+ * @throws {Error} `ESTRUCTURA_INVALIDA` (422) con todo lo que falta.
+ */
 export function validarParaPublicar(caso) {
   const errores = [];
   const escenas = Array.isArray(caso?.escenas) ? caso.escenas : [];
