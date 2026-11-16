@@ -18,9 +18,12 @@ export function autenticar(req, res, next) {
     return res.status(401).json({ error: 'Debe autenticarse para continuar' });
   }
 
-  const [esquema, token] = encabezado.split(' ');
+  // Exactamente "Bearer <token>"; el nombre del esquema no distingue
+  // mayúsculas (RFC 7235). Partes de más se rechazan.
+  const partes = encabezado.trim().split(/\s+/);
+  const [esquema, token] = partes;
 
-  if (esquema !== 'Bearer' || !token) {
+  if (partes.length !== 2 || esquema.toLowerCase() !== 'bearer') {
     return res.status(401).json({ error: 'Formato de autenticación no válido' });
   }
 
@@ -28,6 +31,13 @@ export function autenticar(req, res, next) {
     req.usuario = verificarToken(token);
     return next();
   } catch (error) {
-    return res.status(error.statusCode || 401).json({ error: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+
+    // Sin statusCode es un fallo del servidor (por ejemplo, falta JWT_SECRETO):
+    // se registra sin datos del token y no se culpa al cliente con un 401.
+    console.error('Error en autenticación:', error.message);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

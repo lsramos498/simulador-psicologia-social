@@ -110,7 +110,9 @@ Roles o permisos que no existen responden `404`: no se crean roles ni permisos d
 - Un docente no puede asignarse roles ni permisos; el administrador no puede quitarse su propio rol.
 - Los cambios de roles o permisos se aplican en el siguiente ingreso, porque viajan dentro del token (máximo 1 hora).
 - Política de contraseñas al crear docentes: mínimo 8 caracteres, con al menos una letra y un número.
-- Límite de intentos: 5 fallos seguidos (contraseña o código) bloquean ese correo 15 minutos (`429`). Un ingreso correcto reinicia la cuenta. Los contadores viven en memoria: se borran si el servidor se reinicia.
+- Límite de intentos: 5 fallos seguidos (contraseña o código) bloquean ese correo 15 minutos (`429`). Un ingreso correcto reinicia la cuenta, y los fallos vencen si pasan 15 minutos sin otro fallo (4 errores un día y 1 al día siguiente no bloquean). Los contadores viven en memoria: se borran si el servidor se reinicia.
+- `Authorization` debe ser exactamente `Bearer <token>` (el nombre del esquema no distingue mayúsculas); con partes de más responde `401`.
+- Si el servidor no tiene `JWT_SECRETO`, `autenticar` responde `500` con un mensaje genérico, no `401`: es un fallo de configuración, no del cliente.
 - Los errores inesperados responden `500` con un mensaje genérico; el detalle solo queda en el registro del servidor (`errores.js`).
 
 ## Uso desde otros módulos
@@ -202,6 +204,7 @@ para no duplicar la verificación de permisos.
 | Unitarias | `autorizacion`, `codigos`, `contrasenas`, `limiteIntentos`, `errores`, `servicioProtegido.proxy`, `seed`, `acceso.repository`, `administracion.service`, `administracion.repository` | Cada función aislada; MySQL se reemplaza por un pool, una conexión o un repositorio falso |
 | Integración (HTTP) | `acceso.ingreso`, `acceso.ingreso-docente`, `administracion.routes`, `autenticacion`, `autorizacion` (rutas) | Varias piezas juntas a través de peticiones HTTP con `supertest` |
 | Integración (MySQL real) | `acceso.mysql` | Seed, creación de docente, permisos, ingreso de docente y de estudiante contra la base real |
+| De punta a punta (HTTP + MySQL real) | `scripts/e2e-acceso.mjs` | 55 comprobaciones con el servidor encendido: ingreso, tokens alterados o vencidos, rutas sin token, roles, permisos, Proxy, código del estudiante y operaciones que no le corresponden a cada usuario en todos los módulos |
 
 ```
 npm test                                  # todas (la de MySQL real se salta)
@@ -215,6 +218,29 @@ de una transacción que se deshace al final, así que no deja datos guardados:
 set LUMINA_MYSQL_TEST=1
 node --test tests/acceso.mysql.test.js
 ```
+
+### Pruebas de punta a punta (servidor + MySQL real)
+
+Usan una base de **pruebas** (crean usuarios, un caso y actividades con un sufijo único, y
+quitan y vuelven a dar `CREAR_CASOS` al rol Docente). Con el servidor encendido en otra terminal:
+
+```
+npm start
+npm run test:e2e:acceso
+```
+
+Toma el administrador de `E2E_ADMIN_CORREO` y `E2E_ADMIN_CONTRASENA` (o, si no están, de
+`ADMIN_CORREO` y `ADMIN_CONTRASENA`) en el `.env`. Si alguna comprobación falla, el proceso
+termina con código 1.
+
+### Zona horaria
+
+Node.js y MySQL deben usar la misma zona horaria (la de Colombia, `America/Bogota`). El
+ingreso del estudiante compara la hora de Node.js con `fechaInicio` y `fechaFin` de la
+actividad; si MySQL está en UTC y Node.js en Colombia, las fechas creadas con `NOW()` quedan
+corridas 5 horas y el estudiante recibe `403 La actividad todavía no ha comenzado`. En un
+computador con Windows ambos usan la zona del sistema; en un servidor, configurar
+`default-time-zone = '-05:00'` en MySQL y `TZ=America/Bogota` en Node.js.
 
 ## Colección de Postman
 

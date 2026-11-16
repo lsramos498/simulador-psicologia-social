@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { autenticar } from '../modules/acceso/autenticar.middleware.js';
 import { requiereRol } from '../modules/acceso/autorizar.middleware.js';
 import { ROLES, tieneRol } from '../modules/acceso/autorizacion.js';
@@ -89,38 +89,16 @@ async function obtenerServicioPorDefecto() {
     const { crearRepositorioActividades } = await import('../modules/actividades/actividades.repository.js');
     const { crearServicioActividades } = await import('../modules/actividades/actividades.service.js');
     const { crearCodigoAutorizacion } = await import('../modules/acceso/codigos.js');
-    const { crearServicioNotificaciones } = await import('../modules/notificaciones/notificaciones.service.js');
-    const notificaciones = crearServicioNotificaciones({
-      async enviar(mensaje, contexto = {}) {
-        try {
-          const tipos = {
-            CONVOCATORIA: 'Convocatoria',
-            CAMBIO_ESTUDIANTE: 'CambioConvocatoria'
-          };
-          const [usuarios] = await pool.execute(
-            'SELECT id FROM Usuario WHERE correoInstitucional = ? LIMIT 1',
-            [mensaje.to]
-          );
-          const usuarioId = contexto.estudianteId ?? usuarios[0]?.id;
-          if (!usuarioId) return;
-          await pool.execute(
-            `INSERT INTO Notificacion
-               (usuario_id, actividad_id, tipo, canal, asunto, mensaje, estado, fechaCreacion, errorEnvio)
-             VALUES (?, ?, ?, 'Correo', ?, ?, 'Fallida', NOW(), ?)`,
-            [
-              usuarioId,
-              contexto.actividadId ?? null,
-              tipos[contexto.tipo] ?? 'Convocatoria',
-              mensaje.subject ?? null,
-              mensaje.text,
-              'El transporte de correo no está configurado.'
-            ]
-          );
-        } catch (error) {
-          console.error('No se pudo guardar la notificación:', error?.code || error?.message);
-        }
-      }
-    });
+    const { crearServicioNotificaciones } = await import(
+      '../modules/notificaciones/notificaciones.service.js'
+    );
+
+    const { crearTransporteSMTP } = await import(
+      '../modules/notificaciones/notificaciones.smtp.js'
+    );
+
+    const transporte = crearTransporteSMTP();
+    const notificaciones = crearServicioNotificaciones(transporte);
 
     servicioPorDefecto = crearServicioActividades(
       crearRepositorioActividades(pool),
@@ -176,3 +154,8 @@ const servicioLazy = {
 };
 
 export default crearRutasActividades(servicioLazy);
+export async function ejecutarCierreAutomaticoActividades() {
+  const servicio = await obtenerServicioPorDefecto();
+  const cerradas = await servicio.cerrarVencidas();
+  return Array.isArray(cerradas) ? cerradas.length : cerradas;
+}

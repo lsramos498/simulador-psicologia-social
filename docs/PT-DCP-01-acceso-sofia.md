@@ -19,6 +19,24 @@ Resultado global:
 - Módulo de acceso: **183** pruebas en 18 archivos, 182 aprobadas, 0 fallidas, 1 omitida (la de MySQL real).
 - Prueba con MySQL real del módulo de acceso: **5** pruebas, **5** aprobadas, 0 fallidas.
 
+### Actualización del 14 de noviembre de 2026 (cierre del módulo)
+
+Se corrigieron dos fallos del módulo (ver CP-ACC-11, CP-JWT-03 y CP-ERR-02) y se agregó una prueba de punta a punta con el servidor encendido y MySQL real (`scripts/e2e-acceso.mjs`, filas CP-E2E-01 a CP-E2E-05).
+
+```bash
+npm test
+set LUMINA_MYSQL_TEST=1
+node --test tests/acceso.mysql.test.js
+set LUMINA_MYSQL_TEST=
+# con el servidor encendido en otra terminal (npm start):
+npm run test:e2e:acceso
+```
+
+- `npm test` (todo el backend): **397** pruebas, **395** aprobadas, **0** fallidas, 2 omitidas (las de MySQL real).
+- Prueba con MySQL real del módulo de acceso: **5** pruebas, **5** aprobadas.
+- Punta a punta (servidor + MySQL real): **55** comprobaciones, **55** correctas, 0 fallidas.
+- Colección de Postman (newman): **17** peticiones y **26** aserciones, 0 fallidas.
+
 Tipos de prueba: **unitaria** (función aislada, base de datos simulada), **integrada HTTP** (petición real a la API con `supertest`) e **integrada MySQL** (persistencia real dentro de una transacción que se deshace al final).
 
 ---
@@ -36,14 +54,16 @@ Tipos de prueba: **unitaria** (función aislada, base de datos simulada), **inte
 | CP-ACC-07 | RF-01, RF-02 | Acceso | Rechazar cuentas inactivas | Usuario con `activo = 0` | Ingreso de docente y de estudiante | Cuenta inactiva | 403 | 403 | **Aprobado** | `acceso.ingreso-docente.test.js`, `codigos.test.js` | — |
 | CP-ACC-08 | RF-01 | Acceso | El estudiante solo entra con código | Usuario con rol Estudiante | `POST /api/acceso/ingreso` | Correo de estudiante y contraseña | 403 (API) / 401 (colección, usuario sin contraseña) | 403 / 401 | **Aprobado** | `acceso.ingreso-docente.test.js`; colección Postman | — |
 | CP-ACC-09 | RF-02 | Acceso | Bloqueo tras intentos fallidos con contraseña | Docente existente | 5 contraseñas incorrectas y luego la correcta | Contraseña errada ×5 | 429 aunque la sexta sea correcta | 429 | **Aprobado** | `acceso.ingreso-docente.test.js`, `limiteIntentos.test.js` | Observación: refuerzo de seguridad pedido por la coordinación; no está en la hoja del 16 de octubre |
+| CP-ACC-11 | RF-01, RF-02 | Acceso | Los fallos viejos vencen | Límite de 5 fallos en 15 minutos | 4 fallos, pasar un día, 1 fallo más | Reloj simulado | No bloquea; solo bloquean 5 fallos seguidos dentro de la ventana | No bloquea / bloquea dentro de la ventana | **Aprobado** | `limiteIntentos.test.js` | Defecto corregido el 14/11: antes los fallos no vencían y 4 errores un día más 1 otro día bloqueaban la cuenta |
 | CP-ACC-10 | RF-01, RF-20 | Acceso | Bloqueo tras intentos fallidos con código | — | 5 códigos incorrectos para el mismo correo | Código errado ×5 | 429 en el sexto intento | 429 | **Aprobado** | `acceso.ingreso.test.js` | Misma observación de CP-ACC-09 |
 | CP-JWT-01 | RF-02 | Acceso | Firma y verificación del token | `JWT_SECRETO` configurado | Firmar y verificar un JWT | Usuario con roles y permisos | Conserva id, roles y permisos; dura 1 hora | Correcto | **Aprobado** | `autenticacion.test.js` | — |
 | CP-JWT-02 | RF-02 | Acceso | Rechazar token alterado, sin firma, de otra clave o vencido | — | Verificar tokens inválidos | Token modificado, `alg: none`, otra clave, vencido | 401 | 401 | **Aprobado** | `autenticacion.test.js` | — |
+| CP-JWT-03 | RF-02 | Acceso | Formato estricto del encabezado | — | Llamar `/perfil` con `bearer <token>` y con `Bearer <token> extra` | Encabezados distintos | 200 (el esquema no distingue mayúsculas) / 401 (partes de más) | 200 / 401 | **Aprobado** | `autenticacion.test.js` | Corregido el 14/11: antes se aceptaban partes de más y se rechazaba `bearer` en minúscula |
 | CP-AUT-01 | RF-02 | Acceso | Rutas protegidas sin autenticación | — | Llamar rutas de administración, casos, actividades y participación sin token | Sin `Authorization` | 401 | 401 | **Aprobado** | `autorizacion.test.js`, `administracion.routes.test.js`, `rutas.montadas.test.js`; colección Postman | — |
 | CP-AUT-02 | RF-02 | Acceso | Restricción por rol | Docente y estudiante autenticados | Llamar rutas de administrador | Token de docente o estudiante | 403 | 403 | **Aprobado** | `autorizacion.test.js`, `administracion.routes.test.js`; colección Postman | — |
 | CP-AUT-03 | RF-02 | Acceso | Permiso por operación | Docente con y sin `CREAR_CASOS` | Crear caso | Token con y sin permiso | 201 con permiso, 403 sin permiso | 201 / 403 | **Aprobado** | `autorizacion.test.js`, `autenticacion.test.js` | — |
 | CP-AUT-04 | RF-02 | Acceso | Usuario sin roles | Usuario sin registros en `UsuarioRol` | Evaluar reglas e ingresar | Usuario sin roles | Sin acceso; 403 al ingresar | 403 | **Aprobado** | `autorizacion.test.js`, `acceso.ingreso-docente.test.js` | — |
-| CP-AUT-05 | RF-01, RF-20 | Acceso | El estudiante solo accede a la actividad de su código | Token de estudiante con `actividadId` 5 | `POST /actividades/:id/sesiones` (ruta de ejemplo) con la actividad 5, la 8 y una inválida; sin token; con docente | Tokens de estudiante y docente | 201 en su actividad; 403 en otra o inválida, sin ejecutar la ruta; 401 sin token; el docente pasa | Igual a lo esperado | **Aprobado** | `actividadAutorizada.test.js` | Integración con la ruta de inicio de sesión del estudiante (`POST /api/sesiones/actividades/:actividadId/iniciar`): pendiente en la rama de Laura, acordada el 08/11 |
+| CP-AUT-05 | RF-01, RF-20 | Acceso | El estudiante solo accede a la actividad de su código | Token de estudiante con `actividadId` 5 | `POST /actividades/:id/sesiones` (ruta de ejemplo) con la actividad 5, la 8 y una inválida; sin token; con docente | Tokens de estudiante y docente | 201 en su actividad; 403 en otra o inválida, sin ejecutar la ruta; 401 sin token; el docente pasa | Igual a lo esperado | **Aprobado** | `actividadAutorizada.test.js` | Integrado en develop (PR #10): la ruta `POST /api/sesiones/actividades/:actividadId/iniciar` usa `requiereActividadAutorizada`. Verificado de punta a punta (CP-E2E-05) |
 | CP-ADM-01 | RF-03 | Acceso | Crear docente | Administrador autenticado | `POST /api/acceso/admin/docentes` | Nombres, apellidos, correo, contraseña | 201 con rol Docente; contraseña guardada en hash y no devuelta | 201, sin contraseña | **Aprobado** | `administracion.service.test.js`, `administracion.routes.test.js`; colección Postman | — |
 | CP-ADM-02 | RF-03 | Acceso | Validar datos del docente | Administrador autenticado | Crear docente sin datos, con correo inválido o repetido | Datos incompletos / correo existente | 400 / 409 | 400 / 409 | **Aprobado** | `administracion.service.test.js`; colección Postman | — |
 | CP-ADM-03 | RF-03 | Acceso | Política de contraseñas al crear docentes | Administrador autenticado | Crear docente con contraseñas débiles | `corta1`, `sinnumeros` | 400 y no se crea el usuario | 400, sin usuario | **Aprobado** | `administracion.service.test.js`, `contrasenas.test.js` | Observación: refuerzo de seguridad pedido por la coordinación; no está en la hoja del 16 de octubre |
@@ -59,11 +79,19 @@ Tipos de prueba: **unitaria** (función aislada, base de datos simulada), **inte
 | CP-PRX-03 | RF-02 | Acceso | Solo operaciones configuradas | — | Usar una operación no configurada; agregar una después de crear el proxy | — | No existe; no se puede agregar (`Object.freeze`) | Correcto | **Aprobado** | `servicioProtegido.proxy.test.js` | — |
 | CP-PRX-04 | RF-02 | Acceso / Casos | Proxy en la ruta real de crear casos | App de prueba con servicio de casos simulado | `POST /api/casos` | Docente con y sin permiso, estudiante, sin token | 201 / 403 / 403 / 401; en los rechazos el servicio no se ejecuta | Igual a lo esperado | **Aprobado** | `casos.proxy.test.js` | Aplicación acordada con Stefanía el 08/11 |
 | CP-ERR-01 | RF-02 | Acceso | Errores sin información sensible | Falla simulada de la base de datos | Provocar un error interno | Error con SQL y nombres de tablas | 500 con mensaje genérico | 500 genérico | **Aprobado** | `errores.test.js`, `acceso.ingreso.test.js` | — |
+| CP-ERR-02 | RF-02 | Acceso | Falta de configuración no se reporta como error del cliente | Servidor sin `JWT_SECRETO` | Llamar una ruta protegida con un token | Token válido | 500 con mensaje genérico | 500 genérico | **Aprobado** | `autenticacion.test.js` | Corregido el 14/11: antes respondía 401 y ocultaba el error de configuración |
 | CP-SQL-01 | RF-01, RF-03, RF-20 | Acceso | Persistencia real en MySQL | Base `proyecto_nuclear_test` con el esquema; usuario `lumina_app` con SELECT, INSERT, UPDATE, DELETE | Seed; administrador crea docente y le da `CREAR_CASOS`; ingreso del docente; ingreso del estudiante con código | Datos de prueba creados por la prueba | Todo funciona con persistencia real y se deshace al final | 5/5 aprobadas | **Aprobado** | `acceso.mysql.test.js`; EV-02 | — |
+| CP-E2E-01 | RF-01, RF-02, RF-03 | Acceso | Ingreso real y tokens | Servidor encendido; MySQL real con seed | E2E-01 a E2E-09 | Credenciales válidas, inválidas, tipos inválidos, 6 intentos | 200 con JWT HS256 de 1 hora sin hash; 401 con el mismo mensaje; 400; 429 en el 6.º intento | Igual a lo esperado | **Aprobado** | `scripts/e2e-acceso.mjs` | — |
+| CP-E2E-02 | RF-02 | Acceso | Tokens inválidos y rutas sin token | Servidor encendido | E2E-10 a E2E-16 | Sin token, esquema `Basic`, token alterado, `alg: none`, vencido, otra clave; rutas de casos, actividades, sesiones y participación | 401 en todos los casos | 401 | **Aprobado** | `scripts/e2e-acceso.mjs` | — |
+| CP-E2E-03 | RF-02, RF-03 | Acceso / Casos | Administración, permisos y Proxy | Administrador del seed | E2E-17 a E2E-32 | Docente sin y con `CREAR_CASOS` | 403 en `POST /api/casos` sin permiso; 403 con el token anterior al cambio; 201 al volver a ingresar; 403 en rutas de administrador; 409, 400, 404 según el caso; 403 con la cuenta inactiva | Igual a lo esperado | **Aprobado** | `scripts/e2e-acceso.mjs` | Los cambios de permisos se aplican al volver a ingresar (viajan en el token) |
+| CP-E2E-04 | RF-01, RF-20 | Acceso | Código del estudiante con MySQL real | Convocatorias vigente, futura y con estudiante retirado | E2E-33 a E2E-40 | Código propio, ajeno, inexistente, futuro, retirado | Hash guardado; 200 con `actividadId`; 401 / 401 / 403 / 403; 401 con contraseña | Igual a lo esperado | **Aprobado** | `scripts/e2e-acceso.mjs` | Requiere la misma zona horaria en Node.js y MySQL (ver README de acceso) |
+| CP-E2E-05 | RF-01, RF-02, RF-20 | Acceso / todos | Un usuario no ejecuta operaciones que no le corresponden | Dos estudiantes, un docente | E2E-41 a E2E-50 | Tokens de estudiante y docente | Estudiante: 403 en administración, crear y editar casos, actividad ajena, sesión ajena, cerrar y programar actividades; 200 en su propia actividad. Docente: 403 en la ruta de sesión del estudiante | Igual a lo esperado | **Aprobado** | `scripts/e2e-acceso.mjs` | — |
 
 ## Observaciones
 
 - La política de contraseñas (CP-ADM-03) y el límite de intentos (CP-ACC-09, CP-ACC-10) se agregaron como refuerzo de seguridad solicitado por la coordinación. No aparecen en la hoja de requisitos del 16 de octubre.
+- Integración: Node.js y MySQL deben usar la misma zona horaria; si difieren, el ingreso del estudiante responde 403 "La actividad todavía no ha comenzado" con fechas creadas con `NOW()` (la prueba de punta a punta lo avisa).
+- `Usuario.contrasenaHash` sigue siendo `NOT NULL` en el esquema: los estudiantes, que no usan contraseña, necesitan un valor marcador. Pendiente aplicar la decisión acordada con Stefanía (columna opcional).
 - CP-06 a CP-10 de la plantilla oficial: pendiente de recibir su definición para asignar estos casos a esa numeración.
 
 ## Evidencia de ejecución
@@ -73,3 +101,10 @@ Tipos de prueba: **unitaria** (función aislada, base de datos simulada), **inte
 - Rama: `feature/sofia-acceso-mejoras`
 - Responsable: Sofía Gallego Bedoya
 - Capturas: EV-01 (`npm test`), EV-02 (prueba con MySQL real), EV-03 (colección de Postman)
+
+Actualización del cierre:
+
+- Fecha: 2026-11-14
+- Entorno: Node.js, `node --test`, MySQL 8.0, servidor encendido (`npm start`)
+- Rama: `feature/sofia-acceso-cierre`
+- Capturas: EV-04 (`npm test`), EV-05 (`npm run test:e2e:acceso`)

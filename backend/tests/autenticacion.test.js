@@ -126,6 +126,31 @@ test('con un token inválido responde 401', async () => {
   await request(crearAppDePrueba()).get('/perfil').set('Authorization', 'Bearer abc.def.ghi').expect(401);
 });
 
+test('acepta el esquema Bearer sin importar mayúsculas (RFC 7235)', async () => {
+  const token = firmarToken(estudiante);
+  await request(crearAppDePrueba()).get('/perfil').set('Authorization', `bearer ${token}`).expect(200);
+});
+
+test('rechaza con 401 un encabezado Bearer con partes de más', async () => {
+  const token = firmarToken(estudiante);
+  await request(crearAppDePrueba()).get('/perfil').set('Authorization', `Bearer ${token} extra`).expect(401);
+});
+
+test('si falta JWT_SECRETO en el servidor responde 500 sin detalles, no 401', async () => {
+  const token = firmarToken(estudiante);
+  const secreto = process.env.JWT_SECRETO;
+  const errorOriginal = console.error;
+  console.error = () => {};
+  delete process.env.JWT_SECRETO;
+  try {
+    const res = await request(crearAppDePrueba()).get('/perfil').set('Authorization', `Bearer ${token}`).expect(500);
+    assert.equal(res.body.error, 'Error interno del servidor');
+  } finally {
+    process.env.JWT_SECRETO = secreto;
+    console.error = errorOriginal;
+  }
+});
+
 test('con un token válido deja el usuario en req.usuario', async () => {
   const token = firmarToken(estudiante);
   const res = await request(crearAppDePrueba())

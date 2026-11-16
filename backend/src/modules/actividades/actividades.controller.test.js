@@ -1,6 +1,7 @@
 ﻿import test from 'node:test';
 import assert from 'node:assert/strict';
 import { crearControladorActividades } from './actividades.controller.js';
+import { crearServicioActividades } from './actividades.service.js';
 
 function crearRespuesta() {
   return {
@@ -192,6 +193,34 @@ test('Un dato incompleto responde 400 con el mensaje de validación', async () =
 
   assert.equal(res.statusCode, 400);
   assert.equal(res.body.error, 'Debe asociarse al menos un estudiante.');
+});
+
+test('Devuelve 400 cuando el servicio recibe datos de actividad inválidos', async () => {
+  const servicio = crearServicioActividades(
+    {
+      async enTransaccion() {
+        throw new Error('No debe abrir una transacción.');
+      },
+      async obtenerActividadPorId() {
+        return null;
+      },
+      async listarEstudiantesAutorizados() {
+        return [];
+      }
+    },
+    () => ({ codigo: 'CODIGO', codigoHash: 'HASH' })
+  );
+
+  const controlador = crearControladorActividades(servicio);
+  const res = crearRespuesta();
+
+  await controlador.crear({
+    usuario: { id: 7 },
+    body: {}
+  }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.match(res.body.error, /casoId/);
 });
 
 test('Oculta los detalles de errores internos', async () => {

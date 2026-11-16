@@ -71,6 +71,26 @@ test('después de vencer el bloqueo, la cuenta empieza de cero', () => {
   assert.equal(limite.estaBloqueado('a@x.co'), false);
 });
 
+test('los fallos viejos vencen: 4 fallos hoy y 1 dentro de un día no bloquean', () => {
+  const { reloj, avanzar } = crearReloj();
+  const limite = crearLimiteIntentos({ maxIntentos: 5, bloqueoMs: 15 * 60 * 1000, reloj });
+  for (let i = 0; i < 4; i += 1) limite.registrarFallo('a@x.co');
+  avanzar(24 * 60 * 60 * 1000);
+  limite.registrarFallo('a@x.co');
+  assert.equal(limite.estaBloqueado('a@x.co'), false);
+});
+
+test('los fallos seguidos dentro de la ventana sí bloquean', () => {
+  const { reloj, avanzar } = crearReloj();
+  const limite = crearLimiteIntentos({ maxIntentos: 3, bloqueoMs: 1000, reloj });
+  limite.registrarFallo('a@x.co');
+  avanzar(900);
+  limite.registrarFallo('a@x.co');
+  avanzar(900);
+  limite.registrarFallo('a@x.co');
+  assert.equal(limite.estaBloqueado('a@x.co'), true);
+});
+
 test('rechaza una configuración inválida', () => {
   assert.throws(() => crearLimiteIntentos({ maxIntentos: 0 }), TypeError);
   assert.throws(() => crearLimiteIntentos({ bloqueoMs: -1 }), TypeError);
