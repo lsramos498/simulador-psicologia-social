@@ -1,7 +1,10 @@
+import { ROLES, tieneRol } from '../acceso/autorizacion.js';
 import { construirCaso } from './caso.builder.js';
 import { errorCaso } from './caso.errores.js';
 import {
   ESTADOS_CASO,
+  datosActualizacionDecision,
+  datosActualizacionEscena,
   normalizarDecision,
   normalizarEscena,
   normalizarOpcion,
@@ -21,6 +24,31 @@ function exigirId(valor, nombre) {
   return numero;
 }
 
+function exigirActor(actor) {
+  if (!actor || typeof actor !== 'object' || actor.id == null) {
+    throw errorCaso(
+      'NO_AUTORIZADO',
+      'Se requiere un usuario autenticado para gestionar el caso.',
+      401
+    );
+  }
+  return actor;
+}
+
+function exigirPropietarioOAdmin(caso, actor) {
+  const usuario = exigirActor(actor);
+  if (tieneRol(usuario, ROLES.ADMINISTRADOR)) {
+    return;
+  }
+  if (Number(caso.creadorId) !== Number(usuario.id)) {
+    throw errorCaso(
+      'CASO_AJENO',
+      'Solo el docente creador o un administrador pueden gestionar este caso.',
+      403
+    );
+  }
+}
+
 async function exigirCreador(repositorio, creadorId) {
   const usuario = await repositorio.obtenerUsuarioActivo(creadorId);
   if (!usuario) {
@@ -32,11 +60,12 @@ async function exigirCreador(repositorio, creadorId) {
   }
 }
 
-async function exigirBorrador(tx, casoId) {
+async function exigirBorradorEditable(tx, casoId, actor) {
   const caso = await tx.obtenerPorId(casoId, true);
   if (!caso) {
     throw errorCaso('CASO_NO_EXISTE', 'No se encontró el caso.', 404);
   }
+  exigirPropietarioOAdmin(caso, actor);
   if (caso.estado !== ESTADOS_CASO.BORRADOR) {
     throw errorCaso(
       'CASO_NO_EDITABLE',
@@ -53,11 +82,35 @@ export function crearServicioCasos(repositorio) {
   }
 
   return {
-    async listar(creadorId) {
-      const filtro = creadorId == null || creadorId === ''
+    async listar(filtros) {
+      let creadorId = null;
+      let estado = null;
+
+      if (filtros != null && typeof filtros === 'object' && !Array.isArray(filtros)) {
+        creadorId = filtros.creadorId;
+        estado = filtros.estado;
+      } else {
+        creadorId = filtros;
+      }
+
+      const filtroCreador = creadorId == null || creadorId === ''
         ? null
         : exigirId(creadorId, 'creadorId');
-      return repositorio.listar(filtro);
+
+      let filtroEstado = null;
+      if (estado != null && estado !== '') {
+        const permitido = Object.values(ESTADOS_CASO);
+        if (!permitido.includes(estado)) {
+          throw errorCaso(
+            'ESTADO_INVALIDO',
+            `El estado debe ser uno de: ${permitido.join(', ')}.`,
+            400
+          );
+        }
+        filtroEstado = estado;
+      }
+
+      return repositorio.listar({ creadorId: filtroCreador, estado: filtroEstado });
     },
 
     async obtener(casoId) {
@@ -86,12 +139,12 @@ export function crearServicioCasos(repositorio) {
       return repositorio.enTransaccion(async (tx) => tx.guardarCasoCompleto(caso));
     },
 
-    async actualizar(casoId, datos) {
+    async actualizar(casoId, datos, actor) {
       const id = exigirId(casoId, 'El caso');
       const basicos = validarDatosBasicos(datos);
 
       return repositorio.enTransaccion(async (tx) => {
-        await exigirBorrador(tx, id);
+        await exigirBorradorEditable(tx, id, actor);
         const filas = await tx.actualizarCaso(id, basicos);
         if (!filas) {
           throw errorCaso('CASO_NO_EDITABLE', 'No se pudo actualizar el caso.', 409);
@@ -100,7 +153,7 @@ export function crearServicioCasos(repositorio) {
       });
     },
 
-    async agregarEscena(casoId, datos) {
+    async agregarEscena(casoId, datos, actor) {
       const id = exigirId(casoId, 'El caso');
       const escena = normalizarEscena({ ...datos, decisiones: datos?.decisiones ?? [] });
       if (escena.personajes.length > 0) {
@@ -112,19 +165,38 @@ export function crearServicioCasos(repositorio) {
       }
 
       return repositorio.enTransaccion(async (tx) => {
-        await exigirBorrador(tx, id);
+        await exigirBorradorEditable(tx, id, actor);
         await tx.insertarEscena(id, escena);
         return tx.obtenerCompleto(id);
       });
     },
 
-    async agregarDecision(casoId, escenaId, datos) {
+    async actualizarEscena(casoId, escenaId, datos, actor) {
+      const id = exigirId(casoId, 'El caso');
+      const idEscena = exigirId(escenaId, 'La escena');
+      const escena = datosActualizacionEscena(datos);
+
+      return repositorio.enTransaccion(async (tx) => {
+        await exigirBorradorEditable(tx, id, actor);
+        const actual = await tx.obtenerEscena(idEscena);
+        if (!actual || actual.casoId !== id) {
+          throw errorCaso('ESCENA_NO_EXISTE', 'La escena no pertenece a este caso.', 404);
+        }
+        const filas = await tx.actualizarEscena(idEscena, escena);
+        if (!filas) {
+          throw errorCaso('ESCENA_NO_EXISTE', 'No se pudo actualizar la escena.', 404);
+        }
+        return tx.obtenerCompleto(id);
+      });
+    },
+
+    async agregarDecision(casoId, escenaId, datos, actor) {
       const id = exigirId(casoId, 'El caso');
       const idEscena = exigirId(escenaId, 'La escena');
       const decision = normalizarDecision({ ...datos, opciones: [] });
 
       return repositorio.enTransaccion(async (tx) => {
-        await exigirBorrador(tx, id);
+        await exigirBorradorEditable(tx, id, actor);
         const escena = await tx.obtenerEscena(idEscena);
         if (!escena || escena.casoId !== id) {
           throw errorCaso('ESCENA_NO_EXISTE', 'La escena no pertenece a este caso.', 404);
@@ -134,13 +206,32 @@ export function crearServicioCasos(repositorio) {
       });
     },
 
-    async agregarOpcion(casoId, decisionId, datos) {
+    async actualizarDecision(casoId, decisionId, datos, actor) {
+      const id = exigirId(casoId, 'El caso');
+      const idDecision = exigirId(decisionId, 'La pregunta');
+      const decision = datosActualizacionDecision(datos);
+
+      return repositorio.enTransaccion(async (tx) => {
+        await exigirBorradorEditable(tx, id, actor);
+        const actual = await tx.obtenerDecision(idDecision);
+        if (!actual || actual.casoId !== id) {
+          throw errorCaso('DECISION_NO_EXISTE', 'La pregunta no pertenece a este caso.', 404);
+        }
+        const filas = await tx.actualizarDecision(idDecision, decision);
+        if (!filas) {
+          throw errorCaso('DECISION_NO_EXISTE', 'No se pudo actualizar la pregunta.', 404);
+        }
+        return tx.obtenerCompleto(id);
+      });
+    },
+
+    async agregarOpcion(casoId, decisionId, datos, actor) {
       const id = exigirId(casoId, 'El caso');
       const idDecision = exigirId(decisionId, 'La pregunta');
       const opcion = normalizarOpcion(datos);
 
       return repositorio.enTransaccion(async (tx) => {
-        await exigirBorrador(tx, id);
+        await exigirBorradorEditable(tx, id, actor);
         const decision = await tx.obtenerDecision(idDecision);
         if (!decision || decision.casoId !== id) {
           throw errorCaso('DECISION_NO_EXISTE', 'La pregunta no pertenece a este caso.', 404);
@@ -150,24 +241,43 @@ export function crearServicioCasos(repositorio) {
       });
     },
 
-    async agregarPersonaje(casoId, datos) {
+    async actualizarOpcion(casoId, opcionId, datos, actor) {
+      const id = exigirId(casoId, 'El caso');
+      const idOpcion = exigirId(opcionId, 'La opción');
+      const opcion = normalizarOpcion(datos);
+
+      return repositorio.enTransaccion(async (tx) => {
+        await exigirBorradorEditable(tx, id, actor);
+        const actual = await tx.obtenerOpcion(idOpcion);
+        if (!actual || actual.casoId !== id) {
+          throw errorCaso('OPCION_NO_EXISTE', 'La opción no pertenece a este caso.', 404);
+        }
+        const filas = await tx.actualizarOpcion(idOpcion, opcion);
+        if (!filas) {
+          throw errorCaso('OPCION_NO_EXISTE', 'No se pudo actualizar la opción.', 404);
+        }
+        return tx.obtenerCompleto(id);
+      });
+    },
+
+    async agregarPersonaje(casoId, datos, actor) {
       const id = exigirId(casoId, 'El caso');
       const personaje = normalizarPersonaje(datos);
 
       return repositorio.enTransaccion(async (tx) => {
-        await exigirBorrador(tx, id);
+        await exigirBorradorEditable(tx, id, actor);
         await tx.insertarPersonaje(id, personaje);
         return tx.obtenerCompleto(id);
       });
     },
 
-    async asociarPersonaje(casoId, escenaId, personajeId) {
+    async asociarPersonaje(casoId, escenaId, personajeId, actor) {
       const id = exigirId(casoId, 'El caso');
       const idEscena = exigirId(escenaId, 'La escena');
       const idPersonaje = exigirId(personajeId, 'El personaje');
 
       return repositorio.enTransaccion(async (tx) => {
-        await exigirBorrador(tx, id);
+        await exigirBorradorEditable(tx, id, actor);
         const escena = await tx.obtenerEscena(idEscena);
         if (!escena || escena.casoId !== id) {
           throw errorCaso('ESCENA_NO_EXISTE', 'La escena no pertenece a este caso.', 404);
@@ -185,18 +295,18 @@ export function crearServicioCasos(repositorio) {
       });
     },
 
-    async guardarRubrica(casoId, datos) {
+    async guardarRubrica(casoId, datos, actor) {
       const id = exigirId(casoId, 'El caso');
       const rubrica = normalizarRubrica(datos);
 
       return repositorio.enTransaccion(async (tx) => {
-        await exigirBorrador(tx, id);
+        await exigirBorradorEditable(tx, id, actor);
         await tx.guardarRubrica(id, rubrica);
         return tx.obtenerCompleto(id);
       });
     },
 
-    async publicar(casoId) {
+    async publicar(casoId, actor) {
       const id = exigirId(casoId, 'El caso');
 
       return repositorio.enTransaccion(async (tx) => {
@@ -204,6 +314,7 @@ export function crearServicioCasos(repositorio) {
         if (!caso) {
           throw errorCaso('CASO_NO_EXISTE', 'No se encontró el caso.', 404);
         }
+        exigirPropietarioOAdmin(caso, actor);
         if (caso.estado !== ESTADOS_CASO.BORRADOR) {
           throw errorCaso(
             'CASO_NO_PUBLICABLE',
@@ -220,7 +331,7 @@ export function crearServicioCasos(repositorio) {
       });
     },
 
-    async archivar(casoId) {
+    async archivar(casoId, actor) {
       const id = exigirId(casoId, 'El caso');
 
       return repositorio.enTransaccion(async (tx) => {
@@ -228,6 +339,7 @@ export function crearServicioCasos(repositorio) {
         if (!caso) {
           throw errorCaso('CASO_NO_EXISTE', 'No se encontró el caso.', 404);
         }
+        exigirPropietarioOAdmin(caso, actor);
         if (caso.estado === ESTADOS_CASO.ARCHIVADO) {
           throw errorCaso('CASO_YA_ARCHIVADO', 'El caso ya está archivado.', 409);
         }

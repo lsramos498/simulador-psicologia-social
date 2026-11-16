@@ -67,14 +67,22 @@ export function crearRepositorioCasos(pool) {
         return { id: fila.id };
       },
 
-      async listar(creadorId) {
+      async listar({ creadorId = null, estado = null } = {}) {
         const [filas] = await conexion.execute(
-          `SELECT id, creador_id AS creadorId, titulo, estado,
-                  tiempoEstimadoSegundos, fechaCreacion
-           FROM Caso
-           WHERE (? IS NULL OR creador_id = ?)
-           ORDER BY fechaCreacion DESC, id DESC`,
-          [creadorId, creadorId]
+          `SELECT c.id, c.creador_id AS creadorId, c.titulo, c.estado,
+                  c.tiempoEstimadoSegundos, c.fechaCreacion,
+                  (
+                    SELECT r.id
+                    FROM Rubrica r
+                    WHERE r.caso_id = c.id AND r.activa = TRUE
+                    ORDER BY r.version DESC, r.id DESC
+                    LIMIT 1
+                  ) AS rubricaId
+           FROM Caso c
+           WHERE (? IS NULL OR c.creador_id = ?)
+             AND (? IS NULL OR c.estado = ?)
+           ORDER BY c.fechaCreacion DESC, c.id DESC`,
+          [creadorId, creadorId, estado, estado]
         );
         return filas.map((fila) => ({
           id: fila.id,
@@ -82,7 +90,8 @@ export function crearRepositorioCasos(pool) {
           titulo: fila.titulo,
           estado: fila.estado,
           tiempoEstimadoSegundos: Number(fila.tiempoEstimadoSegundos),
-          fechaCreacion: fila.fechaCreacion
+          fechaCreacion: fila.fechaCreacion,
+          rubricaId: fila.rubricaId == null ? null : Number(fila.rubricaId)
         }));
       },
 
@@ -125,6 +134,18 @@ export function crearRepositorioCasos(pool) {
            FROM Personaje
            WHERE id = ?`,
           [personajeId]
+        );
+        return filas[0] ?? null;
+      },
+
+      async obtenerOpcion(opcionId) {
+        const [filas] = await conexion.execute(
+          `SELECT o.id, o.decision_id AS decisionId, e.caso_id AS casoId
+           FROM OpcionDecision o
+           INNER JOIN Decision d ON d.id = o.decision_id
+           INNER JOIN Escena e ON e.id = d.escena_id
+           WHERE o.id = ?`,
+          [opcionId]
         );
         return filas[0] ?? null;
       },
@@ -200,6 +221,16 @@ export function crearRepositorioCasos(pool) {
         return resultado.insertId;
       },
 
+      async actualizarEscena(escenaId, escena) {
+        const [resultado] = await conexion.execute(
+          `UPDATE Escena
+           SET nombre = ?, contexto = ?, \`orden\` = ?, esFinal = ?
+           WHERE id = ?`,
+          [escena.nombre, escena.contexto, escena.orden, escena.esFinal, escenaId]
+        );
+        return resultado.affectedRows;
+      },
+
       async insertarDecision(escenaId, decision) {
         const [resultado] = await conexion.execute(
           `INSERT INTO Decision (escena_id, pregunta, \`orden\`, ayuda)
@@ -207,6 +238,16 @@ export function crearRepositorioCasos(pool) {
           [escenaId, decision.pregunta, decision.orden, decision.ayuda]
         );
         return resultado.insertId;
+      },
+
+      async actualizarDecision(decisionId, decision) {
+        const [resultado] = await conexion.execute(
+          `UPDATE Decision
+           SET pregunta = ?, \`orden\` = ?, ayuda = ?
+           WHERE id = ?`,
+          [decision.pregunta, decision.orden, decision.ayuda, decisionId]
+        );
+        return resultado.affectedRows;
       },
 
       async insertarOpcion(decisionId, opcion) {
@@ -224,6 +265,33 @@ export function crearRepositorioCasos(pool) {
           [opcionId, opcion.explicacion, opcion.fundamentoTeorico]
         );
         return opcionId;
+      },
+
+      async actualizarOpcion(opcionId, opcion) {
+        const [resultado] = await conexion.execute(
+          `UPDATE OpcionDecision
+           SET texto = ?, esCorrecta = ?, consecuencia = ?, \`orden\` = ?
+           WHERE id = ?`,
+          [opcion.texto, opcion.esCorrecta, opcion.consecuencia, opcion.orden, opcionId]
+        );
+
+        const [retro] = await conexion.execute(
+          `UPDATE Retroalimentacion
+           SET explicacion = ?, fundamentoTeorico = ?
+           WHERE opcion_id = ?`,
+          [opcion.explicacion, opcion.fundamentoTeorico, opcionId]
+        );
+
+        if (!retro.affectedRows) {
+          await conexion.execute(
+            `INSERT INTO Retroalimentacion (
+               decision_id, opcion_id, explicacion, fundamentoTeorico
+             ) VALUES (NULL, ?, ?, ?)`,
+            [opcionId, opcion.explicacion, opcion.fundamentoTeorico]
+          );
+        }
+
+        return resultado.affectedRows;
       },
 
       async asociarPersonaje(escenaId, personajeId) {

@@ -1,7 +1,8 @@
 ﻿import { TIPOS_NOTIFICACION } from '../notificaciones/notificaciones.factory.js';
+import { ACCIONES_CAMBIO_ESTUDIANTE } from '../notificaciones/notificaciones.strategy.js';
 
 const MAX_INT_MYSQL = 2147483647;
-const ESTADOS_ACTIVIDAD = Object.freeze({
+export const ESTADOS_ACTIVIDAD = Object.freeze({
   PROGRAMADA: 'Programada',
   INICIADA: 'Iniciada',
   CERRADA: 'Cerrada'
@@ -452,6 +453,8 @@ export function crearServicioActividades(
 
           if (notificaciones) {
             convocatorias.push({
+              actividadId,
+              estudianteId,
               destinatario: estudiante.correo.trim(),
               caso: {
                 titulo: caso.titulo,
@@ -487,6 +490,7 @@ export function crearServicioActividades(
     },
 
     async iniciar(actividadId, docenteId) {
+      await this.cerrarVencidas();
       return cambiarEstadoActividad(
         repositorio,
         actividadId,
@@ -502,6 +506,211 @@ export function crearServicioActividades(
         docenteId,
         ESTADOS_ACTIVIDAD.CERRADA
       );
+    },
+
+    async cerrarVencidas(ahora = reloj()) {
+      if (typeof repositorio.listarVencidasParaCierre !== 'function') {
+        return [];
+      }
+
+      const marca = ahora instanceof Date ? ahora : new Date(ahora);
+      const vencidas = await repositorio.listarVencidasParaCierre(marca);
+      const cerradas = [];
+
+      for (const actividad of vencidas) {
+        const filas = await repositorio.actualizarEstado(
+          actividad.id,
+          ESTADOS_ACTIVIDAD.CERRADA
+        );
+        if (filas) {
+          cerradas.push({
+            id: Number(actividad.id),
+            estado: ESTADOS_ACTIVIDAD.CERRADA,
+            fechaFin: actividad.fechaFin
+          });
+        }
+      }
+
+      return cerradas;
+    },
+
+    async agregarEstudiante(actividadId, estudianteId, docenteId) {
+      validarId(actividadId, 'actividadId');
+      validarId(estudianteId, 'estudianteId');
+      validarId(docenteId, 'docenteId');
+
+      const fecha = normalizarFecha(reloj(), 'fechaAutorizacion');
+      const { autorizacion, notificacion } = await repositorio.enTransaccion(async (tx) => {
+        const actividad = await exigirActividadEditable(repositorio, actividadId, docenteId);
+        const estudiantes = await tx.obtenerEstudiantes([estudianteId]);
+        const estudiante = estudiantes[0];
+
+        if (!estudiante) {
+          throw errorActividad(
+            'ESTUDIANTE_NO_EXISTE',
+            'El estudiante no existe.',
+            404
+          );
+        }
+        if (Number(estudiante.activo) !== 1) {
+          throw errorActividad(
+            'ESTUDIANTE_INACTIVO',
+            'El estudiante no está activo.',
+            403
+          );
+        }
+        if (Number(estudiante.esEstudiante) !== 1) {
+          throw errorActividad(
+            'USUARIO_NO_ES_ESTUDIANTE',
+            'El usuario no tiene el rol Estudiante.',
+            403
+          );
+        }
+        if (notificaciones && (typeof estudiante.correo !== 'string' || !estudiante.correo.trim())) {
+          throw errorActividad(
+            'ESTUDIANTE_SIN_CORREO',
+            'El estudiante no tiene correo institucional.',
+            422
+          );
+        }
+
+        const actual = await tx.obtenerAutorizacion(actividadId, estudianteId, true);
+        if (actual?.estado === 'Autorizado') {
+          throw errorActividad(
+            'ESTUDIANTE_YA_AUTORIZADO',
+            'El estudiante ya está autorizado en esta actividad.',
+            409
+          );
+        }
+
+        const { codigo, codigoHash } = resolverCodigo(crearCodigoAutorizacion());
+        let autorizacionId = actual?.id ?? null;
+
+        if (actual) {
+          await tx.reactivarAutorizacion({
+            actividadId,
+            estudianteId,
+            codigoAutorizacion: codigoHash,
+            fechaAutorizacion: fecha
+          });
+        } else {
+          try {
+            autorizacionId = await tx.insertarEstudianteAutorizado({
+              actividadId,
+              estudianteId,
+              codigoAutorizacion: codigoHash,
+              fechaAutorizacion: fecha
+            });
+          } catch (error) {
+            if (error.code === 'ER_DUP_ENTRY') {
+              throw errorActividad(
+                'CODIGO_DUPLICADO',
+                'No se pudo registrar el código porque ya existe.',
+                409
+              );
+            }
+            throw error;
+          }
+        }
+
+        if (typeof tx.upsertAsistencia === 'function') {
+          await tx.upsertAsistencia(actividadId, estudianteId, 'Convocado', fecha);
+        }
+
+        return {
+          autorizacion: {
+            id: autorizacionId,
+            estudianteId,
+            codigoAutorizacion: codigo,
+            estado: 'Autorizado'
+          },
+          notificacion: notificaciones
+            ? {
+              actividadId,
+              estudianteId,
+              destinatario: estudiante.correo.trim(),
+              casoTitulo: actividad.casoTitulo || `Caso ${actividad.casoId}`,
+              accion: ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO
+            }
+            : null
+        };
+      });
+
+      if (notificacion) {
+        await notificaciones.enviar(TIPOS_NOTIFICACION.CAMBIO_ESTUDIANTE, notificacion);
+      }
+
+      return autorizacion;
+    },
+
+    async retirarEstudiante(actividadId, estudianteId, docenteId) {
+      validarId(actividadId, 'actividadId');
+      validarId(estudianteId, 'estudianteId');
+      validarId(docenteId, 'docenteId');
+
+      const fecha = normalizarFecha(reloj(), 'fechaRegistro');
+      const { autorizacion, notificacion } = await repositorio.enTransaccion(async (tx) => {
+        const actividad = await exigirActividadEditable(repositorio, actividadId, docenteId);
+        const actual = await tx.obtenerAutorizacion(actividadId, estudianteId, true);
+
+        if (!actual) {
+          throw errorActividad(
+            'ESTUDIANTE_NO_AUTORIZADO',
+            'El estudiante no pertenece a esta actividad.',
+            404
+          );
+        }
+        if (actual.estado === 'Retirado') {
+          throw errorActividad(
+            'ESTUDIANTE_YA_RETIRADO',
+            'El estudiante ya fue retirado de esta actividad.',
+            409
+          );
+        }
+
+        const filas = await tx.actualizarEstadoAutorizacion(
+          actividadId,
+          estudianteId,
+          'Retirado'
+        );
+        if (!filas) {
+          throw errorActividad(
+            'ESTUDIANTE_NO_AUTORIZADO',
+            'No se pudo retirar al estudiante.',
+            409
+          );
+        }
+
+        if (typeof tx.upsertAsistencia === 'function') {
+          await tx.upsertAsistencia(actividadId, estudianteId, 'Retirado', fecha);
+        }
+
+        const estudiantes = await tx.obtenerEstudiantes([estudianteId]);
+        const estudiante = estudiantes[0];
+
+        return {
+          autorizacion: {
+            id: actual.id,
+            estudianteId,
+            estado: 'Retirado'
+          },
+          notificacion: notificaciones && estudiante?.correo
+            ? {
+              actividadId,
+              estudianteId,
+              destinatario: String(estudiante.correo).trim(),
+              casoTitulo: actividad.casoTitulo || `Caso ${actividad.casoId}`,
+              accion: ACCIONES_CAMBIO_ESTUDIANTE.RETIRADO
+            }
+            : null
+        };
+      });
+
+      if (notificacion) {
+        await notificaciones.enviar(TIPOS_NOTIFICACION.CAMBIO_ESTUDIANTE, notificacion);
+      }
+
+      return autorizacion;
     },
 
     async consultarPorId(actividadId) {
@@ -526,8 +735,63 @@ export function crearServicioActividades(
         ...actividad,
         estudiantesAutorizados
       };
+    },
+
+    async listar({ docenteId, todas = false } = {}) {
+      if (todas) {
+        return repositorio.listarTodas();
+      }
+      validarId(docenteId, 'docenteId');
+      return repositorio.listarPorDocente(docenteId);
+    },
+
+    async listarConvocatorias(actividadId, docenteId) {
+      validarId(actividadId, 'actividadId');
+      validarId(docenteId, 'docenteId');
+      const actividad = await repositorio.obtenerActividadPorId(actividadId);
+      if (!actividad) {
+        throw errorActividad(
+          'ACTIVIDAD_NO_EXISTE',
+          'La actividad programada no existe.',
+          404
+        );
+      }
+      if (Number(actividad.docenteId) !== docenteId) {
+        throw errorActividad(
+          'ACTIVIDAD_AJENA',
+          'No tiene autorización para consultar esta actividad.',
+          403
+        );
+      }
+      return repositorio.listarConvocatorias(actividadId);
     }
   };
+}
+
+async function exigirActividadEditable(repositorio, actividadId, docenteId) {
+  const actividad = await repositorio.obtenerActividadPorId(actividadId);
+  if (!actividad) {
+    throw errorActividad(
+      'ACTIVIDAD_NO_EXISTE',
+      'La actividad programada no existe.',
+      404
+    );
+  }
+  if (Number(actividad.docenteId) !== Number(docenteId)) {
+    throw errorActividad(
+      'ACTIVIDAD_AJENA',
+      'No tiene autorización para modificar esta actividad.',
+      403
+    );
+  }
+  if (actividad.estado === ESTADOS_ACTIVIDAD.CERRADA) {
+    throw errorActividad(
+      'ACTIVIDAD_CERRADA',
+      'No se pueden modificar estudiantes de una actividad cerrada.',
+      409
+    );
+  }
+  return actividad;
 }
 
 async function cambiarEstadoActividad(repositorio, actividadId, docenteId, estado) {

@@ -1,0 +1,731 @@
+{
+  "info": {
+    "name": "Lumina - Crear casos",
+    "description": "Colección para probar la creación de casos (Stefanía).\n\nImportar y ejecutar TODA la colección en orden con el Collection Runner.\nEl token no se escribe a mano: lo guardan las peticiones de ingreso.\n\nAntes de ejecutar:\n1. MySQL encendido y `npm run db:seed` en backend, con el mismo admin de las variables.\n2. `npm run dev` en backend (http://localhost:3000).\n\nUsuarios que ya vienen en las variables:\n- Administrador: admin@unihumboldt.edu.co / replace_with_strong_password\n- Docente de pruebas: docente.casos@unihumboldt.edu.co / Docente1234\n  (la colección lo crea si todavía no existe).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "adminCorreo", "value": "admin@unihumboldt.edu.co" },
+    { "key": "adminContrasena", "value": "replace_with_strong_password" },
+    { "key": "docenteCorreo", "value": "docente.casos@unihumboldt.edu.co" },
+    { "key": "docenteContrasena", "value": "Docente1234" },
+    { "key": "tokenAdmin", "value": "" },
+    { "key": "tokenDocente", "value": "" },
+    { "key": "casoId", "value": "" },
+    { "key": "casoConstruidoId", "value": "" },
+    { "key": "escenaId", "value": "" },
+    { "key": "decisionId", "value": "" },
+    { "key": "opcionId", "value": "" },
+    { "key": "personajeId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Entrar y dejar un docente con permiso",
+      "item": [
+        {
+          "name": "Ingreso del administrador",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/acceso/ingreso",
+            "auth": { "type": "noauth" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"{{adminCorreo}}\",\n  \"contrasena\": \"{{adminContrasena}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                "const datos = pm.response.json();",
+                "pm.test('trae token', () => pm.expect(datos.token).to.be.a('string').and.not.empty);",
+                "pm.collectionVariables.set('tokenAdmin', datos.token);",
+                "console.log('TOKEN ADMIN (vale 1 hora):', datos.token);"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Dar CREAR_CASOS al rol Docente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/acceso/admin/roles/Docente/permisos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenAdmin}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permiso\": \"CREAR_CASOS\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 201', () => pm.response.to.have.status(201));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Crear docente de pruebas",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/acceso/admin/docentes",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenAdmin}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Docente\",\n  \"apellidos\": \"Casos\",\n  \"correo\": \"{{docenteCorreo}}\",\n  \"contrasena\": \"{{docenteContrasena}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('crea el docente o ya existía', () => pm.expect([201, 409]).to.include(pm.response.code));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Ingreso del docente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/acceso/ingreso",
+            "auth": { "type": "noauth" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"{{docenteCorreo}}\",\n  \"contrasena\": \"{{docenteContrasena}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                "const datos = pm.response.json();",
+                "pm.test('tiene CREAR_CASOS', () => pm.expect(datos.usuario.permisos).to.include('CREAR_CASOS'));",
+                "pm.collectionVariables.set('tokenDocente', datos.token);",
+                "console.log('TOKEN DOCENTE (vale 1 hora):', datos.token);",
+                "console.log('USUARIO:', datos.usuario);"
+              ]
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "2. Crear casos",
+      "item": [
+        {
+          "name": "Crear caso sin token (401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos",
+            "auth": { "type": "noauth" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Sin sesión\",\n  \"desarrolloSituacional\": \"Nadie autenticado.\",\n  \"contextoHistoria\": \"Prueba.\",\n  \"tiempoEstimadoSegundos\": 300\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": ["pm.test('responde 401', () => pm.response.to.have.status(401));"]
+            }
+          }]
+        },
+        {
+          "name": "Crear caso sin permiso (403)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenAdmin}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Sin permiso\",\n  \"desarrolloSituacional\": \"El administrador no tiene CREAR_CASOS.\",\n  \"contextoHistoria\": \"Prueba.\",\n  \"tiempoEstimadoSegundos\": 300\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": ["pm.test('responde 403', () => pm.response.to.have.status(403));"]
+            }
+          }]
+        },
+        {
+          "name": "Crear caso incompleto (422)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Solo el título\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 422', () => pm.response.to.have.status(422));",
+                "pm.test('codigo de estructura', () => pm.expect(pm.response.json().codigo).to.eql('ESTRUCTURA_INVALIDA'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Crear borrador (201)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Conflicto en el aula\",\n  \"desarrolloSituacional\": \"Dos grupos discuten una norma del curso.\",\n  \"contextoHistoria\": \"Primer semestre, psicología social.\",\n  \"tiempoEstimadoSegundos\": 900\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                "const caso = pm.response.json().data;",
+                "pm.test('queda en Borrador', () => pm.expect(caso.estado).to.eql('Borrador'));",
+                "pm.collectionVariables.set('casoId', String(caso.id));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Construir caso completo (201)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/construir",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Conflicto en el pasillo\",\n  \"desarrolloSituacional\": \"Ana encuentra a dos compañeras discutiendo una norma.\",\n  \"contextoHistoria\": \"Primer semestre, después de clase.\",\n  \"tiempoEstimadoSegundos\": 900,\n  \"personajes\": [\n    { \"nombre\": \"Ana\", \"rolSocial\": \"Estudiante\" }\n  ],\n  \"escenas\": [\n    {\n      \"nombre\": \"El pasillo\",\n      \"contexto\": \"Ana espera a su grupo.\",\n      \"orden\": 1,\n      \"esFinal\": false,\n      \"personajes\": [\"Ana\"],\n      \"decisiones\": [\n        {\n          \"pregunta\": \"¿Qué hace Ana?\",\n          \"orden\": 1,\n          \"opciones\": [\n            {\n              \"texto\": \"Pide escuchar a las dos partes.\",\n              \"esCorrecta\": true,\n              \"orden\": 1,\n              \"explicacion\": \"Reconoce el conflicto antes de tomar partido.\"\n            },\n            {\n              \"texto\": \"Ignora la discusión.\",\n              \"esCorrecta\": false,\n              \"orden\": 2,\n              \"explicacion\": \"No interviene y el conflicto sigue.\"\n            }\n          ]\n        }\n      ]\n    }\n  ],\n  \"rubrica\": {\n    \"nombre\": \"Participación en el conflicto\",\n    \"descripcion\": \"Observa la lectura del contexto.\",\n    \"criterios\": [\n      {\n        \"nombre\": \"Lectura del contexto\",\n        \"descripcion\": \"Identifica actores y tensiones.\",\n        \"ponderacion\": 100,\n        \"puntajeMaximo\": 5,\n        \"niveles\": [\n          { \"nombre\": \"Inicial\", \"descripcion\": \"Describe los hechos.\", \"puntaje\": 2, \"orden\": 1 },\n          { \"nombre\": \"Avanzado\", \"descripcion\": \"Relaciona hechos con teoría.\", \"puntaje\": 5, \"orden\": 2 }\n        ]\n      }\n    ]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                "const caso = pm.response.json().data;",
+                "pm.test('trae escena y rúbrica', () => {",
+                "  pm.expect(caso.escenas.length).to.be.at.least(1);",
+                "  pm.expect(caso.rubrica).to.be.an('object');",
+                "});",
+                "pm.collectionVariables.set('casoConstruidoId', String(caso.id));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Listar casos (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/casos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                "pm.test('incluye casos', () => pm.expect(pm.response.json().total).to.be.at.least(1));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Consultar borrador (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                "pm.test('es el borrador creado', () => pm.expect(String(pm.response.json().data.id)).to.eql(pm.collectionVariables.get('casoId')));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Actualizar datos básicos (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Conflicto en el aula, versión 2\",\n  \"desarrolloSituacional\": \"Dos grupos discuten una norma del curso y piden mediación.\",\n  \"contextoHistoria\": \"Primer semestre, psicología social.\",\n  \"tiempoEstimadoSegundos\": 1200\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                "pm.test('actualiza el título', () => pm.expect(pm.response.json().data.titulo).to.eql('Conflicto en el aula, versión 2'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Agregar escena (201)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/escenas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"El aula\",\n  \"contexto\": \"El grupo espera la indicación de la docente.\",\n  \"orden\": 1,\n  \"esFinal\": false,\n  \"personajes\": [],\n  \"decisiones\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                "const escenas = pm.response.json().data.escenas;",
+                "pm.collectionVariables.set('escenaId', String(escenas[escenas.length - 1].id));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Editar escena (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/escenas/{{escenaId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"El aula principal\",\n  \"contexto\": \"El grupo espera la indicación y ya hay tensión.\",\n  \"orden\": 1,\n  \"esFinal\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 200', () => pm.response.to.have.status(200));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Agregar pregunta (201)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/escenas/{{escenaId}}/decisiones",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Cómo interviene la docente?\",\n  \"orden\": 1,\n  \"ayuda\": \"Observa a los dos grupos antes de hablar.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                "const escenas = pm.response.json().data.escenas;",
+                "const escena = escenas.find((item) => String(item.id) === pm.collectionVariables.get('escenaId'));",
+                "const decision = escena.decisiones[escena.decisiones.length - 1];",
+                "pm.collectionVariables.set('decisionId', String(decision.id));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Editar pregunta (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/decisiones/{{decisionId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Qué hace primero la docente?\",\n  \"orden\": 1,\n  \"ayuda\": \"Escucha a los dos grupos.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": ["pm.test('responde 200', () => pm.response.to.have.status(200));"]
+            }
+          }]
+        },
+        {
+          "name": "Agregar opción esperada (201)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/decisiones/{{decisionId}}/opciones",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Pide escuchar a las dos partes.\",\n  \"esCorrecta\": true,\n  \"orden\": 1,\n  \"explicacion\": \"Contiene el conflicto antes de decidir.\",\n  \"fundamentoTeorico\": \"Mediación y escucha activa.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                "const caso = pm.response.json().data;",
+                "const escena = caso.escenas.find((item) => String(item.id) === pm.collectionVariables.get('escenaId'));",
+                "const decision = escena.decisiones.find((item) => String(item.id) === pm.collectionVariables.get('decisionId'));",
+                "pm.collectionVariables.set('opcionId', String(decision.opciones[decision.opciones.length - 1].id));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Agregar segunda opción (201)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/decisiones/{{decisionId}}/opciones",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Elige un grupo sin escuchar.\",\n  \"esCorrecta\": false,\n  \"orden\": 2,\n  \"explicacion\": \"Toma partido sin leer el contexto.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                "const caso = pm.response.json().data;",
+                "const escena = caso.escenas.find((item) => String(item.id) === pm.collectionVariables.get('escenaId'));",
+                "const decision = escena.decisiones.find((item) => String(item.id) === pm.collectionVariables.get('decisionId'));",
+                "pm.collectionVariables.set('opcionId', String(decision.opciones[decision.opciones.length - 1].id));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Editar opción (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/opciones/{{opcionId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Ignora la discusión y sigue la clase.\",\n  \"esCorrecta\": false,\n  \"orden\": 2,\n  \"explicacion\": \"Evita la situación y el conflicto permanece.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": ["pm.test('responde 200', () => pm.response.to.have.status(200));"]
+            }
+          }]
+        },
+        {
+          "name": "Agregar personaje (201)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/personajes",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"rolSocial\": \"Estudiante\",\n  \"perfil\": \"Participa en el grupo que discute la norma.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                "const personajes = pm.response.json().data.personajes;",
+                "pm.collectionVariables.set('personajeId', String(personajes[personajes.length - 1].id));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Asociar personaje a la escena (201)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/escenas/{{escenaId}}/personajes",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"personajeId\": {{personajeId}}\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": ["pm.test('responde 201', () => pm.response.to.have.status(201));"]
+            }
+          }]
+        },
+        {
+          "name": "Publicar sin rúbrica (422)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/publicar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 422', () => pm.response.to.have.status(422));",
+                "pm.test('explica qué falta', () => pm.expect(pm.response.json().errores.length).to.be.at.least(1));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Guardar rúbrica (200)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/rubrica",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Participación en el conflicto\",\n  \"descripcion\": \"Observa la lectura del contexto.\",\n  \"criterios\": [\n    {\n      \"nombre\": \"Lectura del contexto\",\n      \"descripcion\": \"Identifica actores y tensiones.\",\n      \"ponderacion\": 100,\n      \"puntajeMaximo\": 5,\n      \"niveles\": [\n        { \"nombre\": \"Inicial\", \"descripcion\": \"Describe los hechos.\", \"puntaje\": 2, \"orden\": 1 },\n        { \"nombre\": \"Avanzado\", \"descripcion\": \"Relaciona hechos con teoría.\", \"puntaje\": 5, \"orden\": 2 }\n      ]\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                "pm.test('guarda la rúbrica', () => pm.expect(pm.response.json().data.rubrica.nombre).to.eql('Participación en el conflicto'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Publicar borrador completo (200)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/publicar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                "pm.test('queda Publicado', () => pm.expect(pm.response.json().data.estado).to.eql('Publicado'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Editar un caso publicado (409)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Intento de edición\",\n  \"desarrolloSituacional\": \"No debería guardarse.\",\n  \"contextoHistoria\": \"Caso ya publicado.\",\n  \"tiempoEstimadoSegundos\": 600\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 409', () => pm.response.to.have.status(409));",
+                "pm.test('codigo no editable', () => pm.expect(pm.response.json().codigo).to.eql('CASO_NO_EDITABLE'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Publicar el caso construido (200)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoConstruidoId}}/publicar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                "pm.test('queda Publicado', () => pm.expect(pm.response.json().data.estado).to.eql('Publicado'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Archivar el caso publicado (200)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/archivar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{tokenDocente}}", "type": "string" }]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                "pm.test('queda Archivado', () => pm.expect(pm.response.json().data.estado).to.eql('Archivado'));"
+              ]
+            }
+          }]
+        }
+      ]
+    }
+  ]
+}

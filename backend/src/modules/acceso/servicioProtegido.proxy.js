@@ -1,4 +1,5 @@
 import { tienePermiso } from './autorizacion.js';
+import { crearErrorHttp } from './errores.js';
 
 /**
  * Patrón Proxy de protección (Sofía Gallego — acceso y permisos).
@@ -16,12 +17,6 @@ import { tienePermiso } from './autorizacion.js';
  *
  * Seguro por defecto: el proxy solo expone las operaciones configuradas.
  */
-
-function errorAcceso(mensaje, statusCode) {
-  const error = new Error(mensaje);
-  error.statusCode = statusCode;
-  return error;
-}
 
 export function crearServicioProtegido(servicioReal, usuario, permisosPorOperacion) {
   if (!servicioReal || typeof servicioReal !== 'object') {
@@ -45,11 +40,11 @@ export function crearServicioProtegido(servicioReal, usuario, permisosPorOperaci
 
     proxy[operacion] = (...argumentos) => {
       if (!usuario) {
-        throw errorAcceso('Debe autenticarse para continuar', 401);
+        throw crearErrorHttp('Debe autenticarse para continuar', 401);
       }
 
       if (!tienePermiso(usuario, permiso)) {
-        throw errorAcceso('No tiene permiso para realizar esta operación', 403);
+        throw crearErrorHttp('No tiene permiso para realizar esta operación', 403);
       }
 
       // Delegar en el servicio real, conservando su contexto (this).

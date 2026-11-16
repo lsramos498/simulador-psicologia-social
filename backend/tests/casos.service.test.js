@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { crearServicioCasos } from '../src/modules/casos/casos.service.js';
 
+const docente = { id: 5, roles: ['Docente'], permisos: ['CREAR_CASOS'] };
+
 function repositorioBase(extra = {}) {
   const repo = {
     async obtenerUsuarioActivo(id) {
@@ -59,7 +61,7 @@ test('no publica un borrador incompleto', async () => {
   let actualizo = false;
   const servicio = crearServicioCasos(repositorioBase({
     async obtenerCompleto() {
-      return { id: 1, estado: 'Borrador', escenas: [], rubrica: null };
+      return { id: 1, creadorId: 5, estado: 'Borrador', escenas: [], rubrica: null };
     },
     async actualizarEstado() {
       actualizo = true;
@@ -67,7 +69,7 @@ test('no publica un borrador incompleto', async () => {
     }
   }));
 
-  await assert.rejects(() => servicio.publicar(1), (error) => {
+  await assert.rejects(() => servicio.publicar(1, docente), (error) => {
     assert.equal(error.statusCode, 422);
     assert.ok(error.errores.length >= 2);
     return true;
@@ -78,7 +80,7 @@ test('no publica un borrador incompleto', async () => {
 test('no modifica un caso publicado', async () => {
   const servicio = crearServicioCasos(repositorioBase({
     async obtenerPorId() {
-      return { id: 3, estado: 'Publicado' };
+      return { id: 3, creadorId: 5, estado: 'Publicado' };
     }
   }));
 
@@ -88,7 +90,7 @@ test('no modifica un caso publicado', async () => {
       contexto: 'Contexto de la escena',
       orden: 1,
       esFinal: false
-    }),
+    }, docente),
     (error) => error.statusCode === 409
   );
 });

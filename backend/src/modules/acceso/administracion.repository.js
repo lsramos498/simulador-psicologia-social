@@ -112,6 +112,19 @@ export function crearRepositorioAdministracion(pool) {
     async listarPermisos() {
       const [filas] = await pool.execute('SELECT nombre, descripcion FROM Permiso ORDER BY nombre');
       return filas;
+    },
+
+    async listarUsuariosPorRol(nombreRol) {
+      const [filas] = await pool.execute(
+        `SELECT u.id, u.nombres, u.apellidos, u.correoInstitucional AS correo, u.activo
+         FROM Usuario u
+         INNER JOIN UsuarioRol ur ON ur.usuario_id = u.id
+         INNER JOIN Rol r ON r.id = ur.rol_id
+         WHERE r.nombre = ?
+         ORDER BY u.apellidos, u.nombres, u.id`,
+        [nombreRol]
+      );
+      return filas;
     }
   };
 }

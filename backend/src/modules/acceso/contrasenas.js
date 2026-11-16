@@ -14,7 +14,8 @@ import { promisify } from 'node:util';
  * Formato guardado (cabe en VARCHAR(255)):
  *   scrypt$N$r$p$salBase64$hashBase64
  *
- * La política de contraseñas (longitud mínima, etc.) queda pendiente del equipo.
+ * Política de contraseñas (validarPoliticaContrasena): mínimo 8 caracteres,
+ * con al menos una letra y un número. Se aplica al crear docentes.
  */
 
 const scryptAsync = promisify(scrypt);
@@ -24,6 +25,25 @@ const PARAMETROS = Object.freeze({ N: 16384, r: 8, p: 1 });
 const LONGITUD_SAL = 16;
 const LONGITUD_HASH = 64;
 const LONGITUD_MAXIMA = 1024; // evita que una contraseña gigante sature el servidor
+
+export const LONGITUD_MINIMA = 8;
+
+/**
+ * Revisa que una contraseña nueva cumpla la política.
+ * Devuelve la lista de lo que le falta (vacía si cumple).
+ */
+export function validarPoliticaContrasena(contrasena) {
+  if (typeof contrasena !== 'string') {
+    return ['debe ser un texto'];
+  }
+
+  const incumplimientos = [];
+  if (contrasena.length < LONGITUD_MINIMA) incumplimientos.push(`al menos ${LONGITUD_MINIMA} caracteres`);
+  if (contrasena.length > LONGITUD_MAXIMA) incumplimientos.push(`máximo ${LONGITUD_MAXIMA} caracteres`);
+  if (!/\p{L}/u.test(contrasena)) incumplimientos.push('al menos una letra');
+  if (!/\p{N}/u.test(contrasena)) incumplimientos.push('al menos un número');
+  return incumplimientos;
+}
 
 function validarContrasena(contrasena) {
   if (typeof contrasena !== 'string' || contrasena.length === 0) {

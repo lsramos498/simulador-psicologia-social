@@ -221,6 +221,47 @@ function nombresDePersonajes(personajes) {
   });
 }
 
+/**
+ * Datos editables de una escena ya persistida (sin reemplazar preguntas ni personajes).
+ */
+export function datosActualizacionEscena(datos) {
+  const errores = [];
+  if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
+    throw errorValidacion(['Los datos de la escena no son válidos.']);
+  }
+
+  const nombre = leerTexto(datos.nombre, 'El nombre de la escena', errores, { maximo: 150 });
+  const contexto = leerTexto(datos.contexto, 'El contexto de la escena', errores);
+  const orden = leerEntero(datos.orden, 'El orden de la escena', errores);
+  const esFinal = leerBooleano(datos.esFinal ?? false, 'La marca de escena final', errores);
+
+  if (errores.length) {
+    throw errorValidacion(errores);
+  }
+
+  return { nombre, contexto, orden, esFinal };
+}
+
+/**
+ * Datos editables de una pregunta ya persistida (sin reemplazar opciones).
+ */
+export function datosActualizacionDecision(datos) {
+  const errores = [];
+  if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
+    throw errorValidacion(['Los datos de la pregunta no son válidos.']);
+  }
+
+  const pregunta = leerTexto(datos.pregunta, 'La pregunta', errores);
+  const orden = leerEntero(datos.orden, 'El orden de la pregunta', errores);
+  const ayuda = leerTexto(datos.ayuda, 'La ayuda', errores, { requerido: false });
+
+  if (errores.length) {
+    throw errorValidacion(errores);
+  }
+
+  return { pregunta, orden, ayuda };
+}
+
 export function normalizarEscena(datos) {
   const errores = [];
   if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {

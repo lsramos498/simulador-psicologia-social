@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Guion de sustentación — Stefanía Díaz</title>
+  <style>
+    body { font-family: Calibri, Arial, sans-serif; font-size: 12pt; line-height: 1.45; margin: 2.2cm; color: #111; }
+    h1 { font-size: 18pt; margin-bottom: 4pt; }
+    h2 { font-size: 13pt; margin-top: 18pt; margin-bottom: 8pt; }
+    .meta { margin-bottom: 16pt; }
+    .meta p { margin: 2pt 0; }
+    .box { border: 1px solid #333; padding: 12pt 14pt; margin: 12pt 0 18pt; }
+    .spoken { text-align: justify; }
+    .spoken p { margin: 0 0 10pt; }
+    ul { margin-top: 6pt; }
+    li { margin-bottom: 4pt; }
+    a { color: #0563C1; }
+    .footer { margin-top: 24pt; font-size: 10pt; color: #444; }
+  </style>
+</head>
+<body>
+  <h1>Guion de sustentación — Stefanía Díaz</h1>
+  <p><strong>Proyecto Lumina</strong> — Módulo de casos académicos y rúbricas (avance del Backend hacia el 70 %)</p>
+
+  <div class="meta">
+    <p><strong>Integrante:</strong> Stefanía Díaz</p>
+    <p><strong>Responsabilidad:</strong> Casos académicos y rúbricas (RF-05, RF-06, RF-07, RF-08, RF-09 y parte de RF-17)</p>
+    <p><strong>Patrón de diseño:</strong> Builder</p>
+    <p><strong>Repositorio:</strong> <a href="https://github.com/lsramos498/simulador-psicologia-social">https://github.com/lsramos498/simulador-psicologia-social</a></p>
+    <p><strong>Rama de integración:</strong> develop</p>
+  </div>
+
+  <h2>1. Texto para leer en la sustentación (aprox. 2 a 3 minutos)</h2>
+  <div class="box spoken">
+    <p>Buenos días. Mi nombre es Stefanía Díaz y en el proyecto Lumina me encargué del módulo de casos académicos y rúbricas del Backend. Mis requisitos fueron el RF-05 al RF-09 y la parte correspondiente del RF-17. El patrón de diseño que apliqué y debo sustentar es Builder.</p>
+
+    <p>Empecé desde cero en la rama stefania. Primero integré la base de la API del equipo y dejé una consulta inicial de casos con pruebas. Después aporté el esquema MySQL del modelo relacional de casos situacionales. Con eso pasamos de no tener módulo a tener una primera base funcional.</p>
+
+    <p>Para el avance del cuarenta por ciento implementé la persistencia real en MySQL: casos, escenas, preguntas, opciones, explicaciones y rúbricas. Agregué validaciones de estructura, las reglas de publicación y la creación del caso con el docente autenticado. También escribí y amplié pruebas unitarias para demostrar que el módulo no solo compilaba, sino que cumplía reglas de negocio.</p>
+
+    <p>Entre el cuarenta y el setenta por ciento fortalecí e integré el módulo. Implementé el Builder para construir el caso por pasos: creador, título, contexto, personajes, escenas, preguntas, opciones y rúbrica. El método build valida la estructura, pero no guarda en la base de datos; eso lo hace el servicio a través del repositorio. Separé claramente construir, validar y publicar. Publicar solo ocurre si el caso tiene escenas, preguntas, al menos dos opciones, una opción esperada, explicaciones y rúbrica. Si está incompleto, se rechaza con error de validación y no cambia de estado.</p>
+
+    <p>También implementé la edición de contenido en borrador con endpoints PATCH para escenas, preguntas y opciones, porque un caso no solo se crea: el docente debe poder corregirlo. Restringí la gestión para que solo el docente creador o un administrador puedan editar, publicar o archivar; si otro docente lo intenta, responde 403. Además, el estudiante autenticado no ve la opción correcta ni la explicación. Documenté la arquitectura, revisé antipatrones, aporté mi bloque del plan de pruebas PT-DCP-01 y dejé evidencia en commits, pull requests y pruebas automatizadas. Todo ese trabajo quedó integrado en develop.</p>
+
+    <p>En resumen, desde el uno por ciento hasta el setenta por ciento construí el módulo de casos de Lumina: consulta inicial, esquema y persistencia MySQL, Builder, validación, publicación, rúbricas, permisos de propietario, edición, pruebas y documentación. Puedo demostrarlo abriendo caso.builder.js, el método publicar del servicio y ejecutando las pruebas del módulo.</p>
+  </div>
+
+  <h2>2. Datos clave para responder preguntas</h2>
+  <ul>
+    <li><strong>Builder construye:</strong> el agregado Caso validado (en memoria).</li>
+    <li><strong>Quién persiste:</strong> el servicio + el repositorio MySQL.</li>
+    <li><strong>Estados:</strong> Borrador (editable) → Publicado → Archivado.</li>
+    <li><strong>Archivos principales:</strong> caso.builder.js, caso.validacion.js, casos.service.js, casos.repository.js, casos.routes.js.</li>
+    <li><strong>Antipatrón corregido:</strong> cualquier docente podía gestionar casos ajenos; ahora solo creador o administrador.</li>
+    <li><strong>Demo rápida:</strong> abrir Builder → mostrar publicar → correr <code>npm run test:casos</code>.</li>
+  </ul>
+
+  <h2>3. Línea de tiempo breve</h2>
+  <ul>
+    <li><strong>29 oct:</strong> rama, consulta inicial de casos y esquema MySQL.</li>
+    <li><strong>Hacia el 40 %:</strong> persistencia, validación, publicación, rúbricas y pruebas.</li>
+    <li><strong>Hacia el 70 %:</strong> Builder reforzado, dueño del caso, edición PATCH, docs, PT-DCP-01 e integración en develop.</li>
+  </ul>
+
+  <p class="footer">Documento preparado para la sustentación del segundo corte — Proyecto Nuclear II / Lumina. Repositorio: https://github.com/lsramos498/simulador-psicologia-social</p>
+</body>
+</html>

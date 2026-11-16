@@ -147,3 +147,29 @@ test('la aplicación expone POST /api/acceso/ingreso', async () => {
   const res = await request(app).post('/api/acceso/ingreso').send({}).expect(400);
   assert.match(res.body.error, /obligatorios/);
 });
+
+// ---------- Límite de intentos (fuerza bruta) ----------
+
+test('después de 5 contraseñas incorrectas responde 429, aunque la sexta sea correcta', async () => {
+  const appPrueba = crearAppDePrueba();
+  for (let i = 0; i < 5; i += 1) {
+    await ingresar(appPrueba, { correo: CORREO, contrasena: 'incorrecta-123' }).expect(401);
+  }
+
+  const res = await ingresar(appPrueba, { correo: CORREO, contrasena: CONTRASENA }).expect(429);
+  assert.match(res.body.error, /Demasiados intentos/);
+  assert.equal(res.body.token, undefined);
+});
+
+test('un ingreso correcto reinicia la cuenta de intentos fallidos', async () => {
+  const appPrueba = crearAppDePrueba();
+  for (let i = 0; i < 4; i += 1) {
+    await ingresar(appPrueba, { correo: CORREO, contrasena: 'incorrecta-123' }).expect(401);
+  }
+  await ingresar(appPrueba, { correo: CORREO, contrasena: CONTRASENA }).expect(200);
+
+  for (let i = 0; i < 4; i += 1) {
+    await ingresar(appPrueba, { correo: CORREO, contrasena: 'incorrecta-123' }).expect(401);
+  }
+  await ingresar(appPrueba, { correo: CORREO, contrasena: CONTRASENA }).expect(200);
+});

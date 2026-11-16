@@ -11,7 +11,7 @@ function registrarRespuesta(datos) {
     !Number.isInteger(decisionId) || decisionId <= 0 ||
     !Number.isInteger(opcionId) || opcionId <= 0
   ) {
-    throw new Error(
+    throw new TypeError(
       'La sesión, la decisión y la opción deben tener identificadores válidos'
     );
   }
