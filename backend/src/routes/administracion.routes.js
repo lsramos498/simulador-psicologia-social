@@ -11,6 +11,8 @@ import { responderErrorHttp } from '../modules/acceso/errores.js';
  *   GET    /api/acceso/admin/roles                              roles y sus permisos
  *   GET    /api/acceso/admin/permisos                           catálogo de permisos
  *   POST   /api/acceso/admin/docentes                           crear docente
+ *   POST   /api/acceso/admin/estudiantes                        crear estudiante
+ *   GET    /api/acceso/admin/estudiantes                        listar estudiantes
  *   POST   /api/acceso/admin/usuarios/:id/roles                 asignar rol   { "rol": "Docente" }
  *   DELETE /api/acceso/admin/usuarios/:id/roles/:rol            quitar rol
  *   POST   /api/acceso/admin/roles/:rol/permisos                asignar permiso { "permiso": "CREAR_CASOS" }
@@ -38,6 +40,8 @@ export function crearRutasAdministracion(obtenerServicio) {
   router.get('/permisos', ejecutar((s) => s.listarPermisos()));
 
   router.post('/docentes', ejecutar((s, req) => s.crearDocente(req.body, req.usuario.id), 201));
+  router.post('/estudiantes', ejecutar((s, req) => s.crearEstudiante(req.body, req.usuario.id), 201));
+  router.get('/estudiantes', ejecutar((s) => s.listarEstudiantes()));
 
   router.post('/usuarios/:id/roles', ejecutar((s, req) =>
     s.asignarRol(req.params.id, req.body?.rol, req.usuario.id), 201));

@@ -154,6 +154,53 @@
         );
 
         return resultado.insertId;
+      },
+
+      async obtenerAutorizacion(actividadId, estudianteId, bloquear = false) {
+        const [filas] = await conexion.execute(
+          `SELECT id, actividad_id AS actividadId, estudiante_id AS estudianteId,
+                  codigoAutorizacion, estado, fechaAutorizacion
+           FROM EstudianteAutorizado
+           WHERE actividad_id = ? AND estudiante_id = ?${bloquear ? ' FOR UPDATE' : ''}`,
+          [actividadId, estudianteId]
+        );
+        return filas[0] ?? null;
+      },
+
+      async reactivarAutorizacion({
+        actividadId,
+        estudianteId,
+        codigoAutorizacion,
+        fechaAutorizacion
+      }) {
+        const [resultado] = await conexion.execute(
+          `UPDATE EstudianteAutorizado
+           SET estado = 'Autorizado',
+               codigoAutorizacion = ?,
+               fechaAutorizacion = ?
+           WHERE actividad_id = ? AND estudiante_id = ?`,
+          [codigoAutorizacion, fechaAutorizacion, actividadId, estudianteId]
+        );
+        return resultado.affectedRows;
+      },
+
+      async actualizarEstadoAutorizacion(actividadId, estudianteId, estado) {
+        const [resultado] = await conexion.execute(
+          `UPDATE EstudianteAutorizado
+           SET estado = ?
+           WHERE actividad_id = ? AND estudiante_id = ?`,
+          [estado, actividadId, estudianteId]
+        );
+        return resultado.affectedRows;
+      },
+
+      async upsertAsistencia(actividadId, estudianteId, estado, fecha) {
+        await conexion.execute(
+          `INSERT INTO Asistencia (actividad_id, estudiante_id, estado, fechaRegistro)
+           VALUES (?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE estado = VALUES(estado), fechaRegistro = VALUES(fechaRegistro)`,
+          [actividadId, estudianteId, estado, fecha]
+        );
       }
     };
   }
@@ -252,6 +299,64 @@
       );
 
       return filas;
+    },
+
+    async listarPorDocente(docenteId) {
+      const [filas] = await pool.execute(
+        `${consultaListado} WHERE a.docente_id = ? ORDER BY a.fechaInicio DESC, a.id DESC`,
+        [docenteId]
+      );
+      return filas;
+    },
+
+    async listarTodas() {
+      const [filas] = await pool.execute(
+        `${consultaListado} ORDER BY a.fechaInicio DESC, a.id DESC`
+      );
+      return filas;
+    },
+
+    async listarConvocatorias(actividadId) {
+      const [filas] = await pool.execute(
+        `SELECT n.id, n.usuario_id AS estudianteId, u.nombres, u.apellidos,
+                n.asunto, n.mensaje, n.estado, n.fechaCreacion, n.errorEnvio
+         FROM Notificacion n
+         INNER JOIN Usuario u ON u.id = n.usuario_id
+         WHERE n.actividad_id = ? AND n.tipo = 'Convocatoria'
+         ORDER BY n.id`,
+        [actividadId]
+      );
+      return filas;
+    },
+
+    async listarVencidasParaCierre(ahora) {
+      const [filas] = await pool.execute(
+        `SELECT id, docente_id AS docenteId, estado, fechaFin
+         FROM ActividadProgramada
+         WHERE estado IN ('Programada', 'Iniciada')
+           AND TIMESTAMPADD(DAY, 1, fechaFin) <= ?
+         ORDER BY id`,
+        [ahora]
+      );
+      return filas;
     }
   };
 }
+
+const consultaListado = `
+  SELECT
+    a.id,
+    a.caso_id AS casoId,
+    a.espacioAcademico_id AS espacioAcademicoId,
+    a.docente_id AS docenteId,
+    a.rubrica_id AS rubricaId,
+    a.fechaInicio,
+    a.fechaFin,
+    a.tiempoLimiteSegundos,
+    a.estado,
+    c.titulo AS casoTitulo,
+    e.nombre AS espacioAcademicoNombre
+  FROM ActividadProgramada a
+  INNER JOIN Caso c ON c.id = a.caso_id
+  INNER JOIN EspacioAcademico e ON e.id = a.espacioAcademico_id
+`;

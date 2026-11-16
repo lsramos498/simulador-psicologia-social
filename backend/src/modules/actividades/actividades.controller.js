@@ -11,7 +11,9 @@
 function responderError(res, error) {
   const status = Number.isInteger(error?.statusCode)
     ? error.statusCode
-    : 500;
+    : error instanceof TypeError
+      ? 400
+      : 500;
 
   return res.status(status).json({
     error: status >= 500
@@ -42,15 +44,25 @@ export function crearControladorActividades(servicio) {
       try {
         const resultado = await servicio.crear(req.body, docenteId);
 
-        // Los códigos de autorización no deben exponerse en la respuesta HTTP.
+        // El arreglo interno no sale. El docente recibe los códigos una sola vez:
+        // el correo todavía no tiene transporte, y el hash guardado no se puede leer después.
         const {
           estudiantesAutorizados: codigosInternos,
           ...resultadoPublico
         } = resultado;
+        const codigosDeAcceso = Array.isArray(codigosInternos)
+          ? codigosInternos.map(({ estudianteId, codigoAutorizacion }) => ({
+            estudianteId,
+            codigo: codigoAutorizacion
+          }))
+          : [];
 
         return res.status(201).json({
           mensaje: 'Actividad programada correctamente.',
-          data: resultadoPublico
+          data: {
+            ...resultadoPublico,
+            codigosDeAcceso
+          }
         });
       } catch (error) {
         return responderError(res, error);
@@ -84,7 +96,11 @@ export function crearControladorActividades(servicio) {
     },
 
     async iniciar(req, res) {
-      return cambiarEstado(servicio.iniciar, req, res);
+      return cambiarEstado(servicio.iniciar, req, res, async (actividadId) => {
+        if (typeof servicio.alIniciar === 'function') {
+          await servicio.alIniciar(actividadId);
+        }
+      });
     },
 
     async cerrar(req, res) {
@@ -93,7 +109,7 @@ export function crearControladorActividades(servicio) {
   };
 }
 
-async function cambiarEstado(operacion, req, res) {
+async function cambiarEstado(operacion, req, res, despues) {
   const docenteId = obtenerDocenteAutenticado(req);
 
   if (!docenteId) {
@@ -103,7 +119,9 @@ async function cambiarEstado(operacion, req, res) {
   }
 
   try {
-    const data = await operacion(Number(req.params.id), docenteId);
+    const actividadId = Number(req.params.id);
+    const data = await operacion(actividadId, docenteId);
+    if (despues) await despues(actividadId);
     return res.status(200).json({ data });
   } catch (error) {
     return responderError(res, error);
