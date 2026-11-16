@@ -1,0 +1,206 @@
+:root {
+  --ink: #14201c;
+  --pine: #1f4d40;
+  --pine-deep: #0f2f28;
+  --moss: #3f6f5c;
+  --sand: #d9c4a5;
+  --clay: #b07a4a;
+  --paper: #f3ebe0;
+  --fog: rgba(243, 235, 224, 0.72);
+  --line: rgba(20, 32, 28, 0.14);
+  --ok: #2f6b4f;
+  --warn: #8a5a24;
+  --danger: #8b3a2f;
+  --shadow: 0 24px 60px rgba(15, 47, 40, 0.18);
+  font-family: "Manrope", system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--pine-deep);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(176, 122, 74, 0.28), transparent 34%),
+    radial-gradient(circle at 88% 12%, rgba(217, 196, 165, 0.2), transparent 28%),
+    linear-gradient(160deg, #0c2420 0%, #1f4d40 48%, #14201c 100%);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.brand-mark {
+  font-family: "Fraunces", Georgia, serif;
+  letter-spacing: -0.03em;
+}
+
+.muted {
+  color: rgba(20, 32, 28, 0.68);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pill-borrador {
+  background: rgba(176, 122, 74, 0.18);
+  color: var(--warn);
+}
+
+.pill-publicado {
+  background: rgba(47, 107, 79, 0.16);
+  color: var(--ok);
+}
+
+.pill-archivado {
+  background: rgba(20, 32, 28, 0.08);
+  color: rgba(20, 32, 28, 0.62);
+}
+
+.btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.85rem 1.35rem;
+  font-weight: 700;
+  transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background: var(--clay);
+  color: #fff8ef;
+  box-shadow: 0 10px 30px rgba(176, 122, 74, 0.28);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--pine-deep);
+  border: 1px solid var(--line);
+}
+
+.btn-ghost {
+  background: rgba(255, 248, 239, 0.08);
+  color: var(--paper);
+  border: 1px solid rgba(243, 235, 224, 0.18);
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+}
+
+.field textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.alert {
+  border-radius: 1rem;
+  padding: 0.9rem 1rem;
+  background: rgba(139, 58, 47, 0.1);
+  color: var(--danger);
+  border: 1px solid rgba(139, 58, 47, 0.18);
+}
+
+.alert-ok {
+  background: rgba(47, 107, 79, 0.12);
+  color: var(--ok);
+  border-color: rgba(47, 107, 79, 0.2);
+}
+
+.panel {
+  background: var(--fog);
+  border: 1px solid rgba(243, 235, 224, 0.4);
+  border-radius: 1.6rem;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.rise {
+  animation: rise-in 520ms ease both;
+}
+
+.fade {
+  animation: fade-in 420ms ease both;
+}

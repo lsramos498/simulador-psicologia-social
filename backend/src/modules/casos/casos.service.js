@@ -82,11 +82,35 @@ export function crearServicioCasos(repositorio) {
   }
 
   return {
-    async listar(creadorId) {
-      const filtro = creadorId == null || creadorId === ''
+    async listar(filtros) {
+      let creadorId = null;
+      let estado = null;
+
+      if (filtros != null && typeof filtros === 'object' && !Array.isArray(filtros)) {
+        creadorId = filtros.creadorId;
+        estado = filtros.estado;
+      } else {
+        creadorId = filtros;
+      }
+
+      const filtroCreador = creadorId == null || creadorId === ''
         ? null
         : exigirId(creadorId, 'creadorId');
-      return repositorio.listar(filtro);
+
+      let filtroEstado = null;
+      if (estado != null && estado !== '') {
+        const permitido = Object.values(ESTADOS_CASO);
+        if (!permitido.includes(estado)) {
+          throw errorCaso(
+            'ESTADO_INVALIDO',
+            `El estado debe ser uno de: ${permitido.join(', ')}.`,
+            400
+          );
+        }
+        filtroEstado = estado;
+      }
+
+      return repositorio.listar({ creadorId: filtroCreador, estado: filtroEstado });
     },
 
     async obtener(casoId) {

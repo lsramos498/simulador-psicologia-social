@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { ROLES } from './autorizacion.js';
 import { normalizarCorreo } from './codigos.js';
 import { hashearContrasena, validarPoliticaContrasena } from './contrasenas.js';
@@ -97,6 +98,50 @@ export function crearServicioAdministracion(repositorio) {
 
       // Nunca se devuelve la contraseña ni su hash.
       return { id, nombres, apellidos, correo, roles: [ROLES.DOCENTE] };
+    },
+
+    /**
+     * El estudiante entra con correo y código, no con contraseña.
+     * El esquema exige contrasenaHash, así que se guarda un hash aleatorio
+     * que nadie conoce y el ingreso por contraseña no puede usarlo.
+     */
+    async crearEstudiante(datos, administradorId) {
+      const nombres = texto(datos?.nombres);
+      const apellidos = texto(datos?.apellidos);
+      const correo = normalizarCorreo(datos?.correo);
+
+      const faltantes = [];
+      if (!nombres) faltantes.push('nombres');
+      if (!apellidos) faltantes.push('apellidos');
+      if (!correo) faltantes.push('correo');
+      if (faltantes.length > 0) {
+        throw crearErrorHttp(`Faltan datos: ${faltantes.join(', ')}`, 400);
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+        throw crearErrorHttp('El correo institucional no es válido', 400);
+      }
+      if (nombres.length > 100 || apellidos.length > 100 || correo.length > 150) {
+        throw crearErrorHttp('Algún dato supera la longitud permitida', 400);
+      }
+      if (await repositorio.existeCorreo(correo)) {
+        throw crearErrorHttp('Ya existe un usuario con ese correo', 409);
+      }
+
+      const rolEstudiante = await exigirRol(ROLES.ESTUDIANTE);
+      const id = await repositorio.crearUsuarioConRol({
+        nombres,
+        apellidos,
+        correo,
+        contrasenaHash: await hashearContrasena(randomBytes(24).toString('base64url')),
+        rolId: rolEstudiante.id,
+        asignadoPor: administradorId
+      });
+
+      return { id, nombres, apellidos, correo, roles: [ROLES.ESTUDIANTE] };
+    },
+
+    listarEstudiantes() {
+      return repositorio.listarUsuariosPorRol(ROLES.ESTUDIANTE);
     },
 
     async asignarRol(usuarioId, nombreRol, administradorId) {

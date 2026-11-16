@@ -126,7 +126,7 @@ test('Crea una actividad usando el docente autenticado', async () => {
   });
 });
 
-test('No expone los códigos de autorización en la respuesta', async () => {
+test('Entrega los códigos una sola vez al docente y oculta el arreglo interno', async () => {
   const { servicio } = crearServicio({
     resultadoCrear: {
       id: 50,
@@ -150,12 +150,9 @@ test('No expone los códigos de autorización en la respuesta', async () => {
 
   assert.equal(res.statusCode, 201);
 
-  const respuestaJson = JSON.stringify(res.body);
-
-  assert.equal(
-    respuestaJson.includes('CODIGO-PRIVADO'),
-    false
-  );
+  assert.deepEqual(res.body.data.codigosDeAcceso, [
+    { estudianteId: 12, codigo: 'CODIGO-PRIVADO' }
+  ]);
 
   assert.equal(
     Object.hasOwn(res.body.data, 'estudiantesAutorizados'),
@@ -185,6 +182,18 @@ test('Devuelve los errores de validación del servicio', async () => {
   assert.equal(res.body.error, 'El caso no está publicado.');
 });
 
+test('Un dato incompleto responde 400 con el mensaje de validación', async () => {
+  const { servicio } = crearServicio({
+    errorCrear: new TypeError('Debe asociarse al menos un estudiante.')
+  });
+  const controlador = crearControladorActividades(servicio);
+  const res = crearRespuesta();
+
+  await controlador.crear({ usuario: { id: 7 }, body: { casoId: 1 } }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.body.error, 'Debe asociarse al menos un estudiante.');
+});
 
 test('Devuelve 400 cuando el servicio recibe datos de actividad inválidos', async () => {
   const servicio = crearServicioActividades(

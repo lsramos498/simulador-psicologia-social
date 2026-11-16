@@ -75,6 +75,26 @@ test('POST /api/casos/construir responde 201 con el docente de la sesión', asyn
   assert.equal(recibido.creadorId, 5);
 });
 
+test('GET /api/casos reenvía creadorId y estado al servicio', async () => {
+  let recibido = null;
+  const app = appCon({
+    async listar(filtros) {
+      recibido = filtros;
+      return [{ id: 1, titulo: 'Publicado', estado: 'Publicado' }];
+    }
+  });
+
+  const response = await request(app)
+    .get('/api/casos')
+    .query({ creadorId: '5', estado: 'Publicado' })
+    .set('Authorization', `Bearer ${tokenDe(5, ['CREAR_CASOS'])}`)
+    .expect(200);
+
+  assert.deepEqual(recibido, { creadorId: '5', estado: 'Publicado' });
+  assert.equal(response.body.total, 1);
+  assert.equal(response.body.data[0].estado, 'Publicado');
+});
+
 test('GET /api/casos/:id responde 404 cuando el caso no existe', async () => {
   const app = appCon({
     async obtener() {

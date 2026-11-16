@@ -51,14 +51,19 @@ class EstadoEnCurso extends EstadoBase {
     segundosConsumidos,
     motivoCierre = MOTIVOS_CIERRE.FINALIZACION
   } = {}) {
-    const fin = convertirFecha(fechaFin, 'fechaFin');
+    let fin = convertirFecha(fechaFin, 'fechaFin');
 
     if (!sesion.inicio) {
       throw new Error('La sesión no tiene una fecha de inicio.');
     }
 
+    // MySQL guarda el inicio sin milisegundos y puede redondearlo al segundo
+    // siguiente. Cerrar en ese mismo segundo no es un cierre anticipado.
     if (fin < sesion.inicio) {
-      throw new Error('La fecha de finalización no puede ser anterior al inicio.');
+      if (sesion.inicio.getTime() - fin.getTime() >= 1000) {
+        throw new Error('La fecha de finalización no puede ser anterior al inicio.');
+      }
+      fin = new Date(sesion.inicio.getTime());
     }
 
     const segundos = segundosConsumidos ??

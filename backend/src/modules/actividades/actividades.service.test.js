@@ -514,6 +514,152 @@ test('Rechaza la consulta de una actividad inexistente', async () => {
   );
 });
 
+test('Cierra automáticamente actividades con más de 24 horas desde fechaFin', async () => {
+  const actualizadas = [];
+  const servicio = crearServicioActividades({
+    async enTransaccion() {
+      throw new Error('no debe abrir transacción');
+    },
+    async obtenerActividadPorId() {
+      return null;
+    },
+    async listarEstudiantesAutorizados() {
+      return [];
+    },
+    async listarVencidasParaCierre() {
+      return [
+        { id: 11, docenteId: 2, estado: 'Iniciada', fechaFin: '2026-11-01 11:00:00' },
+        { id: 12, docenteId: 2, estado: 'Programada', fechaFin: '2026-11-01 10:00:00' }
+      ];
+    },
+    async actualizarEstado(id, estado) {
+      actualizadas.push({ id, estado });
+      return 1;
+    }
+  }, () => ({ codigo: 'CODIGO', codigoHash: 'hash-CODIGO' }), () => new Date('2026-11-03T12:00:00'));
+
+  const cerradas = await servicio.cerrarVencidas();
+  assert.equal(cerradas.length, 2);
+  assert.deepEqual(actualizadas, [
+    { id: 11, estado: 'Cerrada' },
+    { id: 12, estado: 'Cerrada' }
+  ]);
+});
+
+test('Agrega un estudiante y envía CAMBIO_ESTUDIANTE', async () => {
+  const enviados = [];
+  const autorizaciones = [];
+  const servicio = crearServicioActividades({
+    async enTransaccion(operacion) {
+      return operacion({
+        async obtenerEstudiantes() {
+          return [{ id: 30, activo: 1, esEstudiante: 1, correo: 'nuevo@unihumboldt.edu.co' }];
+        },
+        async obtenerAutorizacion() {
+          return null;
+        },
+        async insertarEstudianteAutorizado(datos) {
+          autorizaciones.push(datos);
+          return 77;
+        },
+        async upsertAsistencia() {}
+      });
+    },
+    async obtenerActividadPorId() {
+      return {
+        id: 50,
+        docenteId: 2,
+        casoId: 10,
+        casoTitulo: 'Conflicto en el aula',
+        estado: 'Programada'
+      };
+    },
+    async listarEstudiantesAutorizados() {
+      return [];
+    }
+  }, () => ({ codigo: 'NUEVO30', codigoHash: 'hash-NUEVO30' }), relojFijo, {
+    async enviar(tipo, datos) {
+      enviados.push({ tipo, ...datos });
+      return { estado: 'ENVIADO' };
+    }
+  });
+
+  const resultado = await servicio.agregarEstudiante(50, 30, 2);
+  assert.equal(resultado.estudianteId, 30);
+  assert.equal(resultado.codigoAutorizacion, 'NUEVO30');
+  assert.equal(autorizaciones.length, 1);
+  assert.equal(enviados[0].tipo, 'CAMBIO_ESTUDIANTE');
+  assert.equal(enviados[0].accion, 'AGREGADO');
+  assert.equal(enviados[0].destinatario, 'nuevo@unihumboldt.edu.co');
+});
+
+test('Retira un estudiante autorizado y notifica el cambio', async () => {
+  const enviados = [];
+  const servicio = crearServicioActividades({
+    async enTransaccion(operacion) {
+      return operacion({
+        async obtenerEstudiantes() {
+          return [{ id: 20, activo: 1, esEstudiante: 1, correo: 'ana@unihumboldt.edu.co' }];
+        },
+        async obtenerAutorizacion() {
+          return { id: 5, estudianteId: 20, estado: 'Autorizado' };
+        },
+        async actualizarEstadoAutorizacion() {
+          return 1;
+        },
+        async upsertAsistencia() {}
+      });
+    },
+    async obtenerActividadPorId() {
+      return {
+        id: 50,
+        docenteId: 2,
+        casoId: 10,
+        casoTitulo: 'Conflicto en el aula',
+        estado: 'Iniciada'
+      };
+    },
+    async listarEstudiantesAutorizados() {
+      return [];
+    }
+  }, () => ({ codigo: 'X', codigoHash: 'hash-X' }), relojFijo, {
+    async enviar(tipo, datos) {
+      enviados.push({ tipo, accion: datos.accion });
+      return { estado: 'ENVIADO' };
+    }
+  });
+
+  const resultado = await servicio.retirarEstudiante(50, 20, 2);
+  assert.equal(resultado.estado, 'Retirado');
+  assert.deepEqual(enviados, [{ tipo: 'CAMBIO_ESTUDIANTE', accion: 'RETIRADO' }]);
+});
+
+test('No agrega estudiantes a una actividad cerrada', async () => {
+  const servicio = crearServicioActividades({
+    async enTransaccion(operacion) {
+      return operacion({
+        async obtenerEstudiantes() {
+          return [{ id: 30, activo: 1, esEstudiante: 1, correo: 'nuevo@unihumboldt.edu.co' }];
+        },
+        async obtenerAutorizacion() {
+          return null;
+        }
+      });
+    },
+    async obtenerActividadPorId() {
+      return { id: 50, docenteId: 2, estado: 'Cerrada', casoTitulo: 'Caso' };
+    },
+    async listarEstudiantesAutorizados() {
+      return [];
+    }
+  }, () => ({ codigo: 'X', codigoHash: 'hash-X' }), relojFijo);
+
+  await assert.rejects(
+    () => servicio.agregarEstudiante(50, 30, 2),
+    { codigo: 'ACTIVIDAD_CERRADA' }
+  );
+});
+
 // Pruebas de cierre automático de RF-19.
 
 test('Cierra automáticamente las actividades vencidas', async () => {

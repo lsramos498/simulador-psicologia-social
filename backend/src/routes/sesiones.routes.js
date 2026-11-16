@@ -1,13 +1,8 @@
 import { Router } from 'express';
-import { crearControladorSesiones } from '../modules/sesiones/sesiones.controller.js';
-import { crearRepositorioSesiones } from '../modules/sesiones/sesiones.repository.js';
-import { crearServicioSesiones } from '../modules/sesiones/sesiones.service.js';
 import { autenticar } from '../modules/acceso/autenticar.middleware.js';
-import {
-  requiereRol,
-  requiereActividadAutorizada
-} from '../modules/acceso/autorizar.middleware.js';
-import { ROLES } from '../modules/acceso/autorizacion.js';
+import { requiereActividadAutorizada, requiereRol } from '../modules/acceso/autorizar.middleware.js';
+import { ROLES, tieneRol } from '../modules/acceso/autorizacion.js';
+import { responderErrorHttp } from '../modules/acceso/errores.js';
 
 export function crearRutasSesiones(obtenerServicio) {
   const router = Router();
@@ -15,27 +10,77 @@ export function crearRutasSesiones(obtenerServicio) {
   router.post(
     '/actividades/:actividadId/iniciar',
     autenticar,
-    requiereRol(ROLES.ESTUDIANTE),
     requiereActividadAutorizada((req) => req.params.actividadId),
     async (req, res) => {
-      const controlador = crearControladorSesiones(
-        await obtenerServicio()
-      );
-
-      return controlador.iniciar(req, res);
+      try {
+        const data = await (await obtenerServicio()).iniciarPropia(
+          Number(req.params.actividadId),
+          req.usuario.id
+        );
+        return res.status(200).json({ data });
+      } catch (error) {
+        return responderErrorHttp(res, error, 'sesiones');
+      }
     }
   );
 
-  router.post(
-    '/:sesionId/finalizar',
+  router.get(
+    '/actividades/:actividadId',
     autenticar,
-    requiereRol(ROLES.ESTUDIANTE),
+    requiereActividadAutorizada((req) => req.params.actividadId),
     async (req, res) => {
-      const controlador = crearControladorSesiones(
-        await obtenerServicio()
-      );
+      try {
+        const data = await (await obtenerServicio()).consultarPropia(
+          Number(req.params.actividadId),
+          req.usuario.id
+        );
+        return res.status(200).json({ data });
+      } catch (error) {
+        return responderErrorHttp(res, error, 'sesiones');
+      }
+    }
+  );
 
-      return controlador.finalizar(req, res);
+  router.get('/:id', autenticar, async (req, res) => {
+    try {
+      const data = await (await obtenerServicio()).consultar(Number(req.params.id), {
+        id: req.usuario.id,
+        esAdmin: tieneRol(req.usuario, ROLES.ADMINISTRADOR)
+      });
+      return res.status(200).json({ data });
+    } catch (error) {
+      return responderErrorHttp(res, error, 'sesiones');
+    }
+  });
+
+  router.post('/:id/finalizar', autenticar, async (req, res) => {
+    try {
+      const data = await (await obtenerServicio()).finalizarPropia(
+        Number(req.params.id),
+        req.usuario.id
+      );
+      return res.status(200).json({ data });
+    } catch (error) {
+      return responderErrorHttp(res, error, 'sesiones');
+    }
+  });
+
+  router.post(
+    '/:id/cerrar',
+    autenticar,
+    requiereRol(ROLES.DOCENTE, ROLES.ADMINISTRADOR),
+    async (req, res) => {
+      try {
+        const data = await (await obtenerServicio()).cerrarPorDocente(
+          Number(req.params.id),
+          req.usuario.id,
+          new Date(),
+          tieneRol(req.usuario, ROLES.ADMINISTRADOR)
+        );
+        return res.status(200).json({ data });
+      } catch (error) {
+        return responderErrorHttp(res, error, 'sesiones');
+      }
     }
   );
 
@@ -44,16 +89,14 @@ export function crearRutasSesiones(obtenerServicio) {
 
 let servicioPorDefecto;
 
-async function obtenerServicioPorDefecto() {
+export async function obtenerServicioSesiones() {
   if (!servicioPorDefecto) {
     const { pool } = await import('../config/database.js');
-
-    const repositorio = crearRepositorioSesiones(pool);
-
-    servicioPorDefecto = crearServicioSesiones(repositorio);
+    const { crearRepositorioSesiones } = await import('../modules/sesiones/sesiones.repository.js');
+    const { crearServicioSesiones } = await import('../modules/sesiones/sesiones.service.js');
+    servicioPorDefecto = crearServicioSesiones(crearRepositorioSesiones(pool));
   }
-
   return servicioPorDefecto;
 }
 
-export default crearRutasSesiones(obtenerServicioPorDefecto);
+export default crearRutasSesiones(obtenerServicioSesiones);

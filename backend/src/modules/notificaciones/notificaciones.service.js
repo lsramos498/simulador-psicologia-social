@@ -16,7 +16,11 @@ export function crearServicioNotificaciones(transporte) {
       const creador = obtenerCreadorNotificacion(tipo);
       const mensaje = creador.crearMensaje(datos);
 
-      await transporte.enviar(mensaje);
+      await transporte.enviar(mensaje, {
+        tipo,
+        actividadId: datos.actividadId ?? null,
+        estudianteId: datos.estudianteId ?? null
+      });
 
       return {
         destinatario: mensaje.to,

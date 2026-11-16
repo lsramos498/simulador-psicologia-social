@@ -5,10 +5,28 @@ import { crearRepositorioParticipacion } from './participacion.repository.js';
 
 const datos = { sesionId: 1, decisionId: 2, opcionId: 3 };
 
+function sesionEnCurso(extra = {}) {
+  const ahora = Date.now();
+  return {
+    id: 1,
+    actividadId: 3,
+    estudianteId: 7,
+    estado: 'En curso',
+    casoId: 9,
+    inicio: new Date(ahora - 5_000),
+    tiempoLimiteSegundos: 600,
+    estadoActividad: 'Iniciada',
+    fechaInicio: new Date(ahora - 60_000),
+    fechaFin: new Date(ahora + 3_600_000),
+    estadoAutorizacion: 'Autorizado',
+    ...extra
+  };
+}
+
 function preparar(cambios = {}) {
   const llamadas = [];
   const repositorio = {
-    obtenerSesion: async () => ({ estudianteId: 7, estado: 'En curso', casoId: 9 }),
+    obtenerSesion: async () => sesionEnCurso(),
     opcionValida: async () => true,
     obtenerRespuesta: async () => null,
     insertarRespuesta: async (respuesta) => { llamadas.push(respuesta); return 10; },
@@ -43,9 +61,9 @@ for (const estudianteId of [undefined, -1, '7']) {
 
 for (const [nombre, cambios, codigo] of [
   ['sesión inexistente', { obtenerSesion: async () => null }, 'SESION_NO_EXISTE'],
-  ['sesión ajena', { obtenerSesion: async () => ({ estudianteId: 8 }) }, 'SESION_AJENA'],
+  ['sesión ajena', { obtenerSesion: async () => sesionEnCurso({ estudianteId: 8 }) }, 'SESION_AJENA'],
   ...['Sin iniciar', 'Finalizado'].map((estado) => [estado, {
-    obtenerSesion: async () => ({ estudianteId: 7, estado })
+    obtenerSesion: async () => sesionEnCurso({ estado })
   }, 'ESTADO_NO_PERMITIDO']),
   ['relación caso/decisión/opción inválida', { opcionValida: async () => false }, 'OPCION_INVALIDA']
 ]) {
@@ -113,4 +131,29 @@ test('El repositorio confirma la transacción antes de devolver el resultado', a
   llamadas.length = 0;
   await assert.rejects(repo.enTransaccion(async () => { throw error; }), (actual) => actual === error);
   assert.deepEqual(llamadas, ['inicio', 'rollback', 'release']);
+});
+
+test('Rechaza una respuesta cuando se agotó el tiempo de la sesión', async () => {
+  const { servicio, llamadas } = preparar({
+    obtenerSesion: async () => sesionEnCurso({
+      inicio: new Date(Date.now() - 10_000),
+      tiempoLimiteSegundos: 1
+    })
+  });
+  await assert.rejects(servicio.registrar(datos, 7), { codigo: 'TIEMPO_AGOTADO' });
+  assert.equal(llamadas.length, 0);
+});
+
+test('Calcula el progreso y oculta la retroalimentación mientras la sesión sigue en curso', async () => {
+  const { servicio } = preparar({
+    contarPreguntas: async () => 4,
+    contarRespuestas: async () => 1,
+    listarRetroalimentacion: async () => [{ decisionId: 2, explicacion: 'Porque' }]
+  });
+  assert.deepEqual(await servicio.progreso(1, 7), {
+    totalPreguntas: 4,
+    preguntasRespondidas: 1,
+    preguntasPendientes: 3
+  });
+  await assert.rejects(servicio.retroalimentacion(1, 7), { codigo: 'ESTADO_NO_PERMITIDO' });
 });

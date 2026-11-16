@@ -49,7 +49,7 @@ Todas las mutaciones exigen JWT + permiso `CREAR_CASOS`. La gestión de un caso 
 
 | Método | Ruta | Uso |
 |---|---|---|
-| `GET` | `/api/casos` | Listar |
+| `GET` | `/api/casos` | Listar (`?creadorId=` / `?estado=Publicado`); incluye `rubricaId` activa |
 | `GET` | `/api/casos/:id` | Consultar (oculta claves al estudiante) |
 | `POST` | `/api/casos` | Crear borrador básico |
 | `POST` | `/api/casos/construir` | Crear con Builder (agregado completo) |
@@ -70,11 +70,19 @@ Todas las mutaciones exigen JWT + permiso `CREAR_CASOS`. La gestión de un caso 
 
 ```bash
 cd backend
-npm run test:unit
-node --test tests/casos.routes.test.js
+npm run test:casos
 ```
 
-Incluyen construcción válida/inválida, publicación, rúbricas, persistencia simulada, rutas HTTP y restricción de caso ajeno.
+Incluyen Builder, validación, publicación, rúbricas, persistencia simulada, rutas HTTP, Proxy y restricción de caso ajeno.
+
+Integración MySQL real (rollback, no deja datos):
+
+```powershell
+$env:LUMINA_MYSQL_TEST = "1"
+npm run test:casos:mysql
+```
+
+Actividades debe consumir casos con `GET /api/casos?estado=Publicado` (o validar `estado === 'Publicado'` al programar).
 
 ## Interacción con otros módulos
 

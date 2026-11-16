@@ -67,14 +67,22 @@ export function crearRepositorioCasos(pool) {
         return { id: fila.id };
       },
 
-      async listar(creadorId) {
+      async listar({ creadorId = null, estado = null } = {}) {
         const [filas] = await conexion.execute(
-          `SELECT id, creador_id AS creadorId, titulo, estado,
-                  tiempoEstimadoSegundos, fechaCreacion
-           FROM Caso
-           WHERE (? IS NULL OR creador_id = ?)
-           ORDER BY fechaCreacion DESC, id DESC`,
-          [creadorId, creadorId]
+          `SELECT c.id, c.creador_id AS creadorId, c.titulo, c.estado,
+                  c.tiempoEstimadoSegundos, c.fechaCreacion,
+                  (
+                    SELECT r.id
+                    FROM Rubrica r
+                    WHERE r.caso_id = c.id AND r.activa = TRUE
+                    ORDER BY r.version DESC, r.id DESC
+                    LIMIT 1
+                  ) AS rubricaId
+           FROM Caso c
+           WHERE (? IS NULL OR c.creador_id = ?)
+             AND (? IS NULL OR c.estado = ?)
+           ORDER BY c.fechaCreacion DESC, c.id DESC`,
+          [creadorId, creadorId, estado, estado]
         );
         return filas.map((fila) => ({
           id: fila.id,
@@ -82,7 +90,8 @@ export function crearRepositorioCasos(pool) {
           titulo: fila.titulo,
           estado: fila.estado,
           tiempoEstimadoSegundos: Number(fila.tiempoEstimadoSegundos),
-          fechaCreacion: fila.fechaCreacion
+          fechaCreacion: fila.fechaCreacion,
+          rubricaId: fila.rubricaId == null ? null : Number(fila.rubricaId)
         }));
       },
 
