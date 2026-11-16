@@ -58,7 +58,10 @@ test('MySQL: registro y consulta en proyecto_nuclear_test', {
   }
 
   const etiqueta = randomUUID();
-  const fecha = new Date('2026-11-02T09:00:00Z');
+  // Ventana amplia: RF-23 valida actividad Iniciada y fechas al registrar.
+  const ahora = new Date();
+  const fecha = new Date(ahora.getTime() - 60 * 60 * 1000);
+  const fechaFin = new Date(ahora.getTime() + 2 * 60 * 60 * 1000);
   const estudianteId = await insertar('Usuario',
     'nombres, apellidos, correoInstitucional, contrasenaHash, fechaCreacion',
     ['Prueba', 'Participacion', `${etiqueta}@example.invalid`, 'fixture-no-utilizable-para-login', fecha]);
@@ -67,8 +70,8 @@ test('MySQL: registro y consulta en proyecto_nuclear_test', {
     ['Otro', 'Participante', `${etiqueta}-otro@example.invalid`, 'fixture-no-utilizable-para-login', fecha]);
   const espacioId = await insertar('EspacioAcademico', 'nombre', ['Prueba Participación']);
   const casoId = await insertar('Caso',
-    'creador_id, titulo, desarrolloSituacional, contextoHistoria, tiempoEstimadoSegundos, fechaCreacion',
-    [estudianteId, 'Fixture técnico', 'Situación controlada', 'Contexto controlado', 600, fecha]);
+    'creador_id, titulo, desarrolloSituacional, contextoHistoria, tiempoEstimadoSegundos, estado, fechaCreacion',
+    [estudianteId, 'Fixture técnico', 'Situación controlada', 'Contexto controlado', 600, 'Publicado', fecha]);
   const rubricaId = await insertar('Rubrica', 'caso_id, nombre, fechaCreacion', [casoId, 'Fixture', fecha]);
   const escenaId = await insertar('Escena', 'caso_id, nombre, contexto, `orden`', [casoId, 'Escena', 'Contexto', 1]);
   const decisionId = await insertar('Decision', 'escena_id, pregunta, `orden`', [escenaId, 'Pregunta de prueba', 1]);
@@ -76,18 +79,20 @@ test('MySQL: registro y consulta en proyecto_nuclear_test', {
   const opcionId = await insertar('OpcionDecision', 'decision_id, texto, esCorrecta, `orden`', [decisionId, 'Opción', true, 1]);
   const otraOpcionId = await insertar('OpcionDecision', 'decision_id, texto, esCorrecta, `orden`', [otraDecisionId, 'Otra opción', false, 1]);
   const otroCasoId = await insertar('Caso',
-    'creador_id, titulo, desarrolloSituacional, contextoHistoria, tiempoEstimadoSegundos, fechaCreacion',
-    [estudianteId, 'Otro caso', 'Situación', 'Contexto', 600, fecha]);
+    'creador_id, titulo, desarrolloSituacional, contextoHistoria, tiempoEstimadoSegundos, estado, fechaCreacion',
+    [estudianteId, 'Otro caso', 'Situación', 'Contexto', 600, 'Publicado', fecha]);
   const otraEscenaId = await insertar('Escena', 'caso_id, nombre, contexto, `orden`', [otroCasoId, 'Otra escena', 'Contexto', 1]);
   const decisionAjenaId = await insertar('Decision', 'escena_id, pregunta, `orden`', [otraEscenaId, 'Decisión ajena', 1]);
   const opcionAjenaId = await insertar('OpcionDecision', 'decision_id, texto, esCorrecta, `orden`', [decisionAjenaId, 'Opción ajena', false, 1]);
   const actividadId = await insertar('ActividadProgramada',
-    'caso_id, espacioAcademico_id, docente_id, rubrica_id, fechaInicio, fechaFin, tiempoLimiteSegundos, fechaCreacion',
-    [casoId, espacioId, estudianteId, rubricaId, fecha, new Date('2026-11-02T10:00:00Z'), 600, fecha]);
+    'caso_id, espacioAcademico_id, docente_id, rubrica_id, fechaInicio, fechaFin, tiempoLimiteSegundos, fechaCreacion, estado',
+    [casoId, espacioId, estudianteId, rubricaId, fecha, fechaFin, 3600, fecha, 'Iniciada']);
   await insertar('EstudianteAutorizado',
     'actividad_id, estudiante_id, codigoAutorizacion, fechaAutorizacion', [actividadId, estudianteId, etiqueta, fecha]);
+  // inicio reciente: el límite de sesión no debe vencer durante la prueba.
+  const inicioSesion = new Date(ahora.getTime() - 30 * 1000);
   sesionId = await insertar('SesionSimulacion',
-    'actividad_id, estudiante_id, estado, inicio', [actividadId, estudianteId, 'En curso', fecha]);
+    'actividad_id, estudiante_id, estado, inicio', [actividadId, estudianteId, 'En curso', inicioSesion]);
 
   const servicio = crearServicioParticipacion(crearRepositorioParticipacion(pool));
   const datos = { sesionId, decisionId, opcionId };
