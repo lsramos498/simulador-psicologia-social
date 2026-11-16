@@ -24,28 +24,47 @@ function responder(res, error) {
   return res.status(status).json({ error: error.message, codigo: error.codigo });
 }
 
-export function crearRutasParticipacion(obtenerServicio) {
+export function crearRutasParticipacion(obtenerServicio, opciones = {}) {
   const router = Router();
 
-  router.post('/respuestas', autenticar, async (req, res) => {
+  async function atender(req, res, accion, status) {
     try {
+      if (opciones.antes) await opciones.antes();
       const servicio = await obtenerServicio();
-      const data = await servicio.registrar(req.body, req.usuario.id);
-      return res.status(201).json({ data });
+      const data = await accion(servicio, req);
+      return res.status(status).json({ data });
     } catch (error) {
       return responder(res, error);
     }
-  });
+  }
 
-  router.get('/sesiones/:sesionId/respuestas', autenticar, async (req, res) => {
-    try {
-      const servicio = await obtenerServicio();
-      const data = await servicio.consultar(Number(req.params.sesionId), req.usuario.id);
-      return res.status(200).json({ data });
-    } catch (error) {
-      return responder(res, error);
-    }
-  });
+  router.post('/respuestas', autenticar, (req, res) => atender(
+    req,
+    res,
+    (servicio) => servicio.registrar(req.body, req.usuario.id),
+    201
+  ));
+
+  router.get('/sesiones/:sesionId/respuestas', autenticar, (req, res) => atender(
+    req,
+    res,
+    (servicio) => servicio.consultar(Number(req.params.sesionId), req.usuario.id),
+    200
+  ));
+
+  router.get('/sesiones/:sesionId/progreso', autenticar, (req, res) => atender(
+    req,
+    res,
+    (servicio) => servicio.progreso(Number(req.params.sesionId), req.usuario.id),
+    200
+  ));
+
+  router.get('/sesiones/:sesionId/retroalimentacion', autenticar, (req, res) => atender(
+    req,
+    res,
+    (servicio) => servicio.retroalimentacion(Number(req.params.sesionId), req.usuario.id),
+    200
+  ));
 
   return router;
 }
@@ -63,4 +82,9 @@ async function obtenerServicioPorDefecto() {
   return servicioPorDefecto;
 }
 
-export default crearRutasParticipacion(obtenerServicioPorDefecto);
+export default crearRutasParticipacion(obtenerServicioPorDefecto, {
+  antes: async () => {
+    const { obtenerServicioSesiones } = await import('./sesiones.routes.js');
+    await (await obtenerServicioSesiones()).cerrarVencidas();
+  }
+});

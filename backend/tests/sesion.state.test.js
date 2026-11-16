@@ -72,6 +72,17 @@ test('Una sesión Finalizado no puede volver a iniciarse', () => {
   );
 });
 
+test('Permite cerrar en el mismo segundo en que empezó', () => {
+  const sesion = crearSesion();
+  const inicio = new Date('2026-11-09T21:13:22.000Z');
+
+  sesion.iniciar(inicio);
+  sesion.finalizar({ fechaFin: new Date(inicio.getTime() - 400) });
+
+  assert.equal(sesion.estado, 'Finalizado');
+  assert.equal(sesion.segundosConsumidos, 0);
+});
+
 test('No permite una fecha de finalización anterior al inicio', () => {
   const sesion = crearSesion();
 
