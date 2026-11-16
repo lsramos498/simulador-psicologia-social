@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Guion de sustentación — User story map Lumina</title>
+  <style>
+    body { font-family: Calibri, Arial, sans-serif; font-size: 12pt; line-height: 1.45; margin: 1.8cm; color: #111; }
+    h1 { font-size: 18pt; margin-bottom: 4pt; }
+    h2 { font-size: 13pt; margin-top: 16pt; margin-bottom: 6pt; }
+    .meta p { margin: 2pt 0; }
+    .voz { border: 1px solid #333; padding: 10pt 12pt; margin: 10pt 0; }
+    .voz h3 { margin: 0 0 8pt; font-size: 12pt; }
+    .spoken p { margin: 0 0 8pt; text-align: justify; }
+    table { width: 100%; border-collapse: collapse; margin-top: 6pt; font-size: 11pt; }
+    th, td { border: 1px solid #333; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+    th { background: #f2f2f2; }
+    .footer { margin-top: 16pt; font-size: 10pt; color: #444; }
+  </style>
+</head>
+<body>
+  <h1>Guion de sustentación — User story map</h1>
+  <p><strong>Proyecto Lumina</strong> — Simulador de Psicología Social, Proyecto Nuclear II</p>
+
+  <div class="meta">
+    <p><strong>Tres voces:</strong> Stefanía Díaz, Laura Ramos y Valeria Tobar</p>
+    <p><strong>Qué se sustenta:</strong> el mapa de historias de usuario (docs/User-story-map-Lumina.xlsx)</p>
+    <p><strong>Duración:</strong> unos 4 minutos. Cada persona lee solo su bloque.</p>
+  </div>
+
+  <h2>1. Texto para leer</h2>
+
+  <div class="voz spoken">
+    <h3>Stefanía Díaz — apertura, incremento 1 e incremento 2</h3>
+    <p>Buenos días. Somos Stefanía Díaz, Laura Ramos y Valeria Tobar, del proyecto Lumina. Vamos a sustentar el user story map. No es una lista de tareas técnicas. Está ordenado por el valor que recibe el usuario, en cuatro incrementos. Cada tarjeta es una historia o una regla de negocio, y debajo dice si está terminada, en curso o sin iniciar.</p>
+    <p>El primer incremento es Acceso y permisos, con paso a producción el 16 de octubre. Lo desarrolló Sofía Gallego. El objetivo es permitir que cada rol ingrese con su propio mecanismo y solo ejecute lo que tiene autorizado. El estudiante entra con correo y código. El docente y el administrador entran con contraseña. El administrador crea docentes y asigna el permiso de crear casos. Este incremento está terminado. El patrón es el Proxy, aplicado al crear un caso.</p>
+    <p>El segundo incremento es el mío: Casos académicos y rúbricas, con paso a producción el 8 de noviembre. El objetivo es permitir que el docente diseñe, valide y publique un caso situacional completo. El docente crea un borrador, lo construye por pasos con el patrón Builder, agrega escenas, preguntas y opciones con explicación, y asocia una rúbrica cuyas ponderaciones suman cien. Solo puede publicar si esa estructura está completa. Un caso publicado o archivado ya no se edita. Solo el creador o un administrador lo gestionan, y el estudiante no ve la respuesta correcta ni la explicación. Este incremento está terminado. Al cerrarlo, ya existe un caso publicable para programar una actividad.</p>
+  </div>
+
+  <div class="voz spoken">
+    <h3>Laura Ramos — incremento 3</h3>
+    <p>Yo sigo con el tercer incremento: Actividades, sesiones y convocatoria, previsto para el 20 de noviembre. Es mi módulo. El objetivo es permitir que el docente programe una actividad sobre un caso publicado y controle la sesión. Programar, iniciar y cerrar ya está terminado. Sigue en curso la convocatoria por correo, porque el mensaje se arma pero el transporte todavía no está conectado, y el ciclo completo de la sesión: Sin iniciar, En curso y Finalizado. Ese ciclo usa el patrón State. El incremento, en conjunto, está en curso. Sin este paso, el caso publicado no llega al estudiante.</p>
+  </div>
+
+  <div class="voz spoken">
+    <h3>Valeria Tobar — incremento 4 y cierre</h3>
+    <p>Yo cierro con el cuarto incremento: Participación y pantallas, previsto para el 30 de noviembre. Es mi módulo. El objetivo es permitir que el estudiante responda el caso. Si la sesión está En curso, puede registrar su respuesta, cambiarla mientras siga abierta y consultar lo que respondió sin ver la solución. Eso está terminado y usa el patrón Observer. El cálculo del progreso está en curso. Siguen sin iniciar la calificación con la rúbrica, el umbral de ingreso tardío del RF-22 y las pantallas web.</p>
+    <p>En resumen, el mapa muestra el orden del producto. Primero sabemos quién entra. Después existe un caso publicable. Después ese caso se puede convocar. Al final el estudiante lo responde y el equipo debe poder mostrarlo en la web, no solo por la API. Los dos primeros incrementos están terminados. Los dos últimos están en curso.</p>
+  </div>
+
+  <h2>2. Si el profesor pregunta</h2>
+  <table>
+    <tr><th>Pregunta</th><th>Quién responde</th><th>Respuesta</th></tr>
+    <tr><td>¿Por qué este orden?</td><td>Stefanía</td><td>Sin acceso no hay autor, sin caso publicado no hay actividad, y sin sesión en curso no hay respuesta.</td></tr>
+    <tr><td>¿Qué construye el Builder?</td><td>Stefanía</td><td>El caso ya validado, en memoria. Quien lo guarda es el servicio, en MySQL. Build no persiste.</td></tr>
+    <tr><td>¿Qué falta de las actividades?</td><td>Laura</td><td>Enviar el correo de verdad y cerrar el ciclo completo de la sesión con el patrón State.</td></tr>
+    <tr><td>¿Qué falta de la participación?</td><td>Valeria</td><td>Terminar el progreso, calificar con la rúbrica, el RF-22 y las pantallas. Registrar y consultar ya está.</td></tr>
+  </table>
+
+  <p class="footer">Guion para Stefanía Díaz, Laura Ramos y Valeria Tobar. Proyecto Nuclear II / Lumina. Noviembre de 2026. Archivo del mapa: docs/User-story-map-Lumina.xlsx.</p>
+</body>
+</html>
