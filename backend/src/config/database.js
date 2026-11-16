@@ -34,5 +34,7 @@ export const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  charset: 'utf8mb4'
+  charset: 'utf8mb4',
+  // Alinear Node (America/Bogota) con MySQL para ventanas de actividad/sesión.
+  timezone: process.env.DB_TIMEZONE || '-05:00'
 });

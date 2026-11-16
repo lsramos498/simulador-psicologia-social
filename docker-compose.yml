@@ -5,10 +5,13 @@ services:
     ports:
       - "3306:3306"
     environment:
+      TZ: America/Bogota
       MYSQL_ROOT_PASSWORD: rootlocal
       MYSQL_DATABASE: proyecto_nuclear
       MYSQL_USER: lumina_app
       MYSQL_PASSWORD: Lumina2026
+    command:
+      - --default-time-zone=-05:00
     volumes:
       - lumina-mysql-data:/var/lib/mysql
       - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
