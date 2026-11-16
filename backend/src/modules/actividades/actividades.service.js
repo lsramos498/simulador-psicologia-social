@@ -12,13 +12,17 @@ function errorActividad(codigo, mensaje, statusCode = 400) {
   return Object.assign(new Error(mensaje), { codigo, statusCode });
 }
 
+function errorValidacion(mensaje) {
+  return Object.assign(new TypeError(mensaje), { statusCode: 400 });
+}
+
 function validarId(valor, nombre) {
   if (
     !Number.isSafeInteger(valor) ||
     valor <= 0 ||
     valor > MAX_INT_MYSQL
   ) {
-    throw new TypeError(`${nombre} debe ser un entero positivo válido.`);
+    throw errorValidacion(`${nombre} debe ser un entero positivo válido.`);
   }
 }
 
@@ -32,7 +36,7 @@ function normalizarFecha(valor, nombre) {
 
   if (valor instanceof Date) {
     if (Number.isNaN(valor.getTime())) {
-      throw new TypeError(`${nombre} no es una fecha válida.`);
+      throw errorValidacion(`${nombre} no es una fecha válida.`);
     }
 
     anio = valor.getFullYear();
@@ -47,7 +51,7 @@ function normalizarFecha(valor, nombre) {
     );
 
     if (!coincidencia) {
-      throw new TypeError(
+      throw errorValidacion(
         `${nombre} debe tener formato YYYY-MM-DDTHH:mm o YYYY-MM-DD HH:mm:ss.`
       );
     }
@@ -69,11 +73,11 @@ function normalizarFecha(valor, nombre) {
     minuto = Number(minuto);
     segundo = Number(segundo ?? 0);
   } else {
-    throw new TypeError(`${nombre} debe ser una fecha válida.`);
+    throw errorValidacion(`${nombre} debe ser una fecha válida.`);
   }
 
   if (anio < 1000 || anio > 9999) {
-    throw new TypeError(`${nombre} debe tener un año válido para MySQL.`);
+    throw errorValidacion(`${nombre} debe tener un año válido para MySQL.`);
   }
 
   const fecha = new Date(anio, mes - 1, dia, hora, minuto, segundo);
@@ -86,7 +90,7 @@ function normalizarFecha(valor, nombre) {
     fecha.getMinutes() !== minuto ||
     fecha.getSeconds() !== segundo
   ) {
-    throw new TypeError(`${nombre} contiene una fecha u hora inválida.`);
+    throw errorValidacion(`${nombre} contiene una fecha u hora inválida.`);
   }
 
   const completar = (numero) => String(numero).padStart(2, '0');
@@ -101,13 +105,13 @@ function validarTextoOpcional(valor, nombre, longitudMaxima = null) {
   }
 
   if (typeof valor !== 'string') {
-    throw new TypeError(`${nombre} debe ser un texto.`);
+    throw errorValidacion(`${nombre} debe ser un texto.`);
   }
 
   const texto = valor.trim();
 
   if (longitudMaxima && texto.length > longitudMaxima) {
-    throw new TypeError(
+    throw errorValidacion(
       `${nombre} no puede superar ${longitudMaxima} caracteres.`
     );
   }
@@ -117,7 +121,7 @@ function validarTextoOpcional(valor, nombre, longitudMaxima = null) {
 
 function validarDatosActividad(datos, docenteId) {
   if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
-    throw new TypeError('Los datos de la actividad no son válidos.');
+    throw errorValidacion('Los datos de la actividad no son válidos.');
   }
 
   validarId(docenteId, 'docenteId');
@@ -133,7 +137,7 @@ function validarDatosActividad(datos, docenteId) {
     tiempoLimiteSegundos <= 0 ||
     tiempoLimiteSegundos > MAX_INT_MYSQL
   ) {
-    throw new TypeError(
+    throw errorValidacion(
       'El tiempo límite debe ser un entero positivo válido para MySQL.'
     );
   }
@@ -143,7 +147,7 @@ function validarDatosActividad(datos, docenteId) {
     intentosPermitidos < 1 ||
     intentosPermitidos > MAX_INT_MYSQL
   ) {
-    throw new TypeError(
+    throw errorValidacion(
       'Los intentos permitidos deben ser un entero mayor o igual a uno.'
     );
   }
@@ -152,7 +156,7 @@ function validarDatosActividad(datos, docenteId) {
     !Array.isArray(datos.estudiantesIds) ||
     datos.estudiantesIds.length === 0
   ) {
-    throw new TypeError('Debe asociarse al menos un estudiante.');
+    throw errorValidacion('Debe asociarse al menos un estudiante.');
   }
 
   datos.estudiantesIds.forEach((id) => validarId(id, 'estudianteId'));
@@ -160,7 +164,7 @@ function validarDatosActividad(datos, docenteId) {
   const estudiantesUnicos = new Set(datos.estudiantesIds);
 
   if (estudiantesUnicos.size !== datos.estudiantesIds.length) {
-    throw new TypeError('No se permiten estudiantes duplicados.');
+    throw errorValidacion('No se permiten estudiantes duplicados.');
   }
 
   const fechaInicio = normalizarFecha(datos.fechaInicio, 'fechaInicio');
@@ -490,7 +494,12 @@ export function crearServicioActividades(
     },
 
     async iniciar(actividadId, docenteId) {
-      await this.cerrarVencidas();
+      if (
+        typeof repositorio.listarVencidasParaCierre === 'function' ||
+        typeof repositorio.cerrarActividadesVencidas === 'function'
+      ) {
+        await this.cerrarVencidas();
+      }
       return cambiarEstadoActividad(
         repositorio,
         actividadId,
@@ -508,9 +517,23 @@ export function crearServicioActividades(
       );
     },
 
+    /**
+     * Cierra las actividades cuya fechaFin superó las 24 horas.
+     * Con listarVencidasParaCierre() devuelve la lista de actividades cerradas;
+     * si el repositorio solo ofrece cerrarActividadesVencidas() devuelve la
+     * cantidad de actividades cerradas.
+     */
     async cerrarVencidas(ahora = reloj()) {
       if (typeof repositorio.listarVencidasParaCierre !== 'function') {
-        return [];
+        if (typeof repositorio.cerrarActividadesVencidas !== 'function') {
+          throw new TypeError(
+            'El repositorio no puede cerrar actividades vencidas.'
+          );
+        }
+
+        return repositorio.cerrarActividadesVencidas(
+          normalizarFecha(ahora, 'fechaActual')
+        );
       }
 
       const marca = ahora instanceof Date ? ahora : new Date(ahora);
@@ -794,12 +817,19 @@ async function exigirActividadEditable(repositorio, actividadId, docenteId) {
   return actividad;
 }
 
-async function cambiarEstadoActividad(repositorio, actividadId, docenteId, estado) {
+async function cambiarEstadoActividad(
+  repositorio,
+  actividadId,
+  docenteId,
+  estado
+) {
   validarId(actividadId, 'actividadId');
   validarId(docenteId, 'docenteId');
 
   if (typeof repositorio.actualizarEstado !== 'function') {
-    throw new TypeError('El repositorio no puede actualizar el estado de la actividad.');
+    throw new TypeError(
+      'El repositorio no puede actualizar el estado de la actividad.'
+    );
   }
 
   const actividad = await repositorio.obtenerActividadPorId(actividadId);
@@ -820,21 +850,32 @@ async function cambiarEstadoActividad(repositorio, actividadId, docenteId, estad
     );
   }
 
-  if (actividad.estado === ESTADOS_ACTIVIDAD.CERRADA && estado === ESTADOS_ACTIVIDAD.INICIADA) {
+  const transicionesPermitidas = {
+    [ESTADOS_ACTIVIDAD.PROGRAMADA]: ESTADOS_ACTIVIDAD.INICIADA,
+    [ESTADOS_ACTIVIDAD.INICIADA]: ESTADOS_ACTIVIDAD.CERRADA
+  };
+
+  const estadoEsperado = transicionesPermitidas[actividad.estado];
+
+  if (estadoEsperado !== estado) {
     throw errorActividad(
-      'ACTIVIDAD_CERRADA',
-      'Una actividad cerrada no se puede iniciar.',
+      'TRANSICION_INVALIDA',
+      `No se puede cambiar una actividad de ${actividad.estado} a ${estado}.`,
       409
     );
   }
 
-  const filas = await repositorio.actualizarEstado(actividadId, estado);
+  const filas = await repositorio.actualizarEstado(
+    actividadId,
+    estado,
+    actividad.estado
+  );
 
   if (!filas) {
     throw errorActividad(
-      'ACTIVIDAD_NO_EXISTE',
-      'La actividad programada no existe.',
-      404
+      'ESTADO_MODIFICADO_CONCURRENTEMENTE',
+      'La actividad cambió de estado durante la operación. Actualice la información e inténtelo de nuevo.',
+      409
     );
   }
 

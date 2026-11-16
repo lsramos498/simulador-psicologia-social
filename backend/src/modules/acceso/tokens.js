@@ -77,10 +77,14 @@ export function verificarToken(token) {
     throw errorAutenticacion('Debe autenticarse para continuar');
   }
 
+  // Fuera del try: si falta JWT_SECRETO es un error de configuración del
+  // servidor (500), no un token inválido del cliente (401).
+  const secreto = obtenerSecreto();
+
   let datos;
   try {
     // Se fija el algoritmo para impedir tokens sin firma o con otro algoritmo.
-    datos = jwt.verify(token, obtenerSecreto(), { algorithms: [ALGORITMO] });
+    datos = jwt.verify(token, secreto, { algorithms: [ALGORITMO] });
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       throw errorAutenticacion('La sesión expiró, vuelva a iniciar sesión');

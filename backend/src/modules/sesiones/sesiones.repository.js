@@ -1,6 +1,6 @@
 export function crearRepositorioSesiones(pool) {
-  if (!pool || typeof pool.execute !== 'function' || typeof pool.getConnection !== 'function') {
-    throw new TypeError('Se requiere un pool de MySQL');
+  if (!pool || typeof pool.getConnection !== 'function') {
+    throw new TypeError('Se requiere una conexión a la base de datos (pool de MySQL).');
   }
 
   function consultas(conexion) {
@@ -247,6 +247,162 @@ export function crearRepositorioSesiones(pool) {
     };
   }
 
+  /**
+   * Consulta la actividad y bloquea su registro
+   * para evitar modificaciones simultáneas.
+   */
+  async function obtenerActividad(conexion, actividadId) {
+    const [filas] = await conexion.execute(
+      `SELECT
+          id,
+          docente_id,
+          fechaInicio,
+          fechaFin,
+          tiempoLimiteSegundos,
+          intentosPermitidos,
+          estado
+       FROM ActividadProgramada
+       WHERE id = ?
+       FOR UPDATE`,
+      [actividadId]
+    );
+
+    return filas[0] ?? null;
+  }
+
+  /**
+   * Verifica que el estudiante esté autorizado
+   * para participar en la actividad.
+   */
+  async function obtenerAutorizacion(conexion, actividadId, estudianteId) {
+    const [filas] = await conexion.execute(
+      `SELECT
+          id,
+          actividad_id,
+          estudiante_id,
+          estado
+       FROM EstudianteAutorizado
+       WHERE actividad_id = ?
+         AND estudiante_id = ?
+       FOR UPDATE`,
+      [actividadId, estudianteId]
+    );
+
+    return filas[0] ?? null;
+  }
+
+  /**
+   * Recupera la última sesión del estudiante
+   * dentro de una actividad.
+   */
+  async function obtenerUltimaSesion(conexion, actividadId, estudianteId) {
+    const [filas] = await conexion.execute(
+      `SELECT
+          id,
+          actividad_id,
+          estudiante_id,
+          numeroIntento,
+          estado,
+          inicio,
+          fin,
+          segundosConsumidos,
+          motivoCierre
+       FROM SesionSimulacion
+       WHERE actividad_id = ?
+         AND estudiante_id = ?
+       ORDER BY numeroIntento DESC
+       LIMIT 1
+       FOR UPDATE`,
+      [actividadId, estudianteId]
+    );
+
+    return filas[0] ?? null;
+  }
+
+  async function obtenerSesionPorId(conexion, sesionId) {
+    const [filas] = await conexion.execute(
+      `SELECT
+          id,
+          actividad_id,
+          estudiante_id,
+          numeroIntento,
+          estado,
+          inicio,
+          fin,
+          segundosConsumidos,
+          motivoCierre
+       FROM SesionSimulacion
+       WHERE id = ?
+       FOR UPDATE`,
+      [sesionId]
+    );
+
+    return filas[0] ?? null;
+  }
+
+  /**
+   * Inserta una sesión individual.
+   */
+  async function insertarSesion(conexion, sesion) {
+    const [resultado] = await conexion.execute(
+      `INSERT INTO SesionSimulacion (
+          actividad_id,
+          estudiante_id,
+          numeroIntento,
+          estado,
+          inicio,
+          fin,
+          segundosConsumidos,
+          motivoCierre
+       )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        sesion.actividadId,
+        sesion.estudianteId,
+        sesion.numeroIntento,
+        sesion.estado,
+        sesion.inicio,
+        sesion.fin,
+        sesion.segundosConsumidos,
+        sesion.motivoCierre
+      ]
+    );
+
+    return {
+      ...sesion,
+      id: resultado.insertId
+    };
+  }
+
+  /**
+   * Actualiza el estado y los datos de una sesión.
+   */
+  async function actualizarSesion(conexion, sesion) {
+    const [resultado] = await conexion.execute(
+      `UPDATE SesionSimulacion
+       SET estado = ?,
+           inicio = ?,
+           fin = ?,
+           segundosConsumidos = ?,
+           motivoCierre = ?
+       WHERE id = ?`,
+      [
+        sesion.estado,
+        sesion.inicio,
+        sesion.fin,
+        sesion.segundosConsumidos,
+        sesion.motivoCierre,
+        sesion.id
+      ]
+    );
+
+    if (resultado.affectedRows !== 1) {
+      throw new Error('No fue posible actualizar la sesión.');
+    }
+
+    return sesion;
+  }
+
   return {
     ...consultas(pool),
 
@@ -299,11 +455,28 @@ export function crearRepositorioSesiones(pool) {
       }
     },
 
+    // Consultas con la conexión explícita (flujo iniciarSesion/finalizarSesion).
+    obtenerActividad,
+    obtenerAutorizacion,
+    obtenerUltimaSesion,
+    obtenerSesionPorId,
+    insertarSesion,
+    actualizarSesion,
+
+    /**
+     * Ejecuta una operación dentro de una transacción. El argumento recibido
+     * expone las consultas por método (tx.obtenerPorId, ...) y además actúa
+     * como conexión (tx.execute) para las funciones que reciben `conexion`.
+     */
     async enTransaccion(operacion) {
       const conexion = await pool.getConnection();
       try {
         await conexion.beginTransaction();
-        const resultado = await operacion(consultas(conexion));
+        const tx = {
+          ...consultas(conexion),
+          execute: (sql, parametros) => conexion.execute(sql, parametros)
+        };
+        const resultado = await operacion(tx);
         await conexion.commit();
         return resultado;
       } catch (error) {
