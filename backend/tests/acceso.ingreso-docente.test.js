@@ -56,7 +56,14 @@ function ingresar(appPrueba, cuerpo) {
 test('docente con correo y contraseña correctos recibe su token (200)', async () => {
   const res = await ingresar(crearAppDePrueba(), { correo: CORREO, contrasena: CONTRASENA }).expect(200);
 
-  assert.deepEqual(res.body.usuario, { id: 2, roles: ['Docente'], permisos: ['CREAR_CASOS'] });
+  assert.deepEqual(res.body.usuario, {
+    id: 2,
+    roles: ['Docente'],
+    permisos: ['CREAR_CASOS'],
+    nombres: null,
+    apellidos: null,
+    correo: CORREO
+  });
   assert.deepEqual(verificarToken(res.body.token), {
     id: 2, roles: ['Docente'], permisos: ['CREAR_CASOS']
   });
