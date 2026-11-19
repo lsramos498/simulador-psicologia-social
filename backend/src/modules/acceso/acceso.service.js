@@ -199,9 +199,17 @@ export function crearServicioAcceso(repositorio, {
     },
 
     /**
-     * RF-01: el estudiante pide el código a su correo institucional.
-     * Regenera el código (solo guardamos hash) y lo envía por notificación.
-     * Respuesta genérica para no filtrar si el correo existe.
+     * RF-01 / RF-20: el estudiante pide que le reenvíen su código al correo
+     * institucional. Ruta pública, así que:
+     *  - El código NUNCA viaja en la respuesta HTTP (ni el enlace del correo):
+     *    solo llega al correo del estudiante. Si saliera en la respuesta,
+     *    cualquiera que sepa el correo de un convocado entraría como él.
+     *    Única excepción: ACCESO_CODIGO_EN_PANTALLA=true para demos locales.
+     *  - Respuesta igual exista o no el correo (no revela quién está convocado).
+     *  - El código nuevo reemplaza al anterior solo si el correo salió de
+     *    verdad; si el envío falla, el estudiante conserva su código.
+     *  - Máximo 5 solicitudes por correo cada 15 minutos (cuentan todas,
+     *    también las exitosas), para que nadie invalide el código ajeno sin fin.
      */
     async enviarCodigoEstudiante({ correo }) {
       const correoNormalizado = normalizarCorreo(correo);
@@ -209,44 +217,30 @@ export function crearServicioAcceso(repositorio, {
         throw crearErrorHttp('El correo institucional es obligatorio', 400);
       }
 
-      if (limiteIntentos.estaBloqueado(`enviar-codigo:${correoNormalizado}`)) {
-        throw crearErrorHttp(
-          'Demasiados intentos. Intenta de nuevo más tarde',
-          429
-        );
+      const clave = `enviar-codigo:${correoNormalizado}`;
+      if (limiteIntentos.estaBloqueado(clave)) {
+        throw crearErrorHttp('Demasiados intentos. Intenta de nuevo más tarde', 429);
+      }
+      limiteIntentos.registrarFallo(clave);
+
+      // Antes de buscar el correo: así el 503 no revela si está convocado.
+      if (!notificaciones || typeof notificaciones.enviar !== 'function') {
+        throw crearErrorHttp('El envío de correos no está disponible en este momento', 503);
       }
 
+      const respuestaGenerica = { mensaje: MENSAJE_CODIGO_ENVIADO };
       const convocatoria = await repositorio.buscarConvocatoriaActivaPorCorreo(
         correoNormalizado,
         reloj()
       );
-
       if (!convocatoria || !convocatoria.usuarioActivo) {
-        limiteIntentos.registrarFallo(`enviar-codigo:${correoNormalizado}`);
-        return { mensaje: MENSAJE_CODIGO_ENVIADO };
-      }
-
-      if (!notificaciones || typeof notificaciones.enviar !== 'function') {
-        throw crearErrorHttp(
-          'El envío de correos no está disponible en este momento',
-          503
-        );
+        return respuestaGenerica;
       }
 
       const { codigo, codigoHash } = generarCodigo();
-      const actualizadas = await repositorio.actualizarCodigoAutorizacion(
-        convocatoria.actividadId,
-        convocatoria.estudianteId,
-        codigoHash,
-        reloj()
-      );
-
-      if (!actualizadas) {
-        return { mensaje: MENSAJE_CODIGO_ENVIADO };
-      }
-
+      let envio;
       try {
-        const envio = await notificaciones.enviar(TIPOS_NOTIFICACION.CONVOCATORIA, {
+        envio = await notificaciones.enviar(TIPOS_NOTIFICACION.CONVOCATORIA, {
           actividadId: convocatoria.actividadId,
           estudianteId: convocatoria.estudianteId,
           destinatario: convocatoria.correo,
@@ -261,26 +255,27 @@ export function crearServicioAcceso(repositorio, {
           urlAcceso: process.env.URL_ACCESO || 'http://localhost:5173',
           codigoAutorizacion: codigo
         });
-
-        limiteIntentos.reiniciar(`enviar-codigo:${correoNormalizado}`);
-
-        const enPantalla = Boolean(envio?.demo) || envio?.canal === 'Sistema';
-        return {
-          mensaje: enPantalla
-            ? 'Lumina generó tu código. Úsalo para entrar (el correo del sistema aún no está activo).'
-            : MENSAJE_CODIGO_ENVIADO,
-          // Solo se devuelve en modo demo/pantalla; con SMTP real el alumno lo ve en su bandeja.
-          codigo: enPantalla ? codigo : undefined,
-          previewUrl: envio?.previewUrl || null,
-          canal: envio?.canal || null
-        };
       } catch (error) {
-        limiteIntentos.registrarFallo(`enviar-codigo:${correoNormalizado}`);
-        throw crearErrorHttp(
-          error?.message || 'No se pudo enviar el código al correo',
-          502
-        );
+        console.error('No se pudo enviar el código del estudiante:', error?.message);
+        return respuestaGenerica; // conserva el código anterior
       }
+
+      const llegoAlCorreo = envio?.canal === 'Correo' && !envio?.demo;
+      const mostrarEnPantalla = process.env.ACCESO_CODIGO_EN_PANTALLA === 'true';
+      if (!llegoAlCorreo && !mostrarEnPantalla) {
+        return respuestaGenerica; // no se reemplaza un código que nadie recibió
+      }
+
+      await repositorio.actualizarCodigoAutorizacion(
+        convocatoria.actividadId,
+        convocatoria.estudianteId,
+        codigoHash,
+        reloj()
+      );
+
+      return mostrarEnPantalla
+        ? { mensaje: 'Modo demostración: Lumina muestra tu código en pantalla.', codigo }
+        : respuestaGenerica;
     }
   };
 }

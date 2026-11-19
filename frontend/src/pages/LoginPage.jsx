@@ -105,9 +105,6 @@ export default function LoginPage({ onSesion }) {
     try {
       let resultado;
       if (modo === 'estudiante') {
-        if (!codigoEnviado) {
-          throw new Error('Primero pulsa «Enviar código» y revisa tu correo.');
-        }
         resultado = await ingresarEstudiante({ correo, codigo });
       } else {
         resultado = await ingresarDocente({ correo, contrasena });
@@ -257,11 +254,11 @@ export default function LoginPage({ onSesion }) {
                   onClick={pedirCodigo}
                   disabled={cargando || enviandoCodigo || !correo.trim()}
                 >
-                  {enviandoCodigo ? 'Enviando…' : 'Enviar código'}
+                  {enviandoCodigo ? 'Enviando…' : codigoEnviado ? 'Reenviar código' : '¿No tienes el código? Enviarlo a mi correo'}
                 </button>
 
                 <div className="field">
-                  <label htmlFor="codigo">Código recibido</label>
+                  <label htmlFor="codigo">Código de la convocatoria (llega a tu correo)</label>
                   <input
                     id="codigo"
                     type="text"
@@ -270,7 +267,7 @@ export default function LoginPage({ onSesion }) {
                     onChange={(e) => setCodigo(e.target.value.toUpperCase())}
                     placeholder="Ej. ABCD2345"
                     required
-                    disabled={cargando || !codigoEnviado}
+                    disabled={cargando}
                   />
                 </div>
               </>
@@ -297,7 +294,7 @@ export default function LoginPage({ onSesion }) {
               disabled={
                 cargando ||
                 enviandoCodigo ||
-                (modo === 'estudiante' && (!codigoEnviado || !codigo.trim()))
+                (modo === 'estudiante' && !codigo.trim())
               }
             >
               {cargando ? 'Ingresando…' : 'Entrar'}
