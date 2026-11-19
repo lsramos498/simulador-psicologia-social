@@ -65,6 +65,19 @@ correo + código → hash del código → convocatoria en MySQL → reglas (esta
 | `429` | 5 códigos incorrectos seguidos para ese correo: bloqueo de 15 minutos |
 | `500` | Error interno (sin detalles para el cliente) |
 
+### `POST /api/acceso/estudiantes/enviar-codigo` (RF-01, RF-20)
+
+Ruta pública para que el estudiante pida que le reenvíen su código. Cuerpo: `{ "correo": "..." }`.
+
+- Responde siempre el mismo mensaje genérico (`200`), esté o no convocado el correo.
+- El código **solo llega al correo** del estudiante: nunca viaja en la respuesta ni en un
+  enlace de vista previa. Excepción para demos locales: `ACCESO_CODIGO_EN_PANTALLA=true`.
+- El código nuevo reemplaza al anterior solo si el correo salió de verdad por SMTP; si el
+  envío falla, el estudiante conserva el código que ya tenía.
+- Máximo 5 solicitudes por correo cada 15 minutos (`429`); cuentan también las exitosas.
+- `400` sin correo; `503` si el servidor no tiene servicio de correo (igual para cualquier correo).
+- En el login, pedir el código es opcional: quien ya tiene el código de la convocatoria entra directo.
+
 ### `POST /api/acceso/ingreso` (docentes y administradores)
 
 ```json
