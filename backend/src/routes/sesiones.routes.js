@@ -10,6 +10,7 @@ export function crearRutasSesiones(obtenerServicio) {
   router.post(
     '/actividades/:actividadId/iniciar',
     autenticar,
+    requiereRol(ROLES.ESTUDIANTE),
     requiereActividadAutorizada((req) => req.params.actividadId),
     async (req, res) => {
       try {
