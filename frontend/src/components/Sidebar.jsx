@@ -1,8 +1,13 @@
-const ITEMS = [
+import { esAdministrador } from '../utils/roles';
+
+const ITEMS_BASE = [
   { id: 'historias', label: 'Historias', icon: 'home' },
   { id: 'banco', label: 'Personajes', icon: 'people' },
   { id: 'crear', label: 'Crear', icon: 'plus' },
   { id: 'actividades', label: 'Actividades', icon: 'calendar' },
+  { id: 'seguimiento', label: 'Seguimiento', icon: 'eye' },
+  { id: 'espacios', label: 'Espacios', icon: 'box' },
+  { id: 'avisos', label: 'Avisos', icon: 'bell' },
   { id: 'biblioteca', label: 'Biblioteca', icon: 'box' }
 ];
 
@@ -36,6 +41,29 @@ function Icon({ name }) {
       </svg>
     );
   }
+  if (name === 'eye') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+      </svg>
+    );
+  }
+  if (name === 'bell') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 9a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 13 6 9Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M10 19a2 2 0 0 0 4 0" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      </svg>
+    );
+  }
+  if (name === 'shield') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3 5 6v6c0 5 3.5 8 7 9 3.5-1 7-4 7-9V6l-7-3Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-11Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -45,15 +73,20 @@ function Icon({ name }) {
 }
 
 export default function Sidebar({ activa, onCambiar, usuario, onSalir }) {
+  const admin = esAdministrador(usuario);
+  const items = admin
+    ? [{ id: 'admin', label: 'Admin', icon: 'shield' }, ...ITEMS_BASE]
+    : ITEMS_BASE;
+
   return (
     <aside className="side-nav">
       <div className="side-brand">
         <span className="brand-mark">Lumina</span>
-        <small>Práctica</small>
+        <small>{admin ? 'Administración' : 'Docente'}</small>
       </div>
 
       <nav aria-label="Principal">
-        {ITEMS.map((item) => (
+        {items.map((item) => (
           <button
             key={item.id}
             type="button"
@@ -72,7 +105,7 @@ export default function Sidebar({ activa, onCambiar, usuario, onSalir }) {
         <p className="side-user">
           {[usuario?.nombres, usuario?.apellidos].filter(Boolean).join(' ') ||
             usuario?.correo ||
-            'Docente'}
+            (admin ? 'Admin' : 'Docente')}
         </p>
         <button type="button" className="side-salir" onClick={onSalir}>
           Salir

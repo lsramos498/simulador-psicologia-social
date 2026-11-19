@@ -412,6 +412,33 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date()) {
       return { sesion: publica(fila), evaluacion };
     },
 
+    async listarPorActividad(actividadId, actor) {
+      validarIdentificador(actividadId, 'actividadId');
+      const filas = await repositorio.listarPorActividad(actividadId);
+      if (!filas.length) {
+        // Verifica que la actividad exista vía una sesión vacía: consulta actividad.
+        const actividad = await repositorio.enTransaccion(async (tx) =>
+          repositorio.obtenerActividad(tx, actividadId)
+        );
+        if (!actividad) throw crearErrorHttp('La actividad no existe.', 404);
+        if (!actor.esAdmin && Number(actividad.docente_id ?? actividad.docenteId) !== Number(actor.id)) {
+          throw crearErrorHttp('No tiene autorización para monitorear esta actividad.', 403);
+        }
+        return [];
+      }
+      const docenteId = Number(filas[0].docenteId);
+      if (!actor.esAdmin && docenteId !== Number(actor.id)) {
+        throw crearErrorHttp('No tiene autorización para monitorear esta actividad.', 403);
+      }
+      return filas.map((fila) => ({
+        ...publica(fila),
+        nombres: fila.nombres || null,
+        apellidos: fila.apellidos || null,
+        correo: fila.correo || null,
+        casoId: fila.casoId != null ? Number(fila.casoId) : null
+      }));
+    },
+
     finalizarPropia(sesionId, estudianteId, ahora = new Date()) {
       return aplicarCierre(sesionId, MOTIVOS_CIERRE.FINALIZACION, ahora, {
         permitido: (fila) => Number(fila.estudianteId) === Number(estudianteId)

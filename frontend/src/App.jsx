@@ -4,12 +4,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import LoginPage from './pages/LoginPage';
 import CasosPage from './pages/CasosPage';
 import PracticaEstudiantePage from './pages/PracticaEstudiantePage';
-
-function esEstudiante(usuario) {
-  const roles = usuario?.roles || [];
-  if (roles.some((r) => String(r).toLowerCase() === 'estudiante')) return true;
-  return String(usuario?.rol || '').toLowerCase() === 'estudiante';
-}
+import { esEstudiante, puedeUsarTaller } from './utils/roles';
 
 export default function App() {
   const [sesion, setSesion] = useState(() => leerSesion());
@@ -27,10 +22,20 @@ export default function App() {
   let contenido;
   if (!sesion) {
     contenido = <LoginPage onSesion={setSesion} />;
-  } else if (esEstudiante(sesion.usuario)) {
+  } else if (esEstudiante(sesion.usuario) && !puedeUsarTaller(sesion.usuario)) {
     contenido = <PracticaEstudiantePage sesion={sesion} onSalir={cerrarSesion} />;
-  } else {
+  } else if (puedeUsarTaller(sesion.usuario)) {
     contenido = <CasosPage sesion={sesion} onSalir={cerrarSesion} />;
+  } else {
+    contenido = (
+      <section className="crear-caso" style={{ padding: '2rem' }}>
+        <h2>Sin acceso al taller</h2>
+        <p className="muted-light">Tu usuario no tiene rol Docente ni Administrador.</p>
+        <button type="button" className="btn-play" onClick={cerrarSesion}>
+          Salir
+        </button>
+      </section>
+    );
   }
 
   return (

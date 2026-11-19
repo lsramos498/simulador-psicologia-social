@@ -6,25 +6,33 @@ import {
 } from '../api/client';
 
 export default function LoginPage({ onSesion }) {
-  const [modo, setModo] = useState('docente'); // docente | estudiante
-  const [correo, setCorreo] = useState('admin@unihumboldt.edu.co');
+  const [fase, setFase] = useState('portada'); // portada | docente | estudiante
+  const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [codigo, setCodigo] = useState('');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
 
-  function cambiarModo(nuevo) {
-    setModo(nuevo);
+  function abrirDocente() {
+    setFase('docente');
     setError('');
-    if (nuevo === 'docente') {
-      setCorreo('admin@unihumboldt.edu.co');
-      setContrasena('');
-      setCodigo('');
-    } else {
-      setCorreo('estudiante.flujo@unihumboldt.edu.co');
-      setContrasena('');
-      setCodigo('');
-    }
+    setCorreo('admin@unihumboldt.edu.co');
+    setContrasena('');
+    setCodigo('');
+  }
+
+  function abrirEstudiante() {
+    setFase('estudiante');
+    setError('');
+    setCorreo('estudiante.flujo@unihumboldt.edu.co');
+    setContrasena('');
+    setCodigo('');
+  }
+
+  function volverPortada() {
+    setFase('portada');
+    setError('');
+    setCargando(false);
   }
 
   async function enviar(evento) {
@@ -33,7 +41,7 @@ export default function LoginPage({ onSesion }) {
     setCargando(true);
     try {
       let resultado;
-      if (modo === 'estudiante') {
+      if (fase === 'estudiante') {
         resultado = await ingresarEstudiante({ correo, codigo });
       } else {
         resultado = await ingresarDocente({ correo, contrasena });
@@ -60,95 +68,113 @@ export default function LoginPage({ onSesion }) {
   }
 
   return (
-    <main className="login-page">
-      <section className="login-hero rise">
-        <p className="login-kicker">Simulador de psicología social</p>
-        <h1 className="brand-mark">Lumina</h1>
-        <p className="login-lead">
-          {modo === 'docente'
-            ? 'Taller docente para construir, publicar casos y convocar actividades.'
-            : 'Entrá con el código de tu convocatoria y practicá el caso en vivo.'}
-        </p>
-      </section>
+    <main className="login-splash">
+      <div className="login-splash-bg" aria-hidden="true" />
+      <div className="login-splash-vignette" aria-hidden="true" />
 
-      <form className="login-card panel rise" onSubmit={enviar} style={{ animationDelay: '120ms' }}>
-        <div className="login-tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            className={modo === 'docente' ? 'tab activo' : 'tab'}
-            aria-selected={modo === 'docente'}
-            onClick={() => cambiarModo('docente')}
-          >
-            Docente
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={modo === 'estudiante' ? 'tab activo' : 'tab'}
-            aria-selected={modo === 'estudiante'}
-            onClick={() => cambiarModo('estudiante')}
-          >
-            Estudiante
-          </button>
+      <div className="login-splash-center">
+        <div className="login-emblem" aria-hidden="true">
+          <div className="login-lupa">
+            <div className="login-lupa-cristal">
+              <span
+                className="login-lupa-face a"
+                style={{ backgroundImage: "url('/personajes/elena.jpg')" }}
+              />
+              <span
+                className="login-lupa-face b"
+                style={{ backgroundImage: "url('/personajes/bruno.jpg')" }}
+              />
+            </div>
+            <span className="login-lupa-aro" />
+            <span className="login-lupa-mango" />
+          </div>
         </div>
 
-        <h2>{modo === 'docente' ? 'Ingreso docente' : 'Ingreso estudiante'}</h2>
-        <p className="muted">
-          {modo === 'docente'
-            ? 'Usa tu correo institucional y contraseña del backend.'
-            : 'Correo institucional + código que te envió tu docente.'}
-        </p>
+        <p className="login-splash-kicker">Simulador de psicología social</p>
+        <h1 className="login-title-3d">LUMINA</h1>
 
-        <div className="field">
-          <label htmlFor="correo">Correo</label>
-          <input
-            id="correo"
-            type="email"
-            autoComplete="username"
-            value={correo}
-            onChange={(e) => setCorreo(e.target.value)}
-            required
-          />
-        </div>
-
-        {modo === 'docente' ? (
-          <div className="field">
-            <label htmlFor="contrasena">Contraseña</label>
-            <input
-              id="contrasena"
-              type="password"
-              autoComplete="current-password"
-              value={contrasena}
-              onChange={(e) => setContrasena(e.target.value)}
-              required
-            />
+        {fase === 'portada' ? (
+          <div className="login-cta-stack">
+            <button type="button" className="login-btn-game green" onClick={abrirEstudiante}>
+              Jugar
+            </button>
+            <button type="button" className="login-btn-game blue" onClick={abrirDocente}>
+              <span className="login-btn-user" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22">
+                  <circle cx="12" cy="8" r="4" fill="currentColor" />
+                  <path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="currentColor" />
+                </svg>
+              </span>
+              Iniciar sesión
+            </button>
           </div>
         ) : (
-          <div className="field">
-            <label htmlFor="codigo">Código de convocatoria</label>
-            <input
-              id="codigo"
-              type="text"
-              autoComplete="one-time-code"
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-              placeholder="Ej. ABCD2345"
-              required
-            />
-          </div>
+          <form className="login-splash-form" onSubmit={enviar}>
+            <button type="button" className="login-back" onClick={volverPortada}>
+              ← Volver
+            </button>
+            <h2>{fase === 'estudiante' ? 'Entrar a jugar' : 'Iniciar sesión'}</h2>
+            <p className="login-form-lead">
+              {fase === 'estudiante'
+                ? 'Correo institucional y código de tu convocatoria.'
+                : 'Docentes y administradores: correo y contraseña.'}
+            </p>
+
+            <div className="field">
+              <label htmlFor="correo">Correo</label>
+              <input
+                id="correo"
+                type="email"
+                autoComplete="username"
+                value={correo}
+                onChange={(e) => setCorreo(e.target.value)}
+                required
+              />
+            </div>
+
+            {fase === 'docente' ? (
+              <div className="field">
+                <label htmlFor="contrasena">Contraseña</label>
+                <input
+                  id="contrasena"
+                  type="password"
+                  autoComplete="current-password"
+                  value={contrasena}
+                  onChange={(e) => setContrasena(e.target.value)}
+                  required
+                />
+              </div>
+            ) : (
+              <div className="field">
+                <label htmlFor="codigo">Código de convocatoria</label>
+                <input
+                  id="codigo"
+                  type="text"
+                  autoComplete="one-time-code"
+                  value={codigo}
+                  onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+                  placeholder="Ej. ABCD2345"
+                  required
+                />
+              </div>
+            )}
+
+            {error ? <div className="alert">{error}</div> : null}
+
+            <button
+              className={fase === 'estudiante' ? 'login-btn-game green' : 'login-btn-game blue'}
+              type="submit"
+              disabled={cargando}
+            >
+              {cargando
+                ? 'Ingresando…'
+                : fase === 'estudiante'
+                  ? 'Jugar ahora'
+                  : 'Entrar'}
+            </button>
+          </form>
         )}
-
-        {error ? <div className="alert">{error}</div> : null}
-
-        <button className="btn btn-primary" type="submit" disabled={cargando}>
-          {cargando
-            ? 'Ingresando…'
-            : modo === 'docente'
-              ? 'Entrar al taller'
-              : 'Entrar a la práctica'}
-        </button>
-      </form>
+      </div>
     </main>
   );
 }

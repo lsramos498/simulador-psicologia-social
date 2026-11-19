@@ -91,6 +91,24 @@ export function crearRepositorioSesiones(pool) {
         return filas[0] ?? null;
       },
 
+      async listarPorActividad(actividadId) {
+        const [filas] = await conexion.execute(
+          `SELECT s.id, s.actividad_id AS actividadId, s.estudiante_id AS estudianteId,
+                  s.numeroIntento, s.estado, s.inicio, s.fin, s.segundosConsumidos, s.motivoCierre,
+                  a.docente_id AS docenteId, a.estado AS estadoActividad,
+                  a.fechaInicio, a.fechaFin, a.tiempoLimiteSegundos,
+                  a.rubrica_id AS rubricaId, a.caso_id AS casoId,
+                  u.nombres, u.apellidos, u.correoInstitucional AS correo
+           FROM SesionSimulacion s
+           INNER JOIN ActividadProgramada a ON a.id = s.actividad_id
+           INNER JOIN Usuario u ON u.id = s.estudiante_id
+           WHERE s.actividad_id = ?
+           ORDER BY u.apellidos, u.nombres, s.numeroIntento DESC`,
+          [actividadId]
+        );
+        return filas;
+      },
+
       async listarVencidas(ahora) {
         const [filas] = await conexion.execute(
           `${sesionSelect}

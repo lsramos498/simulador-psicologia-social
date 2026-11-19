@@ -13,6 +13,7 @@ import {
 import SimulacionPlayer from '../components/casos/SimulacionPlayer';
 import PracticaInicio from '../components/practica/PracticaInicio';
 import PracticaResultado from '../components/practica/PracticaResultado';
+import PracticaShell from '../components/practica/PracticaShell';
 import { mensajeError } from '../utils/casoHelpers';
 
 function preguntaDeCaso(caso, decisionId) {
@@ -243,15 +244,17 @@ export default function PracticaEstudiantePage({ sesion, onSalir }) {
 
   if (cargando && !caso && fase !== 'fin' && fase !== 'inicio') {
     return (
-      <section className="crear-caso">
-        <p className="muted-light">Preparando tu práctica…</p>
-      </section>
+      <PracticaShell usuario={usuario} onSalir={onSalir}>
+        <section className="crear-caso">
+          <p className="muted-light">Preparando tu práctica…</p>
+        </section>
+      </PracticaShell>
     );
   }
 
   if (fase === 'jugar' && caso && sesionData) {
     return (
-      <div>
+      <PracticaShell usuario={usuario} onSalir={onSalir}>
         {progreso ? (
           <div className="alert alert-ok" style={{ margin: '0.8rem 1rem' }}>
             Progreso: {progreso.preguntasRespondidas ?? progreso.respondidas ?? 0}
@@ -270,33 +273,37 @@ export default function PracticaEstudiantePage({ sesion, onSalir }) {
           onTerminar={alTerminar}
           onSalir={onSalir}
         />
-      </div>
+      </PracticaShell>
     );
   }
 
   if (fase === 'fin') {
     return (
-      <PracticaResultado
-        caso={caso}
-        evaluacion={evaluacion}
-        retroItems={retroItems}
-        onSalir={onSalir}
-      />
+      <PracticaShell usuario={usuario} onSalir={onSalir}>
+        <PracticaResultado
+          caso={caso}
+          evaluacion={evaluacion}
+          retroItems={retroItems}
+          onSalir={onSalir}
+        />
+      </PracticaShell>
     );
   }
 
   return (
-    <PracticaInicio
-      actividadId={actividadId}
-      caso={caso}
-      mensaje={mensaje}
-      error={error}
-      cargando={cargando}
-      notificaciones={notificaciones}
-      onActualizar={() => preparar()}
-      onSalir={onSalir}
-      onEmpezar={empezar}
-      onMarcarLeida={marcarLeida}
-    />
+    <PracticaShell usuario={usuario} onSalir={onSalir}>
+      <PracticaInicio
+        actividadId={actividadId}
+        caso={caso}
+        mensaje={mensaje}
+        error={error}
+        cargando={cargando}
+        notificaciones={notificaciones}
+        onActualizar={() => preparar()}
+        onSalir={onSalir}
+        onEmpezar={empezar}
+        onMarcarLeida={marcarLeida}
+      />
+    </PracticaShell>
   );
 }

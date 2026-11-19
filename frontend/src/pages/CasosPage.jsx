@@ -19,7 +19,12 @@ import SimulacionPlayer from '../components/casos/SimulacionPlayer';
 import { emparejarEscenario } from '../components/casos/AsistenteIACasos';
 import BancoPersonajes from '../components/BancoPersonajes';
 import ActividadesPage from './ActividadesPage';
+import AdminPage from './AdminPage';
+import AvisosPage from './AvisosPage';
+import EspaciosPage from './EspaciosPage';
+import SeguimientoPage from './SeguimientoPage';
 import { mensajeError } from '../utils/casoHelpers';
+import { esAdministrador } from '../utils/roles';
 import { guardarPortadaEscena, portadasDeCasoLocal } from '../utils/escenasLocal';
 
 const formVacio = {
@@ -52,13 +57,16 @@ export default function CasosPage({ sesion, onSalir }) {
   const [abriendoId, setAbriendoId] = useState(null);
   const [mostrarIaCrear, setMostrarIaCrear] = useState(false);
 
+  const admin = esAdministrador(usuario);
+
   async function cargar(estado = filtro) {
     setCargando(true);
     setError('');
     try {
       const respuesta = await listarCasos(token, {
         estado: estado || undefined,
-        creadorId: usuario?.id
+        // Admin ve todos los casos; docente solo los propios.
+        creadorId: admin ? undefined : usuario?.id
       });
       const lista = respuesta.data || [];
       setCasos(lista);
@@ -382,7 +390,7 @@ export default function CasosPage({ sesion, onSalir }) {
   return (
     <div className="studio">
       <Sidebar
-        activa={['ficha', 'editor'].includes(vista) ? 'historias' : vista}
+        activa={['ficha', 'editor', 'jugar'].includes(vista) ? 'historias' : vista}
         onCambiar={cambiarVista}
         usuario={usuario}
         onSalir={onSalir}
@@ -391,10 +399,10 @@ export default function CasosPage({ sesion, onSalir }) {
       <main className="studio-main">
         <header className="studio-top">
           <div>
-            <p className="kicker">Simulador de casos</p>
+            <p className="kicker">{admin ? 'Consola administración' : 'Simulador de casos'}</p>
             <h1 className="brand-mark">Lumina</h1>
           </div>
-          {vista !== 'actividades' ? (
+          {!['actividades', 'admin', 'seguimiento', 'avisos', 'espacios'].includes(vista) ? (
             <div className="studio-filters">
               <label>
                 Estado
@@ -477,6 +485,10 @@ export default function CasosPage({ sesion, onSalir }) {
         ) : null}
 
         {vista === 'actividades' ? <ActividadesPage sesion={sesion} /> : null}
+        {vista === 'admin' && admin ? <AdminPage sesion={sesion} /> : null}
+        {vista === 'seguimiento' ? <SeguimientoPage sesion={sesion} /> : null}
+        {vista === 'avisos' ? <AvisosPage sesion={sesion} /> : null}
+        {vista === 'espacios' ? <EspaciosPage sesion={sesion} /> : null}
 
         {vista === 'biblioteca' ? (
           <>

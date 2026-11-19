@@ -11,7 +11,8 @@ import {
   listarEstudiantes,
   listarEstudiantesAdmin,
   retirarEstudianteActividad,
-  cerrarActividad
+  cerrarActividad,
+  cerrarVencidasActividades
 } from '../api/client';
 import ActividadCrearForm from '../components/actividades/ActividadCrearForm';
 import ActividadesLista from '../components/actividades/ActividadesLista';
@@ -280,19 +281,39 @@ export default function ActividadesPage({ sesion }) {
     }
   }
 
+  async function cerrarVencidas() {
+    setTrabajando(true);
+    setError('');
+    try {
+      const res = await cerrarVencidasActividades(token);
+      const n = res.total ?? res.data?.length ?? 0;
+      setMensaje(n ? `Se cerraron ${n} actividad(es) vencida(s).` : 'No había actividades vencidas.');
+      await cargar();
+    } catch (err) {
+      setError(mensajeError(err));
+    } finally {
+      setTrabajando(false);
+    }
+  }
+
   return (
     <section className="crear-caso">
       <header className="crear-head">
         <div>
-          <p className="kicker">Docente</p>
+          <p className="kicker">{esAdmin ? 'Admin / Docente' : 'Docente'}</p>
           <h2>Actividades y convocatoria</h2>
           <p className="muted-light">
             Programa un caso con rúbrica, genera códigos y notifica a los estudiantes.
           </p>
         </div>
-        <button type="button" className="btn-ghost-dark" onClick={cargar}>
-          Actualizar
-        </button>
+        <div className="ficha-acciones">
+          <button type="button" className="btn-ghost-dark" disabled={trabajando} onClick={cerrarVencidas}>
+            Cerrar vencidas
+          </button>
+          <button type="button" className="btn-ghost-dark" onClick={cargar}>
+            Actualizar
+          </button>
+        </div>
       </header>
 
       {mensaje ? <div className="alert alert-ok fade">{mensaje}</div> : null}

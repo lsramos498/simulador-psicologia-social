@@ -450,3 +450,66 @@ export function retirarEstudianteActividad(token, actividadId, estudianteId) {
     token
   });
 }
+
+export function cerrarVencidasActividades(token) {
+  return pedir('/api/actividades/cerrar-vencidas', { method: 'POST', token });
+}
+
+export function monitorearSesionesActividad(token, actividadId) {
+  return pedir(`/api/sesiones/actividades/${actividadId}/monitor`, { token });
+}
+
+export function cerrarSesionDocente(token, sesionId) {
+  return pedir(`/api/sesiones/${sesionId}/cerrar`, { method: 'POST', token });
+}
+
+/** —— Administración RF-03 —— */
+export function adminListarRoles(token) {
+  return pedir('/api/acceso/admin/roles', { token });
+}
+
+export function adminListarPermisos(token) {
+  return pedir('/api/acceso/admin/permisos', { token });
+}
+
+export function adminCrearDocente(token, datos) {
+  return pedir('/api/acceso/admin/docentes', { method: 'POST', token, body: datos });
+}
+
+export function adminCrearEstudiante(token, datos) {
+  return pedir('/api/acceso/admin/estudiantes', { method: 'POST', token, body: datos });
+}
+
+export function adminAsignarRol(token, usuarioId, rol) {
+  return pedir(`/api/acceso/admin/usuarios/${usuarioId}/roles`, {
+    method: 'POST',
+    token,
+    body: { rol }
+  });
+}
+
+export function adminQuitarRol(token, usuarioId, rol) {
+  return pedir(`/api/acceso/admin/usuarios/${usuarioId}/roles/${encodeURIComponent(rol)}`, {
+    method: 'DELETE',
+    token
+  });
+}
+
+export function adminAsignarPermiso(token, rol, permiso) {
+  return pedir(`/api/acceso/admin/roles/${encodeURIComponent(rol)}/permisos`, {
+    method: 'POST',
+    token,
+    body: { permiso }
+  });
+}
+
+export function adminQuitarPermiso(token, rol, permiso) {
+  return pedir(
+    `/api/acceso/admin/roles/${encodeURIComponent(rol)}/permisos/${encodeURIComponent(permiso)}`,
+    { method: 'DELETE', token }
+  );
+}
+
+export function consultarSalud() {
+  return pedir('/api/health');
+}

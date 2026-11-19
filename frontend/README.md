@@ -1,11 +1,12 @@
-# Lumina — Frontend (taller de casos)
+# Lumina — Frontend
 
-Interfaz docente para el módulo de **Casos situacionales** (Stefania Díaz).
+Interfaz completa del simulador: **Administrador**, **Docente** y **Estudiante**.
 
 ## Requisitos
 
-1. Backend levantado en `http://127.0.0.1:3000`
-2. MySQL con la base `proyecto_nuclear` y usuario seed / docente con `CREAR_CASOS`
+1. MySQL (`docker compose up -d mysql`) + seed del backend (`npm run db:seed`)
+2. Backend en `http://127.0.0.1:3000`
+3. Node 20+
 
 ## Arranque
 
@@ -15,55 +16,41 @@ npm install
 npm run dev
 ```
 
-Abre `http://localhost:5173`. El proxy de Vite reenvía `/api` al backend.
+Abre `http://localhost:5173`. Vite reenvía `/api` al backend.
 
-## Qué incluye
+## Roles
 
-- Ingreso docente (`POST /api/acceso/ingreso`)
-- Catálogo visual de casos (hero + carruseles) y banco de personajes
-- Listado con filtro por estado (`GET /api/casos`)
-- Crear borrador básico (`POST /api/casos`) o caso completo con Builder (`POST /api/casos/construir`)
-- Editor de borrador: datos, personajes, escenas, preguntas, opciones y rúbrica
-- Ficha completa (árbol escenas → decisiones → opciones + checklist)
-- Publicar y archivar
+| Rol | Entrada | Pantallas |
+|-----|---------|-----------|
+| **Estudiante** | Login → **Jugar** (correo + código) | Práctica, notificaciones, simulación live, resultados |
+| **Docente** | Login → **Iniciar sesión** | Historias, crear/IA, editor, actividades, seguimiento, espacios, avisos, biblioteca |
+| **Administrador** | Mismo login docente | Todo lo docente + consola Admin (usuarios, roles, permisos, vista global) |
 
-## Arquitectura
-
-Aplicación React (Vite) de una sola página, sin enrutador: `App.jsx` decide qué
-pantalla mostrar según haya o no una sesión.
+## Estructura
 
 ```
 src/
-├── App.jsx
-├── api/client.js              Sesión + todas las rutas de Casos
-├── data/bancoPersonajes.js    Banco local para armar casos
-├── data/portadas.js           Fondos del catálogo
-├── utils/casoHelpers.js       Estado, errores, checklist de publicación
+├── App.jsx                 Routing por rol
+├── api/client.js           Cliente HTTP completo
+├── utils/roles.js          Helpers de rol
 ├── pages/
-│   ├── LoginPage.jsx
-│   └── CasosPage.jsx          Orquesta vistas (historias, crear, ficha, editor)
+│   ├── LoginPage.jsx       Portada estilo misterio
+│   ├── CasosPage.jsx       Shell docente/admin
+│   ├── AdminPage.jsx       RF-03 administración
+│   ├── ActividadesPage.jsx RF-04 / RF-21
+│   ├── SeguimientoPage.jsx Sesiones + participación
+│   ├── AvisosPage.jsx      Notificaciones
+│   ├── EspaciosPage.jsx    Espacios académicos
+│   └── PracticaEstudiantePage.jsx
 └── components/
     ├── Sidebar.jsx
-    ├── CasoHero.jsx
-    ├── CasosCarrusel.jsx
-    ├── BancoPersonajes.jsx
-    └── casos/
-        ├── CasoFicha.jsx      Detalle + publicar/archivar
-        └── CasoEditor.jsx     Tabs: datos / PJs / escenas / rúbrica / publicar
+    ├── actividades/
+    ├── casos/              Editor, simulación, tabs
+    └── practica/
 ```
 
-### Autenticación
+## Autenticación
 
-1. El docente ingresa; el backend responde con JWT + usuario.
-2. `guardarSesion` guarda en `localStorage` (`lumina.token`, `lumina.usuario`).
-3. Cada petición envía `Authorization: Bearer <token>`.
-4. Cerrar sesión llama a `limpiarSesion`.
-
-La interfaz **no decide permisos**: el backend valida token, `CREAR_CASOS` y
-propiedad del caso. Los errores traen `status`, `codigo` y `errores[]`.
-
-### Proxy de desarrollo
-
-`vite.config.js` reenvía `/api` a `http://127.0.0.1:3000`.
-
-Más detalle del backend: `backend/src/modules/casos/README.md`.
+1. Login guarda JWT en `localStorage` (`lumina.token`, `lumina.usuario`).
+2. Cada petición envía `Authorization: Bearer`.
+3. Permisos los valida el backend; la UI solo enruta por rol.

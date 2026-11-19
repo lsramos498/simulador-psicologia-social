@@ -25,6 +25,26 @@ export function crearRutasSesiones(obtenerServicio) {
   );
 
   router.get(
+    '/actividades/:actividadId/monitor',
+    autenticar,
+    requiereRol(ROLES.DOCENTE, ROLES.ADMINISTRADOR),
+    async (req, res) => {
+      try {
+        const data = await (await obtenerServicio()).listarPorActividad(
+          Number(req.params.actividadId),
+          {
+            id: req.usuario.id,
+            esAdmin: tieneRol(req.usuario, ROLES.ADMINISTRADOR)
+          }
+        );
+        return res.status(200).json({ data });
+      } catch (error) {
+        return responderErrorHttp(res, error, 'sesiones');
+      }
+    }
+  );
+
+  router.get(
     '/actividades/:actividadId',
     autenticar,
     requiereActividadAutorizada((req) => req.params.actividadId),
