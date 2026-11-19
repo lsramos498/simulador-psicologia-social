@@ -7,7 +7,11 @@ const ESTADOS_HTTP = {
   ESTADO_NO_PERMITIDO: 409,
   OPCION_INVALIDA: 422,
   RESPUESTA_DUPLICADA: 409,
-  RESPUESTA_NO_MODIFICABLE: 409
+  RESPUESTA_NO_MODIFICABLE: 409,
+  TIEMPO_AGOTADO: 409,
+  FUERA_DE_VENTANA: 403,
+  ACTIVIDAD_NO_INICIADA: 409,
+  NO_AUTORIZADO: 403
 };
 
 function responder(res, error) {
@@ -15,7 +19,9 @@ function responder(res, error) {
     return res.status(400).json({ error: error.message });
   }
 
-  const status = ESTADOS_HTTP[error?.codigo] ?? 500;
+  const status = Number.isInteger(error?.statusCode)
+    ? error.statusCode
+    : (ESTADOS_HTTP[error?.codigo] ?? 500);
   if (status >= 500) {
     console.error('Error en participación:', error?.code || error?.message);
     return res.status(500).json({ error: 'Ocurrió un error interno al procesar la solicitud.' });

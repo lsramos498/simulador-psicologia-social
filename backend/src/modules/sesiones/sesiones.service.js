@@ -22,7 +22,7 @@ function filaASesion(fila) {
 }
 
 function publica(fila) {
-  return {
+  const base = {
     id: Number(fila.id),
     actividadId: Number(fila.actividadId),
     estudianteId: Number(fila.estudianteId),
@@ -33,6 +33,11 @@ function publica(fila) {
     segundosConsumidos: Number(fila.segundosConsumidos ?? 0),
     motivoCierre: fila.motivoCierre ?? null
   };
+  // casoId viene del JOIN con ActividadProgramada (necesario para el frontend estudiante).
+  if (fila.casoId != null) {
+    base.casoId = Number(fila.casoId);
+  }
+  return base;
 }
 
 function ventanaMasUnDia(fila, ahora) {
@@ -200,7 +205,8 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date()) {
   }
 
   /**
-   * Finaliza una sesión que pertenece al estudiante.
+   * Finaliza una sesión del estudiante con evaluación (mismo camino que finalizarPropia).
+   * Evita el cierre “sin nota” que dejaba deuda de dos ciclos de vida distintos.
    */
   async function finalizarSesion({
     sesionId,
@@ -209,36 +215,8 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date()) {
   }) {
     validarIdentificador(sesionId, 'sesionId');
     validarIdentificador(estudianteId, 'estudianteId');
-
-    return repositorio.enTransaccion(async (conexion) => {
-      const sesionBD = await repositorio.obtenerSesionPorId(conexion, sesionId);
-
-      if (!sesionBD) {
-        throw crearErrorHttp('La sesión no existe.', 404);
-      }
-
-      if (sesionBD.estudiante_id !== estudianteId) {
-        throw crearErrorHttp(
-          'No tienes autorización para finalizar esta sesión.',
-          403
-        );
-      }
-
-      const sesion = convertirSesionBD(sesionBD);
-
-      if (sesion.estado !== ESTADOS_SESION.EN_CURSO) {
-        throw crearErrorHttp(
-          'Solamente se pueden finalizar sesiones en curso.',
-          409
-        );
-      }
-
-      sesion.finalizar({
-        fechaFin: reloj(),
-        motivoCierre
-      });
-
-      return repositorio.actualizarSesion(conexion, sesion.toJSON());
+    return aplicarCierre(sesionId, motivoCierre, reloj(), {
+      permitido: (fila) => Number(fila.estudianteId) === Number(estudianteId)
     });
   }
 
@@ -402,7 +380,11 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date()) {
         throw crearErrorHttp('No se pudo iniciar la sesión.', 409);
       }
       await repositorio.actualizarAsistencia(fila.actividadId, fila.estudianteId, 'Presente');
-      return sesion.toJSON();
+      const abierta = sesion.toJSON();
+      if (fila.casoId != null) {
+        abierta.casoId = Number(fila.casoId);
+      }
+      return abierta;
     },
 
     async consultarPropia(actividadId, estudianteId) {

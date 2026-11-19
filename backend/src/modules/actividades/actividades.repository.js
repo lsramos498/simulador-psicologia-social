@@ -44,7 +44,7 @@
                FROM UsuarioRol ur
                INNER JOIN Rol r ON r.id = ur.rol_id
                WHERE ur.usuario_id = u.id
-                 AND r.nombre = 'Docente'
+                 AND r.nombre IN ('Docente', 'Administrador')
              ) AS esDocente
            FROM Usuario u
            WHERE u.id = ?
@@ -331,10 +331,11 @@
     async listarConvocatorias(actividadId) {
       const [filas] = await pool.execute(
         `SELECT n.id, n.usuario_id AS estudianteId, u.nombres, u.apellidos,
-                n.asunto, n.mensaje, n.estado, n.fechaCreacion, n.errorEnvio
+                n.tipo, n.canal, n.asunto, n.mensaje, n.url, n.estado,
+                n.fechaCreacion, n.errorEnvio
          FROM Notificacion n
          INNER JOIN Usuario u ON u.id = n.usuario_id
-         WHERE n.actividad_id = ? AND n.tipo = 'Convocatoria'
+         WHERE n.actividad_id = ? AND n.tipo IN ('Convocatoria', 'CambioConvocatoria')
          ORDER BY n.id`,
         [actividadId]
       );

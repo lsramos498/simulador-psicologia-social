@@ -39,7 +39,7 @@ export function crearControladorSesiones(servicio) {
       const estudianteId = Number(req.usuario?.id);
       const { motivoCierre } = req.body ?? {};
 
-      const sesion = await servicio.finalizarSesion({
+      const resultado = await servicio.finalizarSesion({
         sesionId,
         estudianteId,
         motivoCierre
@@ -47,7 +47,9 @@ export function crearControladorSesiones(servicio) {
 
       return res.status(200).json({
         mensaje: 'Sesión finalizada correctamente.',
-        sesion
+        data: resultado,
+        sesion: resultado.sesion || resultado,
+        evaluacion: resultado.evaluacion || null
       });
     } catch (error) {
       return responderError(res, error, 'finalización de sesión');

@@ -23,6 +23,7 @@ import { requierePermiso } from '../modules/acceso/autorizar.middleware.js';
 import { crearServicioProtegido } from '../modules/acceso/servicioProtegido.proxy.js';
 import { crearRepositorioCasos } from '../modules/casos/casos.repository.js';
 import { crearServicioCasos } from '../modules/casos/casos.service.js';
+import { estadoAsistenteIa, generarBorradorCaso } from '../modules/casos/asistenteIa.service.js';
 
 /**
  * Convierte un error en la respuesta JSON estándar `{ error, codigo?, errores? }`.
@@ -118,6 +119,8 @@ const docente = [autenticar, requierePermiso('CREAR_CASOS')];
  *  - GET    /                              Lista (filtros `estado`, `creadorId`).
  *  - POST   /                              Crea borrador básico (Proxy, CREAR_CASOS).
  *  - POST   /construir                     Crea caso completo con Builder.
+ *  - POST   /asistente-ia                  Genera borrador de caso con IA (docente).
+ *  - GET    /asistente-ia/estado           Indica si hay OpenAI configurada.
  *  - GET    /:id                           Detalle (oculta respuestas a estudiantes).
  *  - PATCH  /:id                           Edita datos básicos.
  *  - POST   /:id/escenas                   Agrega escena.
@@ -170,6 +173,15 @@ export function crearRutasCasos(obtenerServicio) {
     return res.status(201).json({ data: caso });
   }));
 
+  router.get('/asistente-ia/estado', ...docente, (_req, res) => {
+    return res.status(200).json({ data: estadoAsistenteIa() });
+  });
+
+  router.post('/asistente-ia', ...docente, (req, res) => ejecutar(res, async () => {
+    const borrador = await generarBorradorCaso(datosEntrada(req));
+    return res.status(200).json({ data: borrador });
+  }));
+
   // Crear un caso se protege con el patrón Proxy (no con requierePermiso),
   // para no duplicar la verificación del permiso CREAR_CASOS.
   router.post('/', autenticar, (req, res) => ejecutar(res, async (servicio) => {
@@ -180,7 +192,29 @@ export function crearRutasCasos(obtenerServicio) {
 
   router.get('/:id', autenticar, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.obtener(req.params.id);
-    return res.status(200).json({ data: entregarCaso(req, caso) });
+    const entregado = entregarCaso(req, caso);
+    try {
+      const { leerMaterialCaso } = await import('../modules/casos/caso.material.js');
+      const material = await leerMaterialCaso(caso.id);
+      entregado.material = material;
+    } catch {
+      entregado.material = { dialogos: {}, portadas: {} };
+    }
+    return res.status(200).json({ data: entregado });
+  }));
+
+  router.put('/:id/material', ...docente, (req, res) => ejecutar(res, async (servicio) => {
+    const caso = await servicio.obtener(req.params.id);
+    // Solo el creador (o quien ya pasó el middleware docente) puede persistir anexos.
+    if (Number(caso.creadorId) !== Number(req.usuario.id)
+      && !(req.usuario.roles || []).includes('Administrador')) {
+      const error = new Error('No tiene autorización para editar el material de este caso.');
+      error.statusCode = 403;
+      throw error;
+    }
+    const { guardarMaterialCaso } = await import('../modules/casos/caso.material.js');
+    const material = await guardarMaterialCaso(caso.id, req.body || {});
+    return res.status(200).json({ data: material });
   }));
 
   router.patch('/:id', ...docente, (req, res) => ejecutar(res, async (servicio) => {

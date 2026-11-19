@@ -1,9 +1,11 @@
-
 import { Router } from 'express';
 import { crearRepositorioAcceso } from '../modules/acceso/acceso.repository.js';
 import { crearServicioAcceso } from '../modules/acceso/acceso.service.js';
 import { crearRepositorioAdministracion } from '../modules/acceso/administracion.repository.js';
 import { crearServicioAdministracion } from '../modules/acceso/administracion.service.js';
+import { autenticar } from '../modules/acceso/autenticar.middleware.js';
+import { requiereRol } from '../modules/acceso/autorizar.middleware.js';
+import { ROLES } from '../modules/acceso/autorizacion.js';
 import { crearRutasAdministracion } from './administracion.routes.js';
 import { responderErrorHttp } from '../modules/acceso/errores.js';
 
@@ -68,6 +70,22 @@ export function crearRutasAcceso(obtenerServicio) {
       return responderErrorHttp(res, error, 'ingreso con contraseña');
     }
   });
+
+  // Roster para convocar (docente y admin). Solo datos públicos de estudiantes.
+  router.get(
+    '/estudiantes',
+    autenticar,
+    requiereRol(ROLES.DOCENTE, ROLES.ADMINISTRADOR),
+    async (_req, res) => {
+      try {
+        const admin = await obtenerServicioAdministracion();
+        const data = await admin.listarEstudiantes();
+        return res.status(200).json({ data });
+      } catch (error) {
+        return responderErrorHttp(res, error, 'listado de estudiantes');
+      }
+    }
+  );
 
   return router;
 }

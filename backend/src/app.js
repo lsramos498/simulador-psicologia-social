@@ -7,6 +7,7 @@ import actividadesRoutes from './routes/actividades.routes.js';
 import espaciosRoutes from './routes/espacios.routes.js';
 import sesionesRoutes from './routes/sesiones.routes.js';
 import participacionRoutes from './routes/participacion.routes.js';
+import notificacionesRoutes from './routes/notificaciones.routes.js';
 
 const app = express();
 
@@ -27,5 +28,6 @@ app.use('/api/actividades', actividadesRoutes);
 app.use('/api/espacios', espaciosRoutes);
 app.use('/api/sesiones', sesionesRoutes);
 app.use('/api/participacion', participacionRoutes);
+app.use('/api/notificaciones', notificacionesRoutes);
 
 export default app;

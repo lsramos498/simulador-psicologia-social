@@ -40,7 +40,8 @@ function crearContexto({
   const repositorio = {
     async enTransaccion(operacion) {
       datos.transacciones++;
-      return operacion({});
+      // Misma API que el repositorio real (tx = consultas + métodos de cierre).
+      return operacion(repositorio);
     },
 
     async obtenerActividad() {
@@ -69,6 +70,59 @@ function crearContexto({
       const indice = datos.sesiones.findIndex((s) => s.id === sesion.id);
       datos.sesiones[indice] = sesion;
       return sesion;
+    },
+
+    async obtenerPorId(sesionId) {
+      const s = datos.sesiones.find((x) => Number(x.id) === Number(sesionId));
+      if (!s) return null;
+      return {
+        id: s.id,
+        actividadId: s.actividad_id ?? s.actividadId,
+        estudianteId: s.estudiante_id ?? s.estudianteId,
+        numeroIntento: s.numeroIntento,
+        estado: s.estado,
+        inicio: s.inicio,
+        fin: s.fin,
+        segundosConsumidos: s.segundosConsumidos,
+        motivoCierre: s.motivoCierre,
+        docenteId: datos.actividad.docente_id,
+        estadoActividad: datos.actividad.estado,
+        fechaInicio: datos.actividad.fechaInicio,
+        fechaFin: datos.actividad.fechaFin,
+        tiempoLimiteSegundos: datos.actividad.tiempoLimiteSegundos,
+        rubricaId: datos.actividad.rubrica_id ?? 1,
+        casoId: datos.actividad.caso_id ?? 1
+      };
+    },
+
+    async guardar(sesion) {
+      const indice = datos.sesiones.findIndex((s) => Number(s.id) === Number(sesion.id));
+      if (indice < 0) return 0;
+      datos.sesiones[indice] = {
+        ...datos.sesiones[indice],
+        ...sesion,
+        actividad_id: sesion.actividadId ?? datos.sesiones[indice].actividad_id,
+        estudiante_id: sesion.estudianteId ?? datos.sesiones[indice].estudiante_id
+      };
+      return 1;
+    },
+
+    async marcarRespuestas() {},
+    async datosParaEvaluar() {
+      return {
+        preguntas: [],
+        respuestas: [],
+        criterios: []
+      };
+    },
+    async insertarEvaluacion() {
+      return 99;
+    },
+    async insertarCriterios() {},
+    async insertarNotificacion() {},
+    async actualizarAsistencia() {},
+    async obtenerEvaluacion() {
+      return null;
     }
   };
 
@@ -235,7 +289,7 @@ describe('Servicio de sesiones', () => {
     assert.equal(datos.sesiones.length, 0);
   });
 
-  test('finaliza una sesión y calcula los segundos consumidos', async () => {
+  test('finaliza una sesión con evaluación (mismo camino que finalizarPropia)', async () => {
     const { servicio, datos } = crearContexto();
 
     datos.sesiones.push({
@@ -255,12 +309,10 @@ describe('Servicio de sesiones', () => {
       estudianteId: 20
     });
 
-    assert.equal(resultado.estado, ESTADOS_SESION.FINALIZADO);
-    assert.equal(resultado.segundosConsumidos, 1800);
-    assert.equal(
-      resultado.motivoCierre,
-      MOTIVOS_CIERRE.FINALIZACION
-    );
+    assert.equal(resultado.sesion.estado, ESTADOS_SESION.FINALIZADO);
+    assert.equal(resultado.sesion.motivoCierre, MOTIVOS_CIERRE.FINALIZACION);
+    assert.ok(resultado.evaluacion);
+    assert.equal(resultado.evaluacion.id, 99);
   });
 
   test('impide que un estudiante finalice una sesión ajena', async () => {

@@ -123,7 +123,7 @@ export function crearRepositorioAcceso(pool) {
       }
 
       const [filas] = await pool.execute(`
-        SELECT id, correoInstitucional, contrasenaHash, activo
+        SELECT id, nombres, apellidos, correoInstitucional, contrasenaHash, activo
         FROM Usuario
         WHERE correoInstitucional = ?
         LIMIT 1
@@ -136,6 +136,8 @@ export function crearRepositorioAcceso(pool) {
 
       return {
         id: fila.id,
+        nombres: fila.nombres,
+        apellidos: fila.apellidos,
         correoInstitucional: fila.correoInstitucional,
         contrasenaHash: fila.contrasenaHash,
         activo: Boolean(fila.activo)

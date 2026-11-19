@@ -1,5 +1,7 @@
 ﻿node_modules/
 **/node_modules/
+storage/
+**/storage/
 dist/
 **/dist/
 coverage/
@@ -13,3 +15,4 @@ coverage/
 !**/.env.test.example
 .DS_Store
 Thumbs.db
+.idea/

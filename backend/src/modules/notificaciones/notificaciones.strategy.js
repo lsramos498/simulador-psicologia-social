@@ -1,11 +1,11 @@
-function validarTexto(valor, campo) {
+function validarTexto(valor, campo, { permitirSaltos = false } = {}) {
   if (typeof valor !== 'string' || !valor.trim()) {
     throw new TypeError(`${campo} es obligatorio.`);
   }
 
   const texto = valor.trim();
 
-  if (/[\r\n]/.test(texto)) {
+  if (!permitirSaltos && /[\r\n]/.test(texto)) {
     throw new TypeError(`${campo} contiene caracteres no permitidos.`);
   }
 
@@ -77,7 +77,9 @@ export class NotificacionConvocatoriaStrategy {
     }
 
     const mensaje = mensajePersonalizado
-      ? validarTexto(mensajePersonalizado, 'El mensaje personalizado')
+      ? validarTexto(mensajePersonalizado, 'El mensaje personalizado', {
+        permitirSaltos: true
+      })
       : 'Has sido convocado a una actividad del Simulador de Psicología Social.';
 
     const url = validarUrl(urlAcceso);
@@ -118,7 +120,9 @@ export class NotificacionCambioEstudianteStrategy {
   crearMensaje({
     destinatario,
     casoTitulo,
-    accion
+    accion,
+    codigoAutorizacion,
+    urlAcceso
   }) {
     const correo = validarCorreo(destinatario);
     const titulo = validarTexto(
@@ -133,15 +137,44 @@ export class NotificacionCambioEstudianteStrategy {
         'La acción de cambio de estudiante no es válida.'
       );
     }
-    const mensaje = accion === ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO
-      ? `Has sido agregado a la convocatoria del caso "${titulo}".`
-      : `Has sido retirado de la convocatoria del caso "${titulo}".`;
+    const partes = [
+      accion === ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO
+        ? `Has sido agregado a la convocatoria del caso "${titulo}".`
+        : `Has sido retirado de la convocatoria del caso "${titulo}".`
+    ];
+
+    if (
+      accion === ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO &&
+      codigoAutorizacion
+    ) {
+      partes.push(`Código de autorización: ${validarTexto(codigoAutorizacion, 'El código de autorización')}`);
+    }
+    if (
+      accion === ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO &&
+      urlAcceso
+    ) {
+      partes.push(`Ingresa a la actividad: ${validarUrl(urlAcceso)}`);
+    }
+
+    const mensaje = partes.join('\n');
+    const htmlPartes = [
+      `<p>${escaparHtml(partes[0])}</p>`
+    ];
+    if (codigoAutorizacion && accion === ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO) {
+      htmlPartes.push(
+        `<p><strong>Código de autorización:</strong> ${escaparHtml(String(codigoAutorizacion).trim())}</p>`
+      );
+    }
+    if (urlAcceso && accion === ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO) {
+      const url = validarUrl(urlAcceso);
+      htmlPartes.push(`<p><a href="${escaparHtml(url)}">Ingresar a Lumina</a></p>`);
+    }
 
     return {
       to: correo,
       subject: `Actualización de convocatoria: ${titulo}`,
       text: mensaje,
-      html: `<p>${escaparHtml(mensaje)}</p>`
+      html: htmlPartes.join('\n')
     };
   }
 }

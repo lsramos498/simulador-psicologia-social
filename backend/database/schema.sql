@@ -543,6 +543,13 @@ CREATE TABLE Notificacion (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
+-- DISPARADORES (ver backend/database/triggers.sql — 24 triggers)
+-- =====================================================
+-- Se aplican con: mysql ... < backend/database/triggers.sql
+-- Incluyen auditoría, validaciones de negocio, fechas automáticas
+-- y normalización de datos (Usuario, Caso, Sesión, Respuestas, Actividad, etc.).
+
+-- =====================================================
 -- REGLAS DE NEGOCIO QUE DEBEN VALIDARSE EN BACKEND
 -- =====================================================
 -- 1. Usuario: los estudiantes deben autenticarse con correo institucional y código de autorización válido.

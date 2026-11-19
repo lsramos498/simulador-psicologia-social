@@ -43,7 +43,8 @@ export function crearRutasActividades(servicio) {
     try {
       const data = await servicio.listarConvocatorias(
         Number(req.params.id),
-        Number(req.usuario.id)
+        Number(req.usuario.id),
+        { esAdmin: tieneRol(req.usuario, ROLES.ADMINISTRADOR) }
       );
       return res.status(200).json({ data });
     } catch (error) {
@@ -92,13 +93,17 @@ async function obtenerServicioPorDefecto() {
     const { crearServicioNotificaciones } = await import(
       '../modules/notificaciones/notificaciones.service.js'
     );
-
-    const { crearTransporteSMTP } = await import(
-      '../modules/notificaciones/notificaciones.smtp.js'
+    const { crearRepositorioNotificaciones } = await import(
+      '../modules/notificaciones/notificaciones.repository.js'
+    );
+    const { crearTransporteNotificaciones } = await import(
+      '../modules/notificaciones/notificaciones.transporte.js'
     );
 
-    const transporte = crearTransporteSMTP();
-    const notificaciones = crearServicioNotificaciones(transporte);
+    // Ethereal en local / SMTP real si SMTP_MODE=smtp con host válido.
+    const repoNotif = crearRepositorioNotificaciones(pool);
+    const transporte = await crearTransporteNotificaciones(repoNotif);
+    const notificaciones = crearServicioNotificaciones(transporte, repoNotif);
 
     servicioPorDefecto = crearServicioActividades(
       crearRepositorioActividades(pool),
@@ -127,8 +132,12 @@ const servicioLazy = {
   async listar(filtro) {
     return (await obtenerServicioPorDefecto()).listar(filtro);
   },
-  async listarConvocatorias(actividadId, docenteId) {
-    return (await obtenerServicioPorDefecto()).listarConvocatorias(actividadId, docenteId);
+  async listarConvocatorias(actividadId, docenteId, opciones) {
+    return (await obtenerServicioPorDefecto()).listarConvocatorias(
+      actividadId,
+      docenteId,
+      opciones
+    );
   },
   async agregarEstudiante(actividadId, estudianteId, docenteId) {
     return (await obtenerServicioPorDefecto()).agregarEstudiante(

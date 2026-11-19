@@ -12,9 +12,12 @@ services:
       MYSQL_PASSWORD: Lumina2026
     command:
       - --default-time-zone=-05:00
+      - --log-bin-trust-function-creators=1
     volumes:
       - lumina-mysql-data:/var/lib/mysql
       - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./backend/database/triggers.sql:/docker-entrypoint-initdb.d/02-triggers.sql:ro
+      - ./backend/database/vistas_y_disparadores_clase.sql:/docker-entrypoint-initdb.d/03-vistas-disparadores-clase.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootlocal"]
       interval: 5s
@@ -35,6 +38,7 @@ services:
       MYSQL_PASSWORD: LuminaTest2026
     command:
       - --default-time-zone=-05:00
+      - --log-bin-trust-function-creators=1
     volumes:
       - lumina-mysql-test-data:/var/lib/mysql
       - ./backend/database/schema.test.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro

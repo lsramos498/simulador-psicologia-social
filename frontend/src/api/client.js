@@ -60,6 +60,20 @@ export function leerSesion() {
  *   español del servidor), `status` (HTTP), `codigo` (identificador estable)
  *   y `errores` (lista de validación, si existe).
  */
+/** Callback opcional cuando el token expiró (401). Lo registra App.jsx. */
+let alExpirarSesion = null;
+
+export function onSesionExpirada(callback) {
+  alExpirarSesion = typeof callback === 'function' ? callback : null;
+}
+
+const API_BASE = String(import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+
+function urlApi(ruta) {
+  if (!ruta.startsWith('/')) return `${API_BASE}/${ruta}`;
+  return `${API_BASE}${ruta}`;
+}
+
 async function pedir(ruta, { method = 'GET', body, token } = {}) {
   const headers = { Accept: 'application/json' };
   if (body !== undefined) {
@@ -69,7 +83,7 @@ async function pedir(ruta, { method = 'GET', body, token } = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const respuesta = await fetch(ruta, {
+  const respuesta = await fetch(urlApi(ruta), {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body)
@@ -86,6 +100,10 @@ async function pedir(ruta, { method = 'GET', body, token } = {}) {
   }
 
   if (!respuesta.ok) {
+    if (respuesta.status === 401 && token) {
+      limpiarSesion();
+      alExpirarSesion?.();
+    }
     const error = new Error(payload?.error || 'No se pudo completar la solicitud.');
     error.status = respuesta.status;
     error.codigo = payload?.codigo;
@@ -170,6 +188,24 @@ export function construirCaso(token, datos) {
 }
 
 /**
+ * Genera un borrador de caso con el asistente de IA (`POST /api/casos/asistente-ia`).
+ * @param {string} token
+ * @param {{ prompt: string, nivel?: string, lugar?: string }} datos
+ */
+export function generarCasoConIa(token, datos) {
+  return pedir('/api/casos/asistente-ia', {
+    method: 'POST',
+    token,
+    body: datos
+  });
+}
+
+/** Estado del asistente (`GET /api/casos/asistente-ia/estado`). */
+export function estadoAsistenteIa(token) {
+  return pedir('/api/casos/asistente-ia/estado', { token });
+}
+
+/**
  * Publica un caso en Borrador (`POST /api/casos/:id/publicar`). El servidor
  * exige que esté completo (escenas, preguntas, opciones, explicaciones y rúbrica).
  * @param {string} token  JWT de la sesión.
@@ -194,6 +230,223 @@ export function publicarCaso(token, id) {
 export function archivarCaso(token, id) {
   return pedir(`/api/casos/${id}/archivar`, {
     method: 'POST',
+    token
+  });
+}
+
+/** Actualiza datos básicos de un borrador (`PATCH /api/casos/:id`). */
+export function actualizarCaso(token, id, datos) {
+  return pedir(`/api/casos/${id}`, {
+    method: 'PATCH',
+    token,
+    body: datos
+  });
+}
+
+/** Agrega una escena (`POST /api/casos/:id/escenas`). Sin personajes en el body. */
+export function agregarEscena(token, id, datos) {
+  return pedir(`/api/casos/${id}/escenas`, {
+    method: 'POST',
+    token,
+    body: datos
+  });
+}
+
+/** Actualiza metadatos de una escena (`PATCH /api/casos/:id/escenas/:escenaId`). */
+export function actualizarEscena(token, id, escenaId, datos) {
+  return pedir(`/api/casos/${id}/escenas/${escenaId}`, {
+    method: 'PATCH',
+    token,
+    body: datos
+  });
+}
+
+/** Agrega una pregunta a una escena (`POST .../escenas/:escenaId/decisiones`). */
+export function agregarDecision(token, id, escenaId, datos) {
+  return pedir(`/api/casos/${id}/escenas/${escenaId}/decisiones`, {
+    method: 'POST',
+    token,
+    body: datos
+  });
+}
+
+/** Actualiza una pregunta (`PATCH /api/casos/:id/decisiones/:decisionId`). */
+export function actualizarDecision(token, id, decisionId, datos) {
+  return pedir(`/api/casos/${id}/decisiones/${decisionId}`, {
+    method: 'PATCH',
+    token,
+    body: datos
+  });
+}
+
+/** Agrega una opción a una pregunta (`POST .../decisiones/:decisionId/opciones`). */
+export function agregarOpcion(token, id, decisionId, datos) {
+  return pedir(`/api/casos/${id}/decisiones/${decisionId}/opciones`, {
+    method: 'POST',
+    token,
+    body: datos
+  });
+}
+
+/** Actualiza una opción (`PATCH /api/casos/:id/opciones/:opcionId`). */
+export function actualizarOpcion(token, id, opcionId, datos) {
+  return pedir(`/api/casos/${id}/opciones/${opcionId}`, {
+    method: 'PATCH',
+    token,
+    body: datos
+  });
+}
+
+/** Agrega un personaje al caso (`POST /api/casos/:id/personajes`). */
+export function agregarPersonaje(token, id, datos) {
+  return pedir(`/api/casos/${id}/personajes`, {
+    method: 'POST',
+    token,
+    body: datos
+  });
+}
+
+/** Asocia un personaje del caso a una escena (`POST .../escenas/:escenaId/personajes`). */
+export function asociarPersonaje(token, id, escenaId, personajeId) {
+  return pedir(`/api/casos/${id}/escenas/${escenaId}/personajes`, {
+    method: 'POST',
+    token,
+    body: { personajeId: Number(personajeId) }
+  });
+}
+
+/** Guarda / versiona la rúbrica activa (`PUT /api/casos/:id/rubrica`). */
+export function guardarRubrica(token, id, datos) {
+  return pedir(`/api/casos/${id}/rubrica`, {
+    method: 'PUT',
+    token,
+    body: datos
+  });
+}
+
+/** Material de simulación (diálogos y portadas) persistido en servidor. */
+export function guardarMaterialCaso(token, id, material) {
+  return pedir(`/api/casos/${id}/material`, {
+    method: 'PUT',
+    token,
+    body: material
+  });
+}
+
+/** Ingreso de estudiante con correo + código de convocatoria. */
+export function ingresarEstudiante({ correo, codigo }) {
+  return pedir('/api/acceso/estudiantes/ingreso', {
+    method: 'POST',
+    body: { correo, codigo }
+  });
+}
+
+export function listarEspacios(token) {
+  return pedir('/api/espacios', { token });
+}
+
+export function crearEspacio(token, datos) {
+  return pedir('/api/espacios', { method: 'POST', token, body: datos });
+}
+
+export function listarEstudiantesAdmin(token) {
+  return pedir('/api/acceso/admin/estudiantes', { token });
+}
+
+/** Roster de estudiantes para convocar (docente o admin). */
+export function listarEstudiantes(token) {
+  return pedir('/api/acceso/estudiantes', { token });
+}
+
+export function listarActividades(token) {
+  return pedir('/api/actividades', { token });
+}
+
+export function crearActividad(token, datos) {
+  return pedir('/api/actividades', { method: 'POST', token, body: datos });
+}
+
+export function obtenerActividad(token, id) {
+  return pedir(`/api/actividades/${id}`, { token });
+}
+
+export function iniciarActividad(token, id) {
+  return pedir(`/api/actividades/${id}/iniciar`, { method: 'POST', token });
+}
+
+export function cerrarActividad(token, id) {
+  return pedir(`/api/actividades/${id}/cerrar`, { method: 'POST', token });
+}
+
+export function listarConvocatorias(token, actividadId) {
+  return pedir(`/api/actividades/${actividadId}/convocatorias`, { token });
+}
+
+export function agregarEstudianteActividad(token, actividadId, estudianteId) {
+  return pedir(`/api/actividades/${actividadId}/estudiantes`, {
+    method: 'POST',
+    token,
+    body: { estudianteId: Number(estudianteId) }
+  });
+}
+
+export function iniciarSesionActividad(token, actividadId) {
+  return pedir(`/api/sesiones/actividades/${actividadId}/iniciar`, {
+    method: 'POST',
+    token
+  });
+}
+
+export function consultarSesionActividad(token, actividadId) {
+  return pedir(`/api/sesiones/actividades/${actividadId}`, { token });
+}
+
+export function obtenerSesion(token, sesionId) {
+  return pedir(`/api/sesiones/${sesionId}`, { token });
+}
+
+export function finalizarSesion(token, sesionId) {
+  return pedir(`/api/sesiones/${sesionId}/finalizar`, { method: 'POST', token });
+}
+
+export function registrarRespuesta(token, { sesionId, decisionId, opcionId }) {
+  return pedir('/api/participacion/respuestas', {
+    method: 'POST',
+    token,
+    body: {
+      sesionId: Number(sesionId),
+      decisionId: Number(decisionId),
+      opcionId: Number(opcionId)
+    }
+  });
+}
+
+export function consultarRespuestasSesion(token, sesionId) {
+  return pedir(`/api/participacion/sesiones/${sesionId}/respuestas`, { token });
+}
+
+export function consultarProgresoSesion(token, sesionId) {
+  return pedir(`/api/participacion/sesiones/${sesionId}/progreso`, { token });
+}
+
+export function consultarRetroalimentacionSesion(token, sesionId) {
+  return pedir(`/api/participacion/sesiones/${sesionId}/retroalimentacion`, { token });
+}
+
+export function listarNotificaciones(token) {
+  return pedir('/api/notificaciones', { token });
+}
+
+export function marcarNotificacionLeida(token, id) {
+  return pedir(`/api/notificaciones/${id}/leer`, {
+    method: 'POST',
+    token
+  });
+}
+
+export function retirarEstudianteActividad(token, actividadId, estudianteId) {
+  return pedir(`/api/actividades/${actividadId}/estudiantes/${estudianteId}`, {
+    method: 'DELETE',
     token
   });
 }

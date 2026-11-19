@@ -165,7 +165,10 @@ export function crearServicioAcceso(repositorio, {
         const usuario = {
           id: usuarioBd.id,
           roles,
-          permisos
+          permisos,
+          nombres: usuarioBd.nombres || null,
+          apellidos: usuarioBd.apellidos || null,
+          correo: usuarioBd.correoInstitucional || correo
         };
 
         // Los estudiantes ingresan con código, no con contraseña.
@@ -178,7 +181,11 @@ export function crearServicioAcceso(repositorio, {
 
         // 3. Generar el token de acceso.
         return {
-          token: firmarToken(usuario),
+          token: firmarToken({
+            id: usuario.id,
+            roles: usuario.roles,
+            permisos: usuario.permisos
+          }),
           usuario
         };
       });

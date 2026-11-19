@@ -328,7 +328,7 @@ export function crearServicioActividades(
         if (Number(docente.esDocente) !== 1) {
           throw errorActividad(
             'USUARIO_NO_ES_DOCENTE',
-            'El usuario no tiene asignado el rol Docente.',
+            'El usuario no tiene rol Docente ni Administrador.',
             403
           );
         }
@@ -466,7 +466,7 @@ export function crearServicioActividades(
                 contextoHistoria: caso.contextoHistoria ?? ''
               },
               mensajePersonalizado: actividad.mensajePersonalizado,
-              urlAcceso: process.env.URL_ACCESO || 'http://localhost:3000',
+              urlAcceso: process.env.URL_ACCESO || 'http://localhost:5173',
               codigoAutorizacion: codigo
             });
           }
@@ -484,13 +484,37 @@ export function crearServicioActividades(
         };
       });
 
+      const notificacionesEnviadas = [];
       if (notificaciones) {
         for (const convocatoria of convocatorias) {
-          await notificaciones.enviar(TIPOS_NOTIFICACION.CONVOCATORIA, convocatoria);
+          try {
+            const envio = await notificaciones.enviar(
+              TIPOS_NOTIFICACION.CONVOCATORIA,
+              convocatoria
+            );
+            notificacionesEnviadas.push({
+              estudianteId: convocatoria.estudianteId,
+              destinatario: envio.destinatario,
+              estado: envio.estado,
+              canal: envio.canal,
+              previewUrl: envio.previewUrl || null
+            });
+          } catch (error) {
+            notificacionesEnviadas.push({
+              estudianteId: convocatoria.estudianteId,
+              destinatario: convocatoria.destinatario,
+              estado: 'Fallida',
+              canal: null,
+              error: error?.message || String(error)
+            });
+          }
         }
       }
 
-      return creada;
+      return {
+        ...creada,
+        notificaciones: notificacionesEnviadas
+      };
     },
 
     async iniciar(actividadId, docenteId) {
@@ -653,7 +677,9 @@ export function crearServicioActividades(
               estudianteId,
               destinatario: estudiante.correo.trim(),
               casoTitulo: actividad.casoTitulo || `Caso ${actividad.casoId}`,
-              accion: ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO
+              accion: ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO,
+              codigoAutorizacion: codigo,
+              urlAcceso: process.env.URL_ACCESO || 'http://localhost:5173'
             }
             : null
         };
@@ -768,7 +794,7 @@ export function crearServicioActividades(
       return repositorio.listarPorDocente(docenteId);
     },
 
-    async listarConvocatorias(actividadId, docenteId) {
+    async listarConvocatorias(actividadId, docenteId, { esAdmin = false } = {}) {
       validarId(actividadId, 'actividadId');
       validarId(docenteId, 'docenteId');
       const actividad = await repositorio.obtenerActividadPorId(actividadId);
@@ -779,7 +805,7 @@ export function crearServicioActividades(
           404
         );
       }
-      if (Number(actividad.docenteId) !== docenteId) {
+      if (!esAdmin && Number(actividad.docenteId) !== docenteId) {
         throw errorActividad(
           'ACTIVIDAD_AJENA',
           'No tiene autorización para consultar esta actividad.',
