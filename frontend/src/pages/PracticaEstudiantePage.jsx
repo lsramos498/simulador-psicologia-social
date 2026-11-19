@@ -300,7 +300,6 @@ export default function PracticaEstudiantePage({ sesion, onSalir }) {
         cargando={cargando}
         notificaciones={notificaciones}
         onActualizar={() => preparar()}
-        onSalir={onSalir}
         onEmpezar={empezar}
         onMarcarLeida={marcarLeida}
       />

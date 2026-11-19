@@ -6,14 +6,19 @@ import {
   consultarRetroalimentacionSesion,
   listarActividades,
   monitorearSesionesActividad,
+  obtenerActividad,
+  obtenerCaso,
   obtenerSesion
 } from '../api/client';
 import { mensajeError } from '../utils/casoHelpers';
+import { enriquecerRespuestas } from '../utils/casoPreguntas';
 
-export default function SeguimientoPage({ sesion }) {
+export default function SeguimientoPage({ sesion, onIrActividades }) {
   const { token } = sesion;
   const [actividades, setActividades] = useState([]);
   const [actividadId, setActividadId] = useState('');
+  const [actividadDetalle, setActividadDetalle] = useState(null);
+  const [casoTitulo, setCasoTitulo] = useState('');
   const [sesiones, setSesiones] = useState([]);
   const [detalle, setDetalle] = useState(null);
   const [error, setError] = useState('');
@@ -38,22 +43,41 @@ export default function SeguimientoPage({ sesion }) {
     }
   }
 
-  async function cargarSesiones(id = actividadId) {
+  async function cargarSesiones(id = actividadId, { silencioso = false } = {}) {
     if (!id) {
       setSesiones([]);
+      setActividadDetalle(null);
+      setCasoTitulo('');
       return;
     }
-    setTrabajando(true);
-    setError('');
+    if (!silencioso) setTrabajando(true);
+    if (!silencioso) setError('');
     try {
-      const res = await monitorearSesionesActividad(token, id);
-      setSesiones(res.data || []);
-      setDetalle(null);
+      const [mon, act] = await Promise.all([
+        monitorearSesionesActividad(token, id),
+        obtenerActividad(token, id).catch(() => null)
+      ]);
+      setSesiones(mon.data || []);
+      const detalleAct = act?.data || null;
+      setActividadDetalle(detalleAct);
+      if (detalleAct?.casoId) {
+        try {
+          const c = await obtenerCaso(token, detalleAct.casoId);
+          setCasoTitulo(c.data?.titulo || '');
+        } catch {
+          setCasoTitulo('');
+        }
+      } else {
+        setCasoTitulo('');
+      }
+      if (!silencioso) setDetalle(null);
     } catch (err) {
-      setError(mensajeError(err));
-      setSesiones([]);
+      if (!silencioso) {
+        setError(mensajeError(err));
+        setSesiones([]);
+      }
     } finally {
-      setTrabajando(false);
+      if (!silencioso) setTrabajando(false);
     }
   }
 
@@ -63,6 +87,14 @@ export default function SeguimientoPage({ sesion }) {
 
   useEffect(() => {
     if (actividadId) cargarSesiones(actividadId);
+  }, [actividadId]);
+
+  useEffect(() => {
+    if (!actividadId) return undefined;
+    const timer = setInterval(() => {
+      cargarSesiones(actividadId, { silencioso: true });
+    }, 12_000);
+    return () => clearInterval(timer);
   }, [actividadId]);
 
   async function verDetalle(sesionId) {
@@ -75,11 +107,23 @@ export default function SeguimientoPage({ sesion }) {
         consultarRespuestasSesion(token, sesionId).catch(() => null),
         consultarRetroalimentacionSesion(token, sesionId).catch(() => null)
       ]);
+      const sesionData = ses.data?.sesion || ses.data;
+      let caso = null;
+      const casoId = sesionData?.casoId || actividadDetalle?.casoId;
+      if (casoId) {
+        try {
+          const c = await obtenerCaso(token, casoId);
+          caso = c.data;
+        } catch {
+          caso = null;
+        }
+      }
+      const crudas = resp?.data || [];
       setDetalle({
-        sesion: ses.data?.sesion || ses.data,
+        sesion: sesionData,
         evaluacion: ses.data?.evaluacion || null,
         progreso: prog?.data || null,
-        respuestas: resp?.data || [],
+        respuestas: enriquecerRespuestas(crudas, caso),
         retro: Array.isArray(retro?.data) ? retro.data : retro?.data || []
       });
     } catch (err) {
@@ -104,6 +148,8 @@ export default function SeguimientoPage({ sesion }) {
     }
   }
 
+  const enCurso = sesiones.filter((s) => s.estado === 'En curso').length;
+
   return (
     <section className="crear-caso">
       <header className="crear-head">
@@ -111,7 +157,8 @@ export default function SeguimientoPage({ sesion }) {
           <p className="kicker">Docente</p>
           <h2>Seguimiento en vivo</h2>
           <p className="muted-light">
-            Monitorea sesiones, progreso y respuestas (Laura · Valeria).
+            Monitorea sesiones, progreso y respuestas. Se actualiza cada 12 s.
+            {enCurso ? ` · ${enCurso} en curso` : ''}
           </p>
         </div>
         <button
@@ -128,62 +175,94 @@ export default function SeguimientoPage({ sesion }) {
       {error ? <div className="alert">{error}</div> : null}
       {cargando ? <p className="muted-light">Cargando actividades…</p> : null}
 
-      <div className="field">
-        <label>Actividad</label>
-        <select value={actividadId} onChange={(e) => setActividadId(e.target.value)}>
-          <option value="">Elegir actividad</option>
-          {actividades.map((a) => (
-            <option key={a.id} value={a.id}>
-              #{a.id} · {a.estado} · caso {a.casoId}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="panel-editor">
-        <h3>Sesiones ({sesiones.length})</h3>
-        {sesiones.length === 0 ? (
-          <p className="muted-light">
-            No hay sesiones aún. Iniciá la actividad para preparar las de los convocados.
-          </p>
-        ) : (
-          <div className="arbol-escenas">
-            {sesiones.map((s) => (
-              <article key={s.id} className="nodo-escena">
-                <header>
-                  <strong>
-                    #{s.id} · {s.nombres} {s.apellidos}
-                  </strong>
-                  <p className="muted-light">
-                    {s.correo || `Estudiante #${s.estudianteId}`} · {s.estado}
-                    {s.numeroIntento ? ` · intento ${s.numeroIntento}` : ''}
-                  </p>
-                </header>
-                <div className="ficha-acciones">
-                  <button
-                    type="button"
-                    className="btn-play"
-                    disabled={trabajando}
-                    onClick={() => verDetalle(s.id)}
-                  >
-                    Ver detalle
-                  </button>
-                  {s.estado !== 'Finalizado' ? (
-                    <button
-                      type="button"
-                      className="btn-ghost-dark"
-                      disabled={trabajando}
-                      onClick={() => cerrar(s.id)}
-                    >
-                      Cerrar sesión
-                    </button>
-                  ) : null}
-                </div>
-              </article>
-            ))}
+      {actividades.length === 0 && !cargando ? (
+        <div className="empty-state">
+          <strong>No hay actividades para monitorear</strong>
+          <p className="muted-light">Creá e iniciá una actividad para ver las sesiones de los estudiantes.</p>
+          {onIrActividades ? (
+            <button type="button" className="btn-play" onClick={onIrActividades}>
+              Ir a Actividades
+            </button>
+          ) : null}
+        </div>
+      ) : (
+        <>
+          <div className="field">
+            <label>Actividad</label>
+            <select value={actividadId} onChange={(e) => setActividadId(e.target.value)}>
+              <option value="">Elegir actividad</option>
+              {actividades.map((a) => (
+                <option key={a.id} value={a.id}>
+                  #{a.id} · {a.estado} · caso {a.casoId}
+                </option>
+              ))}
+            </select>
           </div>
-        )}
-      </div>
+
+          {actividadDetalle ? (
+            <div className="asistente-resultado" style={{ marginBottom: '1rem' }}>
+              <strong>
+                {casoTitulo || `Caso #${actividadDetalle.casoId}`} · {actividadDetalle.estado}
+              </strong>
+              <p className="muted-light" style={{ margin: '0.35rem 0 0' }}>
+                {actividadDetalle.fechaInicio} → {actividadDetalle.fechaFin}
+                {actividadDetalle.estudiantesAutorizados?.length != null
+                  ? ` · ${actividadDetalle.estudiantesAutorizados.length} convocados`
+                  : ''}
+              </p>
+            </div>
+          ) : null}
+
+          <div className="panel-editor">
+            <h3>Sesiones ({sesiones.length})</h3>
+            {sesiones.length === 0 ? (
+              <div className="empty-state soft">
+                <p className="muted-light" style={{ margin: 0 }}>
+                  No hay sesiones aún. Si la actividad está Programada, iniciála en Actividades para
+                  preparar las de los convocados.
+                </p>
+              </div>
+            ) : (
+              <div className="arbol-escenas">
+                {sesiones.map((s) => (
+                  <article key={s.id} className="nodo-escena">
+                    <header>
+                      <strong>
+                        #{s.id} · {s.nombres} {s.apellidos}
+                        {s.estado === 'En curso' ? ' · 🟢' : ''}
+                      </strong>
+                      <p className="muted-light">
+                        {s.correo || `Estudiante #${s.estudianteId}`} · {s.estado}
+                        {s.numeroIntento ? ` · intento ${s.numeroIntento}` : ''}
+                      </p>
+                    </header>
+                    <div className="ficha-acciones">
+                      <button
+                        type="button"
+                        className="btn-play"
+                        disabled={trabajando}
+                        onClick={() => verDetalle(s.id)}
+                      >
+                        Ver detalle
+                      </button>
+                      {s.estado !== 'Finalizado' ? (
+                        <button
+                          type="button"
+                          className="btn-ghost-dark"
+                          disabled={trabajando}
+                          onClick={() => cerrar(s.id)}
+                        >
+                          Cerrar sesión
+                        </button>
+                      ) : null}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {detalle ? (
         <div className="panel-editor">
@@ -211,9 +290,12 @@ export default function SeguimientoPage({ sesion }) {
             <p className="muted-light">Sin respuestas registradas.</p>
           ) : (
             <ul className="asistente-meta">
-              {(Array.isArray(detalle.respuestas) ? detalle.respuestas : []).map((r, idx) => (
-                <li key={r.id || idx}>
-                  Decisión {r.decisionId}: opción {r.opcionId}
+              {detalle.respuestas.map((r) => (
+                <li key={r.key}>
+                  {r.escena ? <em className="muted-light">{r.escena} · </em> : null}
+                  <strong>{r.pregunta}</strong>
+                  <br />
+                  Elegió: {r.opcionTexto}
                   {r.esCorrecta != null ? (r.esCorrecta ? ' · correcta' : ' · incorrecta') : ''}
                 </li>
               ))}

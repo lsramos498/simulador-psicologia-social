@@ -63,26 +63,82 @@ a {
 }
 
 .practica-shell {
+  position: relative;
   min-height: 100vh;
 }
 
+.practica-shell-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(90, 150, 180, 0.16), transparent 42%),
+    radial-gradient(ellipse at 90% 10%, rgba(80, 160, 120, 0.1), transparent 40%),
+    linear-gradient(165deg, #e8eef3 0%, #f5f8fa 48%, #eef3f6 100%);
+}
+
+.practica-shell-body {
+  position: relative;
+  z-index: 1;
+}
+
 .practica-top {
+  position: sticky;
+  top: 0;
+  z-index: 15;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   padding: 0.75rem 1.1rem;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.88);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(10px);
-  position: sticky;
-  top: 0;
-  z-index: 15;
 }
 
 .practica-top .brand-mark {
   font-size: 1.35rem;
   display: block;
+}
+
+.practica-panel {
+  position: relative;
+  z-index: 1;
+}
+
+.empty-state {
+  padding: 1.25rem 1.35rem;
+  border-radius: 1rem;
+  border: 1px dashed var(--line);
+  background: rgba(255, 255, 255, 0.65);
+  margin: 0.75rem 0;
+}
+
+.empty-state.soft {
+  background: transparent;
+}
+
+.empty-state strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.side-badge {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.45rem;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: #c44536;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  line-height: 1;
 }
 
 .brand-mark {
@@ -376,6 +432,18 @@ a {
   color: rgba(255, 236, 200, 0.72);
 }
 
+.login-hint {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 236, 200, 0.62);
+  line-height: 1.35;
+}
+
+.aviso-nuevo {
+  border-left: 3px solid var(--accent);
+  padding-left: 0.65rem;
+}
+
 .login-title-3d {
   margin: 0 0 1.35rem;
   font-family: "Anton", Impact, sans-serif;
@@ -506,6 +574,79 @@ a {
   margin-bottom: 0.85rem;
 }
 
+.login-mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin: 0 0 1rem;
+  padding: 0.28rem;
+  border-radius: 0.9rem;
+  background: rgba(8, 6, 16, 0.45);
+  border: 1px solid rgba(243, 210, 122, 0.2);
+}
+
+.login-mode-tabs button {
+  border: 0;
+  border-radius: 0.7rem;
+  padding: 0.55rem 0.4rem;
+  background: transparent;
+  color: rgba(255, 236, 200, 0.7);
+  font-weight: 700;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.login-mode-tabs button.active {
+  background: rgba(243, 210, 122, 0.22);
+  color: #ffe9b0;
+  box-shadow: inset 0 0 0 1px rgba(243, 210, 122, 0.35);
+}
+
+.login-btn-send-code {
+  margin: 0 0 0.85rem;
+  min-height: 2.75rem;
+  font-size: 1.05rem;
+}
+
+.login-ok {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.7rem;
+  background: rgba(70, 160, 80, 0.18);
+  border: 1px solid rgba(140, 220, 140, 0.35);
+  color: #d8ffd0;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.login-codigo-demo {
+  margin: -0.25rem 0 0.85rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.7rem;
+  background: rgba(243, 210, 122, 0.14);
+  border: 1px solid rgba(243, 210, 122, 0.4);
+  color: #ffe9b0;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.login-codigo-demo strong {
+  font-size: 1.25rem;
+  letter-spacing: 0.14em;
+  color: #fff4c8;
+}
+
+.login-preview {
+  margin: -0.35rem 0 0.85rem;
+  font-size: 0.84rem;
+}
+
+.login-preview a {
+  color: #9fd4ff;
+  font-weight: 700;
+}
+
 .btn {
   border: 0;
   border-radius: 999px;
@@ -594,6 +735,7 @@ a {
 }
 
 .side-icon {
+  position: relative;
   width: 1.45rem;
   height: 1.45rem;
   display: grid;
@@ -646,6 +788,47 @@ a {
   margin: 0.15rem 0 0;
   font-size: clamp(1.8rem, 3.5vw, 2.6rem);
   line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(47, 143, 107, 0.14);
+  color: var(--accent-deep);
+  border: 1px solid rgba(47, 143, 107, 0.28);
+}
+
+.quick-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0 0 0.85rem;
+}
+
+.quick-nav .chip-ejemplo {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.quick-nav .chip-ejemplo:hover {
+  border-color: rgba(47, 143, 107, 0.45);
+  background: #fff;
 }
 
 .studio-filters {
@@ -661,8 +844,13 @@ a {
   color: var(--ink-dim);
 }
 
-.studio-filters select {
+.studio-filters select,
+.studio-filters input[type='search'] {
   min-width: 9rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  padding: 0.45rem 0.65rem;
+  background: #fff;
 }
 
 /* ——— Hero caso ——— */
@@ -1605,9 +1793,32 @@ a {
     flex: 1;
   }
 
-  .side-brand,
-  .side-foot {
+  .side-brand {
     display: none;
+  }
+
+  .side-foot {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0;
+    text-align: left;
+  }
+
+  .side-user {
+    display: none;
+  }
+
+  .side-salir {
+    white-space: nowrap;
+    font-size: 0.75rem;
+    padding: 0.45rem 0.7rem;
+  }
+
+  .crear-head {
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
 
   .caso-hero-copy {

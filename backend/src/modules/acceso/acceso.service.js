@@ -1,6 +1,7 @@
 
 import { ROLES, tieneRol } from './autorizacion.js';
 import {
+  crearCodigoAutorizacion,
   hashearCodigoAutorizacion,
   normalizarCodigo,
   normalizarCorreo,
@@ -10,6 +11,7 @@ import { hashearContrasena, verificarContrasena } from './contrasenas.js';
 import { crearErrorHttp } from './errores.js';
 import { crearLimiteIntentos } from './limiteIntentos.js';
 import { firmarToken } from './tokens.js';
+import { TIPOS_NOTIFICACION } from '../notificaciones/notificaciones.factory.js';
 
 // Hash de una contraseña que nadie conoce. Se compara cuando el correo no
 // existe, para que la respuesta tarde lo mismo y no revele qué correos existen.
@@ -23,9 +25,14 @@ async function obtenerHashFicticio() {
   return hashFicticio;
 }
 
+const MENSAJE_CODIGO_ENVIADO =
+  'Si tu correo está convocado a una actividad vigente, te enviamos el código. Revisa tu bandeja.';
+
 export function crearServicioAcceso(repositorio, {
   reloj = () => new Date(),
-  limiteIntentos = crearLimiteIntentos()
+  limiteIntentos = crearLimiteIntentos(),
+  notificaciones = null,
+  generarCodigo = crearCodigoAutorizacion
 } = {}) {
   if (
     !repositorio ||
@@ -189,6 +196,91 @@ export function crearServicioAcceso(repositorio, {
           usuario
         };
       });
+    },
+
+    /**
+     * RF-01: el estudiante pide el código a su correo institucional.
+     * Regenera el código (solo guardamos hash) y lo envía por notificación.
+     * Respuesta genérica para no filtrar si el correo existe.
+     */
+    async enviarCodigoEstudiante({ correo }) {
+      const correoNormalizado = normalizarCorreo(correo);
+      if (!correoNormalizado) {
+        throw crearErrorHttp('El correo institucional es obligatorio', 400);
+      }
+
+      if (limiteIntentos.estaBloqueado(`enviar-codigo:${correoNormalizado}`)) {
+        throw crearErrorHttp(
+          'Demasiados intentos. Intenta de nuevo más tarde',
+          429
+        );
+      }
+
+      const convocatoria = await repositorio.buscarConvocatoriaActivaPorCorreo(
+        correoNormalizado,
+        reloj()
+      );
+
+      if (!convocatoria || !convocatoria.usuarioActivo) {
+        limiteIntentos.registrarFallo(`enviar-codigo:${correoNormalizado}`);
+        return { mensaje: MENSAJE_CODIGO_ENVIADO };
+      }
+
+      if (!notificaciones || typeof notificaciones.enviar !== 'function') {
+        throw crearErrorHttp(
+          'El envío de correos no está disponible en este momento',
+          503
+        );
+      }
+
+      const { codigo, codigoHash } = generarCodigo();
+      const actualizadas = await repositorio.actualizarCodigoAutorizacion(
+        convocatoria.actividadId,
+        convocatoria.estudianteId,
+        codigoHash,
+        reloj()
+      );
+
+      if (!actualizadas) {
+        return { mensaje: MENSAJE_CODIGO_ENVIADO };
+      }
+
+      try {
+        const envio = await notificaciones.enviar(TIPOS_NOTIFICACION.CONVOCATORIA, {
+          actividadId: convocatoria.actividadId,
+          estudianteId: convocatoria.estudianteId,
+          destinatario: convocatoria.correo,
+          caso: {
+            titulo: convocatoria.casoTitulo,
+            desarrolloSituacional: convocatoria.desarrolloSituacional || '',
+            contextoHistoria: convocatoria.contextoHistoria || ''
+          },
+          mensajePersonalizado:
+            convocatoria.mensajePersonalizado ||
+            'Tu código de acceso a Lumina. Úsalo en Iniciar sesión.',
+          urlAcceso: process.env.URL_ACCESO || 'http://localhost:5173',
+          codigoAutorizacion: codigo
+        });
+
+        limiteIntentos.reiniciar(`enviar-codigo:${correoNormalizado}`);
+
+        const enPantalla = Boolean(envio?.demo) || envio?.canal === 'Sistema';
+        return {
+          mensaje: enPantalla
+            ? 'Lumina generó tu código. Úsalo para entrar (el correo del sistema aún no está activo).'
+            : MENSAJE_CODIGO_ENVIADO,
+          // Solo se devuelve en modo demo/pantalla; con SMTP real el alumno lo ve en su bandeja.
+          codigo: enPantalla ? codigo : undefined,
+          previewUrl: envio?.previewUrl || null,
+          canal: envio?.canal || null
+        };
+      } catch (error) {
+        limiteIntentos.registrarFallo(`enviar-codigo:${correoNormalizado}`);
+        throw crearErrorHttp(
+          error?.message || 'No se pudo enviar el código al correo',
+          502
+        );
+      }
     }
   };
 }

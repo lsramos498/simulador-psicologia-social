@@ -12,7 +12,8 @@ import {
   listarEstudiantesAdmin,
   retirarEstudianteActividad,
   cerrarActividad,
-  cerrarVencidasActividades
+  cerrarVencidasActividades,
+  obtenerActividad
 } from '../api/client';
 import ActividadCrearForm from '../components/actividades/ActividadCrearForm';
 import ActividadesLista from '../components/actividades/ActividadesLista';
@@ -40,6 +41,7 @@ export default function ActividadesPage({ sesion }) {
   const [mensaje, setMensaje] = useState('');
   const [cargando, setCargando] = useState(true);
   const [trabajando, setTrabajando] = useState(false);
+  const [detalleActividad, setDetalleActividad] = useState(null);
   const [form, setForm] = useState({
     casoId: '',
     espacioAcademicoId: '',
@@ -253,6 +255,19 @@ export default function ActividadesPage({ sesion }) {
     }
   }
 
+  async function verDetalle(id) {
+    setTrabajando(true);
+    setError('');
+    try {
+      const res = await obtenerActividad(token, id);
+      setDetalleActividad(res.data);
+    } catch (err) {
+      setError(mensajeError(err));
+    } finally {
+      setTrabajando(false);
+    }
+  }
+
   async function iniciar(id) {
     setTrabajando(true);
     setError('');
@@ -335,7 +350,26 @@ export default function ActividadesPage({ sesion }) {
 
       {codigos.length > 0 ? (
         <div className="asistente-resultado">
-          <strong>Códigos de acceso (guárdalos ahora)</strong>
+          <div className="ficha-acciones" style={{ marginBottom: '0.5rem' }}>
+            <strong>Códigos de acceso (guárdalos ahora)</strong>
+            <button
+              type="button"
+              className="btn-ghost-dark"
+              onClick={async () => {
+                const texto = codigos
+                  .map((c) => `Estudiante #${c.estudianteId}: ${c.codigo}`)
+                  .join('\n');
+                try {
+                  await navigator.clipboard.writeText(texto);
+                  setMensaje('Códigos copiados al portapapeles.');
+                } catch {
+                  setError('No se pudo copiar. Seleccioná los códigos a mano.');
+                }
+              }}
+            >
+              Copiar todos
+            </button>
+          </div>
           <ul className="asistente-meta">
             {codigos.map((c) => (
               <li key={`${c.estudianteId}-${c.codigo}`}>
@@ -373,8 +407,44 @@ export default function ActividadesPage({ sesion }) {
         </div>
       ) : null}
 
+      {detalleActividad ? (
+        <div className="panel-editor">
+          <div className="ficha-acciones" style={{ marginBottom: '0.5rem' }}>
+            <h3 style={{ margin: 0 }}>
+              Detalle actividad #{detalleActividad.id} · {detalleActividad.estado}
+            </h3>
+            <button type="button" className="btn-ghost-dark" onClick={() => setDetalleActividad(null)}>
+              Cerrar
+            </button>
+          </div>
+          <p className="muted-light">
+            Caso {detalleActividad.casoId} · Rúbrica {detalleActividad.rubricaId || '—'} · Espacio{' '}
+            {detalleActividad.espacioAcademicoId || '—'}
+          </p>
+          <p className="muted-light">
+            {detalleActividad.fechaInicio} → {detalleActividad.fechaFin}
+            {detalleActividad.tiempoLimiteSegundos
+              ? ` · límite ${detalleActividad.tiempoLimiteSegundos}s`
+              : ''}
+          </p>
+          <h4>Estudiantes autorizados</h4>
+          {(detalleActividad.estudiantesAutorizados || []).length === 0 ? (
+            <p className="muted-light">Ninguno todavía.</p>
+          ) : (
+            <ul className="asistente-meta">
+              {detalleActividad.estudiantesAutorizados.map((e) => (
+                <li key={e.id || e.estudianteId}>
+                  #{e.estudianteId} {e.nombres || ''} {e.apellidos || ''} · {e.estado}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
+
       <ActividadesLista
         actividades={actividades}
+        estudiantes={estudiantes}
         trabajando={trabajando}
         estudianteExtra={estudianteExtra}
         setEstudianteExtra={setEstudianteExtra}
@@ -382,6 +452,7 @@ export default function ActividadesPage({ sesion }) {
         setEstudianteRetiro={setEstudianteRetiro}
         onIniciar={iniciar}
         onCerrar={cerrar}
+        onVerDetalle={verDetalle}
         onVerNotificaciones={verConvocatorias}
         onAgregarExtra={agregarExtra}
         onRetirar={retirar}

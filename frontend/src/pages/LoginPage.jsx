@@ -1,38 +1,101 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  enviarCodigoEstudiante,
   guardarSesion,
   ingresarDocente,
   ingresarEstudiante
 } from '../api/client';
 
 export default function LoginPage({ onSesion }) {
-  const [fase, setFase] = useState('portada'); // portada | docente | estudiante
+  const [fase, setFase] = useState('portada'); // portada | sesion
+  const [modo, setModo] = useState('estudiante'); // estudiante | docente
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [codigo, setCodigo] = useState('');
+  const [codigoEnviado, setCodigoEnviado] = useState(false);
+  const [aviso, setAviso] = useState('');
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [codigoVisible, setCodigoVisible] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [enviandoCodigo, setEnviandoCodigo] = useState(false);
   const [error, setError] = useState('');
+  const correoRef = useRef(null);
 
-  function abrirDocente() {
-    setFase('docente');
+  useEffect(() => {
+    if (fase === 'sesion') {
+      correoRef.current?.focus();
+    }
+  }, [fase]);
+
+  function abrirSesion() {
+    setFase('sesion');
+    setModo('estudiante');
     setError('');
-    setCorreo('admin@unihumboldt.edu.co');
+    setAviso('');
+    setPreviewUrl('');
+    setCodigoVisible('');
+    setCorreo('');
     setContrasena('');
     setCodigo('');
-  }
-
-  function abrirEstudiante() {
-    setFase('estudiante');
-    setError('');
-    setCorreo('estudiante.flujo@unihumboldt.edu.co');
-    setContrasena('');
-    setCodigo('');
+    setCodigoEnviado(false);
   }
 
   function volverPortada() {
     setFase('portada');
     setError('');
+    setAviso('');
+    setPreviewUrl('');
+    setCodigoVisible('');
     setCargando(false);
+    setEnviandoCodigo(false);
+  }
+
+  function cambiarModo(siguiente) {
+    setModo(siguiente);
+    setError('');
+    setAviso('');
+    setPreviewUrl('');
+    setCodigoVisible('');
+    setContrasena('');
+    setCodigo('');
+    setCodigoEnviado(false);
+  }
+
+  async function pedirCodigo() {
+    setError('');
+    setAviso('');
+    setPreviewUrl('');
+    setCodigoVisible('');
+    if (!correo.trim()) {
+      setError('Escribe tu correo institucional.');
+      correoRef.current?.focus();
+      return;
+    }
+
+    setEnviandoCodigo(true);
+    try {
+      const resultado = await enviarCodigoEstudiante({ correo });
+      setCodigoEnviado(true);
+      if (resultado.codigo) {
+        const recibido = String(resultado.codigo).toUpperCase();
+        setCodigoVisible(recibido);
+        setCodigo(recibido);
+        setAviso(resultado.mensaje || 'Lumina generó tu código. Ya quedó listo para entrar.');
+      } else if (resultado.previewUrl) {
+        setPreviewUrl(resultado.previewUrl);
+        setAviso('Abre el enlace para ver el código del correo de prueba.');
+        window.open(resultado.previewUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        setAviso(
+          resultado.mensaje ||
+            'Si tu correo está convocado, te enviamos el código. Revisa tu bandeja (y spam).'
+        );
+      }
+    } catch (err) {
+      setError(err.message || 'No se pudo enviar el código.');
+    } finally {
+      setEnviandoCodigo(false);
+    }
   }
 
   async function enviar(evento) {
@@ -41,7 +104,10 @@ export default function LoginPage({ onSesion }) {
     setCargando(true);
     try {
       let resultado;
-      if (fase === 'estudiante') {
+      if (modo === 'estudiante') {
+        if (!codigoEnviado) {
+          throw new Error('Primero pulsa «Enviar código» y revisa tu correo.');
+        }
         resultado = await ingresarEstudiante({ correo, codigo });
       } else {
         resultado = await ingresarDocente({ correo, contrasena });
@@ -95,10 +161,7 @@ export default function LoginPage({ onSesion }) {
 
         {fase === 'portada' ? (
           <div className="login-cta-stack">
-            <button type="button" className="login-btn-game green" onClick={abrirEstudiante}>
-              Jugar
-            </button>
-            <button type="button" className="login-btn-game blue" onClick={abrirDocente}>
+            <button type="button" className="login-btn-game blue" onClick={abrirSesion}>
               <span className="login-btn-user" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="22" height="22">
                   <circle cx="12" cy="8" r="4" fill="currentColor" />
@@ -107,32 +170,72 @@ export default function LoginPage({ onSesion }) {
               </span>
               Iniciar sesión
             </button>
+            <p className="login-hint">
+              Estudiante: correo + código · Docente/admin: correo + contraseña
+            </p>
           </div>
         ) : (
           <form className="login-splash-form" onSubmit={enviar}>
-            <button type="button" className="login-back" onClick={volverPortada}>
+            <button type="button" className="login-back" onClick={volverPortada} disabled={cargando}>
               ← Volver
             </button>
-            <h2>{fase === 'estudiante' ? 'Entrar a jugar' : 'Iniciar sesión'}</h2>
+            <h2>Iniciar sesión</h2>
             <p className="login-form-lead">
-              {fase === 'estudiante'
-                ? 'Correo institucional y código de tu convocatoria.'
+              {modo === 'estudiante'
+                ? 'Escribe tu correo, envía el código y úsalo para entrar.'
                 : 'Docentes y administradores: correo y contraseña.'}
             </p>
+
+            <div className="login-mode-tabs" role="tablist" aria-label="Tipo de cuenta">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={modo === 'estudiante'}
+                className={modo === 'estudiante' ? 'active' : ''}
+                onClick={() => cambiarModo('estudiante')}
+                disabled={cargando || enviandoCodigo}
+              >
+                Estudiante
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={modo === 'docente'}
+                className={modo === 'docente' ? 'active' : ''}
+                onClick={() => cambiarModo('docente')}
+                disabled={cargando || enviandoCodigo}
+              >
+                Docente / Admin
+              </button>
+            </div>
 
             <div className="field">
               <label htmlFor="correo">Correo</label>
               <input
                 id="correo"
+                ref={correoRef}
                 type="email"
                 autoComplete="username"
                 value={correo}
-                onChange={(e) => setCorreo(e.target.value)}
+                onChange={(e) => {
+                  setCorreo(e.target.value);
+                  setCodigoEnviado(false);
+                  setAviso('');
+                  setPreviewUrl('');
+                  setCodigoVisible('');
+                  setCodigo('');
+                }}
+                placeholder={
+                  modo === 'estudiante'
+                    ? 'estudiante@unihumboldt.edu.co'
+                    : 'docente@unihumboldt.edu.co'
+                }
                 required
+                disabled={cargando || enviandoCodigo}
               />
             </div>
 
-            {fase === 'docente' ? (
+            {modo === 'docente' ? (
               <div className="field">
                 <label htmlFor="contrasena">Contraseña</label>
                 <input
@@ -141,36 +244,63 @@ export default function LoginPage({ onSesion }) {
                   autoComplete="current-password"
                   value={contrasena}
                   onChange={(e) => setContrasena(e.target.value)}
+                  placeholder="Tu contraseña"
                   required
+                  disabled={cargando}
                 />
               </div>
             ) : (
-              <div className="field">
-                <label htmlFor="codigo">Código de convocatoria</label>
-                <input
-                  id="codigo"
-                  type="text"
-                  autoComplete="one-time-code"
-                  value={codigo}
-                  onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-                  placeholder="Ej. ABCD2345"
-                  required
-                />
-              </div>
+              <>
+                <button
+                  type="button"
+                  className="login-btn-game green login-btn-send-code"
+                  onClick={pedirCodigo}
+                  disabled={cargando || enviandoCodigo || !correo.trim()}
+                >
+                  {enviandoCodigo ? 'Enviando…' : 'Enviar código'}
+                </button>
+
+                <div className="field">
+                  <label htmlFor="codigo">Código recibido</label>
+                  <input
+                    id="codigo"
+                    type="text"
+                    autoComplete="one-time-code"
+                    value={codigo}
+                    onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+                    placeholder="Ej. ABCD2345"
+                    required
+                    disabled={cargando || !codigoEnviado}
+                  />
+                </div>
+              </>
             )}
 
+            {aviso ? <div className="login-ok">{aviso}</div> : null}
+            {codigoVisible ? (
+              <p className="login-codigo-demo">
+                Código Lumina: <strong>{codigoVisible}</strong>
+              </p>
+            ) : null}
+            {previewUrl ? (
+              <p className="login-preview">
+                <a href={previewUrl} target="_blank" rel="noreferrer">
+                  Ver código en el correo de prueba →
+                </a>
+              </p>
+            ) : null}
             {error ? <div className="alert">{error}</div> : null}
 
             <button
-              className={fase === 'estudiante' ? 'login-btn-game green' : 'login-btn-game blue'}
+              className="login-btn-game blue"
               type="submit"
-              disabled={cargando}
+              disabled={
+                cargando ||
+                enviandoCodigo ||
+                (modo === 'estudiante' && (!codigoEnviado || !codigo.trim()))
+              }
             >
-              {cargando
-                ? 'Ingresando…'
-                : fase === 'estudiante'
-                  ? 'Jugar ahora'
-                  : 'Entrar'}
+              {cargando ? 'Ingresando…' : 'Entrar'}
             </button>
           </form>
         )}

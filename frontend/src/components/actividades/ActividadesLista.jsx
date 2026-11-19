@@ -1,5 +1,6 @@
 export default function ActividadesLista({
   actividades,
+  estudiantes = [],
   trabajando,
   estudianteExtra,
   setEstudianteExtra,
@@ -7,15 +8,21 @@ export default function ActividadesLista({
   setEstudianteRetiro,
   onIniciar,
   onCerrar,
+  onVerDetalle,
   onVerNotificaciones,
   onAgregarExtra,
   onRetirar
 }) {
+  const roster = estudiantes || [];
+
   return (
     <div className="panel-editor">
       <h3>Mis actividades</h3>
       {(actividades || []).length === 0 ? (
-        <p className="muted-light">Aún no hay actividades.</p>
+        <div className="empty-state soft">
+          <strong>Aún no hay actividades</strong>
+          <p className="muted-light">Creá una arriba para generar códigos y notificar.</p>
+        </div>
       ) : (
         <div className="arbol-escenas">
           {actividades.map((a) => (
@@ -53,6 +60,14 @@ export default function ActividadesLista({
                   type="button"
                   className="btn-ghost-dark"
                   disabled={trabajando}
+                  onClick={() => onVerDetalle?.(a.id)}
+                >
+                  Ver detalle
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost-dark"
+                  disabled={trabajando}
                   onClick={() => onVerNotificaciones(a.id)}
                 >
                   Ver notificaciones
@@ -61,13 +76,28 @@ export default function ActividadesLista({
               {a.estado !== 'Cerrada' ? (
                 <div className="field" style={{ marginTop: '0.75rem' }}>
                   <label>Convocar / retirar estudiante</label>
-                  <div className="ficha-acciones">
-                    <input
-                      value={estudianteExtra}
-                      onChange={(e) => setEstudianteExtra(e.target.value)}
-                      placeholder="ID a convocar"
-                      style={{ maxWidth: '8rem' }}
-                    />
+                  <div className="ficha-acciones" style={{ flexWrap: 'wrap' }}>
+                    {roster.length > 0 ? (
+                      <select
+                        value={estudianteExtra}
+                        onChange={(e) => setEstudianteExtra(e.target.value)}
+                        style={{ minWidth: '12rem' }}
+                      >
+                        <option value="">Convocar…</option>
+                        {roster.map((est) => (
+                          <option key={est.id} value={est.id}>
+                            #{est.id} {est.nombres || ''} {est.apellidos || ''}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        value={estudianteExtra}
+                        onChange={(e) => setEstudianteExtra(e.target.value)}
+                        placeholder="ID a convocar"
+                        style={{ maxWidth: '8rem' }}
+                      />
+                    )}
                     <button
                       type="button"
                       className="btn-play"
@@ -76,12 +106,27 @@ export default function ActividadesLista({
                     >
                       Notificar
                     </button>
-                    <input
-                      value={estudianteRetiro}
-                      onChange={(e) => setEstudianteRetiro(e.target.value)}
-                      placeholder="ID a retirar"
-                      style={{ maxWidth: '8rem' }}
-                    />
+                    {roster.length > 0 ? (
+                      <select
+                        value={estudianteRetiro}
+                        onChange={(e) => setEstudianteRetiro(e.target.value)}
+                        style={{ minWidth: '12rem' }}
+                      >
+                        <option value="">Retirar…</option>
+                        {roster.map((est) => (
+                          <option key={`r-${est.id}`} value={est.id}>
+                            #{est.id} {est.nombres || ''} {est.apellidos || ''}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        value={estudianteRetiro}
+                        onChange={(e) => setEstudianteRetiro(e.target.value)}
+                        placeholder="ID a retirar"
+                        style={{ maxWidth: '8rem' }}
+                      />
+                    )}
                     <button
                       type="button"
                       className="btn-ghost-dark"

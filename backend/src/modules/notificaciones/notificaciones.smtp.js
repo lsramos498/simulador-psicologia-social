@@ -7,16 +7,57 @@ const HOSTS_PLACEHOLDER = new Set([
   '127.0.0.1'
 ]);
 
+function modoSmtp(configuracion = process.env) {
+  return String(configuracion.SMTP_MODE || '').trim().toLowerCase();
+}
+
+function smtpListo(configuracion = process.env) {
+  return Boolean(
+    String(configuracion.SMTP_HOST || '').trim() &&
+    String(configuracion.SMTP_USER || '').trim() &&
+    String(configuracion.SMTP_PASS || '').trim() &&
+    String(configuracion.SMTP_FROM || '').trim() &&
+    String(configuracion.SMTP_PORT || '').trim()
+  );
+}
+
 function esSmtpPlaceholder(configuracion = process.env) {
-  const modo = String(configuracion.SMTP_MODE || '').trim().toLowerCase();
+  const modo = modoSmtp(configuracion);
   if (modo === 'ethereal' || modo === 'local' || modo === 'dev') {
     return true;
   }
-  if (modo === 'smtp') {
+  if (modo === 'demo' || modo === 'pantalla') {
     return false;
+  }
+  if (modo === 'smtp') {
+    // Sin contraseña no hay Gmail real: se usa entrega en pantalla (Lumina).
+    return !smtpListo(configuracion);
   }
   const host = String(configuracion.SMTP_HOST || '').trim().toLowerCase();
   return !host || HOSTS_PLACEHOLDER.has(host);
+}
+
+/**
+ * Sin cuenta SMTP del sistema: Lumina registra el aviso y el código
+ * se entrega en la pantalla de inicio de sesión (no usa tu correo personal).
+ */
+export function crearTransporteDemo() {
+  return Object.freeze({
+    modo: 'demo',
+    async enviar(mensaje) {
+      if (!mensaje || !mensaje.to || !mensaje.subject) {
+        throw new TypeError('El mensaje de correo está incompleto.');
+      }
+      console.info(
+        `[notificaciones] Modo demo/pantalla → para ${mensaje.to}: ${mensaje.subject}`
+      );
+      return {
+        messageId: `demo-${Date.now()}`,
+        previewUrl: null,
+        demo: true
+      };
+    }
+  });
 }
 
 /**
@@ -145,10 +186,29 @@ export async function crearTransporteEthereal(configuracion = process.env) {
 
 /**
  * Elige el mejor transporte disponible:
- * - SMTP_MODE=smtp + credenciales reales → SMTP
- * - placeholder / ethereal / local → Ethereal (envío real de prueba)
+ * - SMTP_MODE=smtp + credenciales → Gmail/SMTP real (remitente Lumina)
+ * - SMTP_MODE=demo|pantalla o smtp sin clave → entrega en pantalla
+ * - ethereal/local → Ethereal (solo preview)
  */
 export async function crearTransporteCorreo(configuracion = process.env) {
+  const modo = modoSmtp(configuracion);
+
+  if (modo === 'demo' || modo === 'pantalla') {
+    console.info('[notificaciones] Modo demo: código en pantalla (remitente Lumina, sin Gmail).');
+    return crearTransporteDemo();
+  }
+
+  if (modo === 'smtp' && smtpListo(configuracion)) {
+    return crearTransporteSMTP(configuracion);
+  }
+
+  if (modo === 'smtp' && !smtpListo(configuracion)) {
+    console.warn(
+      '[notificaciones] SMTP_MODE=smtp sin credenciales. Usando entrega en pantalla hasta configurar la cuenta Lumina.'
+    );
+    return crearTransporteDemo();
+  }
+
   if (!esSmtpPlaceholder(configuracion)) {
     return crearTransporteSMTP(configuracion);
   }
@@ -161,13 +221,11 @@ export async function crearTransporteCorreo(configuracion = process.env) {
     return ethereal;
   } catch (error) {
     console.warn(
-      '[notificaciones] No se pudo crear Ethereal:',
+      '[notificaciones] Ethereal no disponible; usando entrega en pantalla:',
       error?.message || error
     );
-    throw new Error(
-      `No hay transporte de correo disponible. Configura SMTP real o revisa la red. Detalle: ${error?.message || error}`
-    );
+    return crearTransporteDemo();
   }
 }
 
-export { esSmtpPlaceholder };
+export { esSmtpPlaceholder, smtpListo };

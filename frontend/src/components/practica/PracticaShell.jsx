@@ -1,6 +1,7 @@
 export default function PracticaShell({ usuario, onSalir, children }) {
   return (
     <div className="practica-shell">
+      <div className="practica-shell-bg" aria-hidden="true" />
       <header className="practica-top">
         <div>
           <span className="brand-mark">Lumina</span>
@@ -12,7 +13,7 @@ export default function PracticaShell({ usuario, onSalir, children }) {
           Salir
         </button>
       </header>
-      {children}
+      <div className="practica-shell-body">{children}</div>
     </div>
   );
 }

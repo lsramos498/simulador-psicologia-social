@@ -27,7 +27,8 @@ export default function SimResultadoFin({
         </p>
         <button
           type="button"
-          className="btn-play"
+          className="login-btn-game green"
+          style={{ maxWidth: '22rem' }}
           onClick={() => (onTerminar ? onTerminar() : onSalir?.())}
         >
           Ver resultados oficiales
@@ -82,7 +83,12 @@ export default function SimResultadoFin({
           </p>
         </div>
       </div>
-      <button type="button" className="btn-play" onClick={onSalir}>
+      <button
+        type="button"
+        className="login-btn-game blue"
+        style={{ maxWidth: '18rem' }}
+        onClick={onSalir}
+      >
         Volver a historias
       </button>
     </section>

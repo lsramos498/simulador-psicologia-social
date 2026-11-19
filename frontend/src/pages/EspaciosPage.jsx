@@ -92,7 +92,10 @@ export default function EspaciosPage({ sesion }) {
       <div className="panel-editor">
         <h3>Registrados ({espacios.length})</h3>
         {espacios.length === 0 ? (
-          <p className="muted-light">Todavía no hay espacios.</p>
+          <div className="empty-state soft">
+            <strong>Todavía no hay espacios</strong>
+            <p className="muted-light">Creá uno arriba; luego lo elegís al programar una actividad.</p>
+          </div>
         ) : (
           <ul className="asistente-meta">
             {espacios.map((e) => (

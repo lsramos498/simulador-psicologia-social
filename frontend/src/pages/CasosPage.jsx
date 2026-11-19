@@ -42,6 +42,7 @@ export default function CasosPage({ sesion, onSalir }) {
   const { token, usuario } = sesion;
   const [vista, setVista] = useState('historias');
   const [filtro, setFiltro] = useState('');
+  const [busqueda, setBusqueda] = useState('');
   const [casos, setCasos] = useState([]);
   const [destacadoId, setDestacadoId] = useState(null);
   const [detalle, setDetalle] = useState(null);
@@ -85,22 +86,36 @@ export default function CasosPage({ sesion, onSalir }) {
     cargar();
   }, []);
 
+  const casosFiltrados = useMemo(() => {
+    const q = busqueda.trim().toLocaleLowerCase('es');
+    if (!q) return casos;
+    return casos.filter((c) => {
+      const texto = `${c.titulo || ''} ${c.id || ''} ${c.estado || ''}`.toLocaleLowerCase('es');
+      return texto.includes(q);
+    });
+  }, [casos, busqueda]);
+
   const destacado = useMemo(
-    () => casos.find((c) => c.id === destacadoId) || casos[0] || null,
-    [casos, destacadoId]
+    () =>
+      casosFiltrados.find((c) => c.id === destacadoId) ||
+      casosFiltrados[0] ||
+      casos.find((c) => c.id === destacadoId) ||
+      casos[0] ||
+      null,
+    [casos, casosFiltrados, destacadoId]
   );
 
   const publicados = useMemo(
-    () => casos.filter((c) => c.estado === 'Publicado'),
-    [casos]
+    () => casosFiltrados.filter((c) => c.estado === 'Publicado'),
+    [casosFiltrados]
   );
   const borradores = useMemo(
-    () => casos.filter((c) => c.estado === 'Borrador'),
-    [casos]
+    () => casosFiltrados.filter((c) => c.estado === 'Borrador'),
+    [casosFiltrados]
   );
   const archivados = useMemo(
-    () => casos.filter((c) => c.estado === 'Archivado'),
-    [casos]
+    () => casosFiltrados.filter((c) => c.estado === 'Archivado'),
+    [casosFiltrados]
   );
 
   function togglePersonaje(personaje) {
@@ -394,16 +409,29 @@ export default function CasosPage({ sesion, onSalir }) {
         onCambiar={cambiarVista}
         usuario={usuario}
         onSalir={onSalir}
+        token={token}
       />
 
       <main className="studio-main">
         <header className="studio-top">
           <div>
             <p className="kicker">{admin ? 'Consola administración' : 'Simulador de casos'}</p>
-            <h1 className="brand-mark">Lumina</h1>
+            <h1 className="brand-mark">
+              Lumina{' '}
+              <span className="role-pill">{admin ? 'Admin' : 'Docente'}</span>
+            </h1>
           </div>
           {!['actividades', 'admin', 'seguimiento', 'avisos', 'espacios'].includes(vista) ? (
             <div className="studio-filters">
+              <label>
+                Buscar
+                <input
+                  type="search"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Título o #id"
+                />
+              </label>
               <label>
                 Estado
                 <select
@@ -433,6 +461,22 @@ export default function CasosPage({ sesion, onSalir }) {
 
         {vista === 'historias' ? (
           <>
+            <div className="quick-nav">
+              <button type="button" className="chip-ejemplo" onClick={() => cambiarVista('crear')}>
+                + Crear historia
+              </button>
+              <button type="button" className="chip-ejemplo" onClick={() => cambiarVista('actividades')}>
+                Actividades
+              </button>
+              <button type="button" className="chip-ejemplo" onClick={() => cambiarVista('seguimiento')}>
+                Seguimiento
+              </button>
+              {admin ? (
+                <button type="button" className="chip-ejemplo" onClick={() => cambiarVista('admin')}>
+                  Admin
+                </button>
+              ) : null}
+            </div>
             <CasoHero
               caso={destacado}
               onAbrir={(caso) => {
@@ -446,15 +490,22 @@ export default function CasosPage({ sesion, onSalir }) {
                 caso?.estado === 'Borrador' ? abrirEditor(caso) : abrirSimulacion(caso)
               }
             />
-            <CasosCarrusel
-              titulo="Recomendado para ti"
-              casos={casos}
-              seleccionadoId={destacado?.id}
-              onSeleccionar={(caso) => {
-                setDestacadoId(caso.id);
-                abrirFicha(caso);
-              }}
-            />
+            {casosFiltrados.length > 0 ? (
+              <CasosCarrusel
+                titulo="Recomendado para ti"
+                casos={casosFiltrados}
+                seleccionadoId={destacado?.id}
+                onSeleccionar={(caso) => {
+                  setDestacadoId(caso.id);
+                  abrirFicha(caso);
+                }}
+              />
+            ) : busqueda.trim() ? (
+              <div className="empty-state soft">
+                <strong>Sin coincidencias</strong>
+                <p className="muted-light">Probá otro término o limpiá la búsqueda.</p>
+              </div>
+            ) : null}
             {borradores.length > 0 ? (
               <CasosCarrusel
                 titulo="Por completar"
@@ -486,30 +537,60 @@ export default function CasosPage({ sesion, onSalir }) {
 
         {vista === 'actividades' ? <ActividadesPage sesion={sesion} /> : null}
         {vista === 'admin' && admin ? <AdminPage sesion={sesion} /> : null}
-        {vista === 'seguimiento' ? <SeguimientoPage sesion={sesion} /> : null}
+        {vista === 'seguimiento' ? (
+          <SeguimientoPage sesion={sesion} onIrActividades={() => cambiarVista('actividades')} />
+        ) : null}
         {vista === 'avisos' ? <AvisosPage sesion={sesion} /> : null}
         {vista === 'espacios' ? <EspaciosPage sesion={sesion} /> : null}
 
         {vista === 'biblioteca' ? (
           <>
-            <CasosCarrusel
-              titulo="Por completar"
-              casos={borradores}
-              seleccionadoId={destacado?.id}
-              onSeleccionar={(caso) => abrirFicha(caso)}
-            />
-            <CasosCarrusel
-              titulo="Listas para jugar"
-              casos={publicados}
-              seleccionadoId={destacado?.id}
-              onSeleccionar={(caso) => abrirFicha(caso)}
-            />
-            <CasosCarrusel
-              titulo="Archivadas"
-              casos={archivados}
-              seleccionadoId={destacado?.id}
-              onSeleccionar={(caso) => abrirFicha(caso)}
-            />
+            <header className="crear-head" style={{ marginBottom: '0.5rem' }}>
+              <div>
+                <p className="kicker">Biblioteca</p>
+                <h2>Todas tus historias</h2>
+                <p className="muted-light">Borradores, publicadas y archivadas en un solo lugar.</p>
+              </div>
+              <button type="button" className="btn-play" onClick={() => cambiarVista('crear')}>
+                Nueva historia
+              </button>
+            </header>
+            {casosFiltrados.length === 0 ? (
+              <div className="empty-state">
+                <strong>{busqueda.trim() ? 'Sin coincidencias' : 'Biblioteca vacía'}</strong>
+                <p className="muted-light">
+                  {busqueda.trim()
+                    ? 'Probá otro término o limpiá la búsqueda.'
+                    : 'Creá tu primera historia para empezar la práctica.'}
+                </p>
+                {!busqueda.trim() ? (
+                  <button type="button" className="btn-play" onClick={() => cambiarVista('crear')}>
+                    Crear historia
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <>
+                <CasosCarrusel
+                  titulo="Por completar"
+                  casos={borradores}
+                  seleccionadoId={destacado?.id}
+                  onSeleccionar={(caso) => abrirFicha(caso)}
+                />
+                <CasosCarrusel
+                  titulo="Listas para jugar"
+                  casos={publicados}
+                  seleccionadoId={destacado?.id}
+                  onSeleccionar={(caso) => abrirFicha(caso)}
+                />
+                <CasosCarrusel
+                  titulo="Archivadas"
+                  casos={archivados}
+                  seleccionadoId={destacado?.id}
+                  onSeleccionar={(caso) => abrirFicha(caso)}
+                />
+              </>
+            )}
           </>
         ) : null}
 

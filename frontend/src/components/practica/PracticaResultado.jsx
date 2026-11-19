@@ -1,6 +1,6 @@
 export default function PracticaResultado({ caso, evaluacion, retroItems, onSalir }) {
   return (
-    <section className="sim-player sim-fin">
+    <section className="sim-player sim-fin practica-panel">
       <p className="kicker">Práctica finalizada</p>
       <h2>{caso?.titulo || 'Sesión terminada'}</h2>
       {evaluacion?.resultado != null ? (
@@ -24,7 +24,7 @@ export default function PracticaResultado({ caso, evaluacion, retroItems, onSali
       ) : (
         <p className="muted-light">No hay detalle de retroalimentación para esta sesión.</p>
       )}
-      <button type="button" className="btn-play" onClick={onSalir}>
+      <button type="button" className="login-btn-game blue" style={{ maxWidth: '16rem' }} onClick={onSalir}>
         Salir
       </button>
     </section>

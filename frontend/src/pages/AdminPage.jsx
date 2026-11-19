@@ -218,16 +218,23 @@ export default function AdminPage({ sesion }) {
           </div>
 
           <h3>Últimas actividades</h3>
-          {(actividades || []).slice(0, 8).map((a) => (
-            <article key={a.id} className="nodo-escena">
-              <strong>
-                #{a.id} · {a.estado}
-              </strong>
-              <p className="muted-light">
-                Caso {a.casoId} · Docente {a.docenteId} · {a.fechaInicio} → {a.fechaFin}
-              </p>
-            </article>
-          ))}
+          {(actividades || []).length === 0 ? (
+            <div className="empty-state soft">
+              <strong>Sin actividades todavía</strong>
+              <p className="muted-light">Cuando docentes programen prácticas, aparecerán aquí.</p>
+            </div>
+          ) : (
+            (actividades || []).slice(0, 8).map((a) => (
+              <article key={a.id} className="nodo-escena">
+                <strong>
+                  #{a.id} · {a.estado}
+                </strong>
+                <p className="muted-light">
+                  Caso {a.casoId} · Docente {a.docenteId} · {a.fechaInicio} → {a.fechaFin}
+                </p>
+              </article>
+            ))
+          )}
         </div>
       ) : null}
 
@@ -313,14 +320,38 @@ export default function AdminPage({ sesion }) {
           </form>
 
           <h3 style={{ marginTop: '1.5rem' }}>Estudiantes ({estudiantes.length})</h3>
-          <ul className="asistente-meta">
-            {estudiantes.map((est) => (
-              <li key={est.id}>
-                #{est.id} · {est.nombres} {est.apellidos} · {est.correo}
-                {est.activo === 0 || est.activo === false ? ' · inactivo' : ''}
-              </li>
-            ))}
-          </ul>
+          {estudiantes.length === 0 ? (
+            <div className="empty-state soft">
+              <strong>Sin estudiantes</strong>
+              <p className="muted-light">Creá uno arriba para poder convocar prácticas.</p>
+            </div>
+          ) : (
+            <ul className="asistente-meta">
+              {estudiantes.map((est) => (
+                <li key={est.id}>
+                  #{est.id} · {est.nombres} {est.apellidos} · {est.correo}
+                  {est.activo === 0 || est.activo === false ? ' · inactivo' : ''}
+                  {' · '}
+                  <button
+                    type="button"
+                    className="btn-ghost-dark"
+                    style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem' }}
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(String(est.id));
+                        setMensaje(`ID ${est.id} copiado. Podés usarlo en Asignar rol.`);
+                        setRolForm((prev) => ({ ...prev, usuarioId: String(est.id) }));
+                      } catch {
+                        setRolForm((prev) => ({ ...prev, usuarioId: String(est.id) }));
+                      }
+                    }}
+                  >
+                    Usar ID
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
 
           <form className="crear-form" onSubmit={asignarRol} style={{ marginTop: '1.5rem' }}>
             <h3>Asignar / quitar rol</h3>

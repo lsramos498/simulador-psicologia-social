@@ -12,6 +12,9 @@ import { responderErrorHttp } from '../modules/acceso/errores.js';
 /**
  * Rutas del módulo de acceso (Sofía Gallego — acceso y permisos).
  *
+ *   POST /api/acceso/estudiantes/enviar-codigo
+ *   body: { "correo": "..." }
+ *
  *   POST /api/acceso/estudiantes/ingreso
  *   body: { "correo": "...", "codigo": "..." }
  *
@@ -25,6 +28,24 @@ function esTextoConContenido(valor) {
 
 export function crearRutasAcceso(obtenerServicio) {
   const router = Router();
+
+  router.post('/estudiantes/enviar-codigo', async (req, res) => {
+    const { correo } = req.body ?? {};
+
+    if (!esTextoConContenido(correo)) {
+      return res.status(400).json({
+        error: 'El correo institucional es obligatorio'
+      });
+    }
+
+    try {
+      const servicio = await obtenerServicio();
+      const resultado = await servicio.enviarCodigoEstudiante({ correo });
+      return res.status(200).json(resultado);
+    } catch (error) {
+      return responderErrorHttp(res, error, 'envío de código de estudiante');
+    }
+  });
 
   router.post('/estudiantes/ingreso', async (req, res) => {
     const { correo, codigo } = req.body ?? {};
@@ -98,10 +119,23 @@ let servicioAdministracion;
 async function obtenerServicioPorDefecto() {
   if (!servicioPorDefecto) {
     const { pool } = await import('../config/database.js');
-
-    servicioPorDefecto = crearServicioAcceso(
-      crearRepositorioAcceso(pool)
+    const { crearRepositorioNotificaciones } = await import(
+      '../modules/notificaciones/notificaciones.repository.js'
     );
+    const { crearTransporteNotificaciones } = await import(
+      '../modules/notificaciones/notificaciones.transporte.js'
+    );
+    const { crearServicioNotificaciones } = await import(
+      '../modules/notificaciones/notificaciones.service.js'
+    );
+
+    const repoNotif = crearRepositorioNotificaciones(pool);
+    const transporte = await crearTransporteNotificaciones(repoNotif);
+    const notificaciones = crearServicioNotificaciones(transporte, repoNotif);
+
+    servicioPorDefecto = crearServicioAcceso(crearRepositorioAcceso(pool), {
+      notificaciones
+    });
   }
 
   return servicioPorDefecto;

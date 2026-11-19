@@ -28,13 +28,24 @@ export default function App() {
     contenido = <CasosPage sesion={sesion} onSalir={cerrarSesion} />;
   } else {
     contenido = (
-      <section className="crear-caso" style={{ padding: '2rem' }}>
-        <h2>Sin acceso al taller</h2>
-        <p className="muted-light">Tu usuario no tiene rol Docente ni Administrador.</p>
-        <button type="button" className="btn-play" onClick={cerrarSesion}>
-          Salir
-        </button>
-      </section>
+      <main className="login-splash">
+        <div className="login-splash-bg" aria-hidden="true" />
+        <div className="login-splash-vignette" aria-hidden="true" />
+        <div className="login-splash-center">
+          <h1 className="login-title-3d" style={{ fontSize: '3rem' }}>
+            LUMINA
+          </h1>
+          <div className="login-splash-form">
+            <h2>Sin acceso</h2>
+            <p className="login-form-lead">
+              Tu usuario no tiene rol Docente ni Administrador para entrar al taller.
+            </p>
+            <button type="button" className="login-btn-game blue" onClick={cerrarSesion}>
+              Volver al inicio
+            </button>
+          </div>
+        </div>
+      </main>
     );
   }
 

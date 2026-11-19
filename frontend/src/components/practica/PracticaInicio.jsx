@@ -6,28 +6,22 @@ export default function PracticaInicio({
   cargando,
   notificaciones,
   onActualizar,
-  onSalir,
   onEmpezar,
   onMarcarLeida
 }) {
   return (
-    <section className="crear-caso">
+    <section className="crear-caso practica-panel">
       <header className="crear-head">
         <div>
           <p className="kicker">Estudiante</p>
           <h2>Tu práctica</h2>
           <p className="muted-light">
-            Actividad #{actividadId || '—'} · {caso?.titulo || 'Caso pendiente'}
+            Actividad #{actividadId || '—'} · {caso?.titulo || 'Caso pendiente de iniciar'}
           </p>
         </div>
-        <div className="ficha-acciones">
-          <button type="button" className="btn-ghost-dark" onClick={onActualizar} disabled={cargando}>
-            Actualizar
-          </button>
-          <button type="button" className="btn-ghost-dark" onClick={onSalir}>
-            Salir
-          </button>
-        </div>
+        <button type="button" className="btn-ghost-dark" onClick={onActualizar} disabled={cargando}>
+          Actualizar
+        </button>
       </header>
       {mensaje ? <div className="alert alert-ok">{mensaje}</div> : null}
       {error ? <div className="alert">{error}</div> : null}
@@ -58,7 +52,12 @@ export default function PracticaInicio({
           </ul>
         </div>
       ) : (
-        <p className="muted-light">Cuando tu docente te convoque, verás aquí el aviso con el código.</p>
+        <div className="empty-state">
+          <strong>Todavía no hay avisos</strong>
+          <p className="muted-light">
+            Cuando tu docente te convoque, verás aquí el mensaje con el código de acceso.
+          </p>
+        </div>
       )}
 
       <div className="panel-editor">
@@ -68,7 +67,8 @@ export default function PracticaInicio({
         </p>
         <button
           type="button"
-          className="btn-play"
+          className="login-btn-game green"
+          style={{ maxWidth: '22rem' }}
           disabled={cargando || !actividadId}
           onClick={onEmpezar}
         >

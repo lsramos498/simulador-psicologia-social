@@ -333,6 +333,14 @@ export function guardarMaterialCaso(token, id, material) {
   });
 }
 
+/** Solicita el código de convocatoria al correo del estudiante. */
+export function enviarCodigoEstudiante({ correo }) {
+  return pedir('/api/acceso/estudiantes/enviar-codigo', {
+    method: 'POST',
+    body: { correo }
+  });
+}
+
 /** Ingreso de estudiante con correo + código de convocatoria. */
 export function ingresarEstudiante({ correo, codigo }) {
   return pedir('/api/acceso/estudiantes/ingreso', {

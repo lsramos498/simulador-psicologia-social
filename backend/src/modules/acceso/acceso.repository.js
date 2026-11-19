@@ -142,6 +142,60 @@ export function crearRepositorioAcceso(pool) {
         contrasenaHash: fila.contrasenaHash,
         activo: Boolean(fila.activo)
       };
+    },
+
+    /**
+     * Convoca activa del estudiante: Autorizado, ventana vigente y actividad
+     * Programada o Iniciada. La más reciente si hay varias.
+     */
+    async buscarConvocatoriaActivaPorCorreo(correo, ahora = new Date()) {
+      const normalizado = typeof correo === 'string' ? correo.trim().toLowerCase() : '';
+      if (!normalizado) {
+        return null;
+      }
+
+      const [filas] = await pool.execute(`
+        SELECT
+          ea.actividad_id AS actividadId,
+          ea.estudiante_id AS estudianteId,
+          ea.estado AS estadoAutorizacion,
+          u.correoInstitucional AS correo,
+          u.activo AS usuarioActivo,
+          u.nombres,
+          u.apellidos,
+          ap.fechaInicio,
+          ap.fechaFin,
+          ap.estado AS estadoActividad,
+          ap.mensajePersonalizado,
+          c.titulo AS casoTitulo,
+          c.desarrolloSituacional,
+          c.contextoHistoria
+        FROM EstudianteAutorizado ea
+        JOIN Usuario u ON u.id = ea.estudiante_id
+        JOIN ActividadProgramada ap ON ap.id = ea.actividad_id
+        JOIN Caso c ON c.id = ap.caso_id
+        WHERE u.correoInstitucional = ?
+          AND ea.estado = 'Autorizado'
+          AND ap.estado IN ('Programada', 'Iniciada')
+          AND ap.fechaInicio <= ?
+          AND ap.fechaFin >= ?
+        ORDER BY ap.fechaInicio DESC, ea.id DESC
+        LIMIT 1
+      `, [normalizado, ahora, ahora]);
+
+      return filas[0] ?? null;
+    },
+
+    async actualizarCodigoAutorizacion(actividadId, estudianteId, codigoHash, fechaAutorizacion = new Date()) {
+      const [resultado] = await pool.execute(`
+        UPDATE EstudianteAutorizado
+        SET codigoAutorizacion = ?,
+            fechaAutorizacion = ?,
+            estado = 'Autorizado'
+        WHERE actividad_id = ? AND estudiante_id = ?
+      `, [codigoHash, fechaAutorizacion, actividadId, estudianteId]);
+
+      return resultado.affectedRows;
     }
   };
 }

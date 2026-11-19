@@ -50,10 +50,12 @@ export async function crearTransporteNotificaciones(repositorio, configuracion =
       let fechaEnvio = ahora;
       let previewUrl = null;
 
+      let demo = false;
       if (correo) {
         try {
           const info = await correo.enviar(mensaje);
-          canal = 'Correo';
+          demo = Boolean(info?.demo) || correo.modo === 'demo';
+          canal = demo ? 'Sistema' : 'Correo';
           errorEnvio = null;
           previewUrl = info?.previewUrl || null;
           if (previewUrl) {
@@ -89,6 +91,7 @@ export async function crearTransporteNotificaciones(repositorio, configuracion =
         estado,
         canal,
         previewUrl,
+        demo,
         smtp: canal === 'Correo'
       };
     }

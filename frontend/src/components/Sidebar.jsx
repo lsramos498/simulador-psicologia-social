@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { listarNotificaciones } from '../api/client';
 import { esAdministrador } from '../utils/roles';
 
 const ITEMS_BASE = [
@@ -6,7 +8,7 @@ const ITEMS_BASE = [
   { id: 'crear', label: 'Crear', icon: 'plus' },
   { id: 'actividades', label: 'Actividades', icon: 'calendar' },
   { id: 'seguimiento', label: 'Seguimiento', icon: 'eye' },
-  { id: 'espacios', label: 'Espacios', icon: 'box' },
+  { id: 'espacios', label: 'Espacios', icon: 'place' },
   { id: 'avisos', label: 'Avisos', icon: 'bell' },
   { id: 'biblioteca', label: 'Biblioteca', icon: 'box' }
 ];
@@ -57,6 +59,14 @@ function Icon({ name }) {
       </svg>
     );
   }
+  if (name === 'place') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        <circle cx="12" cy="10" r="2.2" fill="currentColor" />
+      </svg>
+    );
+  }
   if (name === 'shield') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -72,11 +82,32 @@ function Icon({ name }) {
   );
 }
 
-export default function Sidebar({ activa, onCambiar, usuario, onSalir }) {
+export default function Sidebar({ activa, onCambiar, usuario, onSalir, token }) {
   const admin = esAdministrador(usuario);
   const items = admin
     ? [{ id: 'admin', label: 'Admin', icon: 'shield' }, ...ITEMS_BASE]
     : ITEMS_BASE;
+  const [noLeidas, setNoLeidas] = useState(0);
+
+  useEffect(() => {
+    if (!token) return undefined;
+    let vivo = true;
+    async function cargar() {
+      try {
+        const res = await listarNotificaciones(token);
+        const n = (res.data || []).filter((x) => x.estado !== 'Leida').length;
+        if (vivo) setNoLeidas(n);
+      } catch {
+        if (vivo) setNoLeidas(0);
+      }
+    }
+    cargar();
+    const t = setInterval(cargar, 20_000);
+    return () => {
+      vivo = false;
+      clearInterval(t);
+    };
+  }, [token, activa]);
 
   return (
     <aside className="side-nav">
@@ -95,6 +126,9 @@ export default function Sidebar({ activa, onCambiar, usuario, onSalir }) {
           >
             <span className="side-icon">
               <Icon name={item.icon} />
+              {item.id === 'avisos' && noLeidas > 0 ? (
+                <span className="side-badge">{noLeidas > 9 ? '9+' : noLeidas}</span>
+              ) : null}
             </span>
             <span>{item.label}</span>
           </button>
