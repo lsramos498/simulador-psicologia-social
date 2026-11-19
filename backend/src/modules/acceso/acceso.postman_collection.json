@@ -1,0 +1,908 @@
+{
+  "info": {
+    "name": "Lumina - Acceso y permisos",
+    "description": "Colección del módulo de acceso y permisos (Sofía Gallego). RF-01, RF-02, RF-03 y RF-20.\n\nAntes de ejecutar:\n1. Encender el backend: `npm run dev` (en backend).\n2. Haber ejecutado `npm run db:seed`.\n3. En las variables de la colección, escribir `adminCorreo` y `adminContrasena` SOLO en la columna *Current value* (no se exportan ni se suben a Git).\n\nEjecutar las carpetas en orden (1 → 4). La carpeta 2 crea un docente real con un correo único `docente.demo.<número>@unihumboldt.edu.co`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "adminCorreo",
+      "value": ""
+    },
+    {
+      "key": "adminContrasena",
+      "value": ""
+    },
+    {
+      "key": "tokenAdmin",
+      "value": ""
+    },
+    {
+      "key": "tokenDocente",
+      "value": ""
+    },
+    {
+      "key": "docenteCorreo",
+      "value": ""
+    },
+    {
+      "key": "docenteContrasena",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Ingreso del administrador",
+      "item": [
+        {
+          "name": "Ingreso sin datos (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/ingreso",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "ingreso"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Contraseña incorrecta (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/ingreso",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "ingreso"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"{{adminCorreo}}\",\n  \"contrasena\": \"contrasena-incorrecta\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test('mismo mensaje para correo o contraseña', () => pm.expect(pm.response.json().error).to.eql('Correo o contraseña no válidos'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingreso del administrador (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/ingreso",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "ingreso"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"{{adminCorreo}}\",\n  \"contrasena\": \"{{adminContrasena}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const datos = pm.response.json();",
+                  "pm.test('trae el rol Administrador', () => pm.expect(datos.usuario.roles).to.include('Administrador'));",
+                  "pm.test('no devuelve el hash de la contraseña', () => pm.expect(pm.response.text()).to.not.include('scrypt'));",
+                  "pm.collectionVariables.set('tokenAdmin', datos.token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Administración (RF-03)",
+      "item": [
+        {
+          "name": "Sin token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/admin/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "admin",
+                "roles"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar roles y permisos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/admin/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "admin",
+                "roles"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('existen los 3 roles', () => {",
+                  "  const nombres = pm.response.json().data.map((r) => r.nombre);",
+                  "  pm.expect(nombres).to.include.members(['Administrador', 'Docente', 'Estudiante']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar catálogo de permisos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/admin/permisos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "admin",
+                "permisos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('incluye CREAR_CASOS', () => pm.expect(pm.response.json().data.map((p) => p.nombre)).to.include('CREAR_CASOS'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear docente (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/admin/docentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "admin",
+                "docentes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Docente\",\n  \"apellidos\": \"Demostración\",\n  \"correo\": \"{{docenteCorreo}}\",\n  \"contrasena\": \"{{docenteContrasena}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Correo y contraseña únicos para cada ejecución.",
+                  "pm.collectionVariables.set('docenteCorreo', `docente.demo.${Date.now()}@unihumboldt.edu.co`);",
+                  "pm.collectionVariables.set('docenteContrasena', `Demo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('el docente tiene el rol Docente', () => pm.expect(pm.response.json().data.roles).to.eql(['Docente']));",
+                  "pm.test('no devuelve la contraseña', () => pm.expect(pm.response.text()).to.not.include(pm.collectionVariables.get('docenteContrasena')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear el mismo docente otra vez (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/admin/docentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "admin",
+                "docentes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Docente\",\n  \"apellidos\": \"Demostración\",\n  \"correo\": \"{{docenteCorreo}}\",\n  \"contrasena\": \"{{docenteContrasena}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear docente con datos incompletos (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/admin/docentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "admin",
+                "docentes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Solo nombre\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dar CREAR_CASOS al rol Docente (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/admin/roles/Docente/permisos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "admin",
+                "roles",
+                "Docente",
+                "permisos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permiso\": \"CREAR_CASOS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Permiso inexistente (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/admin/roles/Docente/permisos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "admin",
+                "roles",
+                "Docente",
+                "permisos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permiso\": \"PERMISO_INVENTADO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Ingreso del docente",
+      "item": [
+        {
+          "name": "Ingreso del docente (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/ingreso",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "ingreso"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"{{docenteCorreo}}\",\n  \"contrasena\": \"{{docenteContrasena}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const datos = pm.response.json();",
+                  "pm.test('trae el rol Docente', () => pm.expect(datos.usuario.roles).to.include('Docente'));",
+                  "pm.test('trae el permiso CREAR_CASOS', () => pm.expect(datos.usuario.permisos).to.include('CREAR_CASOS'));",
+                  "pm.collectionVariables.set('tokenDocente', datos.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El docente intenta crear otro docente (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/admin/docentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "admin",
+                "docentes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"No\",\n  \"apellidos\": \"Permitido\",\n  \"correo\": \"no.permitido@unihumboldt.edu.co\",\n  \"contrasena\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El docente intenta darse el rol Administrador (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/admin/usuarios/1/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "admin",
+                "usuarios",
+                "1",
+                "roles"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rol\": \"Administrador\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Ingreso del estudiante (RF-01, RF-20)",
+      "item": [
+        {
+          "name": "Sin código (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/estudiantes/ingreso",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "estudiantes",
+                "ingreso"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"estudiante@unihumboldt.edu.co\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Código que no existe (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/estudiantes/ingreso",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "estudiantes",
+                "ingreso"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"estudiante@unihumboldt.edu.co\",\n  \"codigo\": \"ABCD2345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "El ingreso exitoso del estudiante necesita una actividad programada con su código (módulo de actividades). Ese caso está cubierto por la prueba con MySQL real: tests/acceso.mysql.test.js."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Un estudiante no puede usar el ingreso con contraseña (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/acceso/ingreso",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "acceso",
+                "ingreso"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"estudiante@unihumboldt.edu.co\",\n  \"contrasena\": \"cualquiera\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,168 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+<head>
+<meta charset="utf-8">
+<title>Avance Codificación de Módulos para el Proyecto Nuclear</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 12pt; line-height: 1.35; color: #1a1a1a; margin: 2.2cm; }
+  h1 { font-size: 20pt; text-align: center; margin-bottom: 0; }
+  h2 { font-size: 14pt; margin-top: 22pt; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+  h3 { font-size: 12.5pt; margin-top: 14pt; margin-bottom: 4pt; }
+  p { margin: 6pt 0; }
+  .centro { text-align: center; }
+  .meta { text-align: center; margin-top: 4pt; }
+  ul { margin-top: 4pt; }
+  li { margin-bottom: 3pt; }
+  table { border-collapse: collapse; width: 100%; margin: 10pt 0; }
+  th, td { border: 1px solid #bbb; padding: 6px 8px; vertical-align: top; text-align: left; }
+  th { background: #f3f3f3; }
+  .portada { text-align: center; margin-top: 1.2cm; }
+  .uni { font-size: 16pt; font-weight: bold; margin-bottom: 4pt; }
+  .ciudad { margin-top: 0; }
+  .titulo-portada { font-size: 18pt; margin: 2.2cm 1.2cm 0.6cm; }
+  .proyecto { margin-top: 0.4cm; }
+  .etiqueta { margin-top: 1.6cm; font-weight: bold; margin-bottom: 2pt; }
+  .nombres { line-height: 1.6; margin-top: 0; }
+  .docente { margin-top: 0; }
+  .fecha { margin-top: 2.2cm; }
+</style>
+</head>
+<body>
+
+<div class="portada">
+  <p class="uni">Corporación Universitaria Empresarial Alexander von Humboldt</p>
+  <p class="ciudad">Armenia, Quindío</p>
+  <h1 class="titulo-portada">Avance Codificación de Módulos para el Proyecto Nuclear, pruebas unitarias y de integración</h1>
+  <p class="proyecto">Proyecto Nuclear II<br>Lumina — Simulador de Psicología Social</p>
+  <p class="etiqueta">Presentado por</p>
+  <p class="nombres">
+    Stefanía Díaz Raigoza<br>
+    Laura Sofía Ramos Reyes<br>
+    Valeria Tobar Garzón<br>
+    Sofía Gallego
+  </p>
+  <p class="etiqueta">Docente</p>
+  <p class="docente">Diana María Valencia Rebellón</p>
+  <p class="fecha">Armenia, Quindío<br>2 de noviembre de 2026</p>
+</div>
+
+<br clear="all" style="page-break-before:always">
+
+<p class="centro"><b>Proyecto Nuclear II</b></p>
+<h1>Avance Codificación de Módulos para el Proyecto Nuclear, pruebas unitarias y de integración</h1>
+<p class="meta">Lumina — Simulador de Psicología Social</p>
+<p class="meta">2 de noviembre de 2026</p>
+
+<h2>1. Identificación</h2>
+<p>Este documento presenta la codificación de los módulos del Proyecto Nuclear correspondiente a este avance, las pruebas unitarias, las pruebas de integración y el versionamiento del código. La entrega de este avance es el API backend.</p>
+<p>Repositorio: https://github.com/lsramos498/simulador-psicologia-social<br>
+Rama de entrega: <b>stefania</b>. El mismo resultado también está en <b>develop</b>.</p>
+
+<table>
+  <tr><th>Integrante</th><th>Responsabilidad en este avance</th></tr>
+  <tr><td>Stefanía Díaz Raigoza</td><td>Modelo de datos, casos, escenarios, preguntas, opciones, explicaciones, rúbricas y patrón Builder</td></tr>
+  <tr><td>Sofía Gallego</td><td>Acceso, roles, permisos, ingreso de estudiantes, docentes y administradores, y patrón Proxy</td></tr>
+  <tr><td>Laura Ramos</td><td>Actividades, sesiones, notificaciones y patrón State, con Factory y Strategy</td></tr>
+  <tr><td>Valeria Tobar</td><td>Participación, respuestas, progreso y patrón Observer</td></tr>
+</table>
+
+<h2>2. Base compartida</h2>
+<p>La API está hecha con Node.js y Express. La persistencia es MySQL 8. El esquema tiene las tablas del modelo relacional, con llaves primarias, llaves foráneas, unicidad y restricciones CHECK de estados, fechas y tiempos. La base se llama <b>proyecto_nuclear</b>.</p>
+<p>Los estados del caso que usa todo el equipo son <b>Borrador</b>, <b>Publicado</b> y <b>Archivado</b>. Solo un caso publicado se puede agendar.</p>
+<p>Las rutas montadas en la aplicación son:</p>
+<ul>
+  <li><b>/api/health</b>, estado del servicio.</li>
+  <li><b>/api/casos</b>, construcción y consulta de casos.</li>
+  <li><b>/api/acceso</b>, ingreso y administración.</li>
+  <li><b>/api/actividades</b>, programación de actividades.</li>
+  <li><b>/api/participacion</b>, registro y consulta de respuestas.</li>
+</ul>
+
+<h2>3. Stefanía Díaz Raigoza — casos</h2>
+<p>Stefanía elaboró el modelo relacional en DBML y el script MySQL que crea las tablas, las llaves y las restricciones. Sobre esa base implementó el módulo de casos.</p>
+<p>El módulo permite crear y consultar un caso, y administrar sus personajes, escenas, preguntas, opciones y la explicación de cada opción. También asocia la rúbrica: criterios, ponderaciones y niveles de desempeño. Un caso nace en Borrador. Solo en ese estado se puede editar. Para pasar a Publicado debe tener al menos una escena, una pregunta, dos opciones, una opción esperada, explicación en cada opción y una rúbrica cuyas ponderaciones sumen 100. Desde Borrador o Publicado se puede archivar.</p>
+<p>El armado del caso usa el patrón <b>Builder</b>. <b>CasoBuilder</b> recibe por pasos el docente, el título, el desarrollo situacional, el contexto, el tiempo, los personajes, las escenas y la rúbrica. <b>build()</b> entrega la estructura ya validada y no cambia el estado. El servicio persiste ese agregado en una sola transacción.</p>
+<p>La creación exige autenticación y el permiso <b>CREAR_CASOS</b>. El docente creador se toma de la sesión (<b>req.usuario.id</b>) y no del cuerpo de la petición, para que nadie cree un caso a nombre de otra persona. Quien consulta un caso sin ser docente ni administrador no recibe cuál opción es la esperada ni su explicación.</p>
+<h3>Pruebas unitarias</h3>
+<p>Las pruebas unitarias de este módulo son 54 y cubren validación, Builder, publicación, archivo, rúbrica y persistencia de los nombres de tabla del esquema. Se ejecutan en <b>backend</b> con <b>npm run test:unit</b>.</p>
+
+<h2>4. Sofía Gallego — acceso y permisos</h2>
+<p>Sofía implementó el ingreso y la autorización. Los requisitos de este tramo son el acceso del estudiante, el de docentes y administradores, y la administración de docentes, roles y permisos.</p>
+<p>El estudiante entra con correo institucional y código de autorización. El código no se guarda en texto plano: se guarda su hash HMAC-SHA256. El servicio busca la convocatoria por ese hash y comprueba que la cuenta esté activa, que el estudiante siga autorizado, que la actividad esté dentro de las fechas y que tenga el rol Estudiante. Docentes y administradores entran con correo y contraseña. La contraseña se guarda con scrypt y nunca se devuelve en la respuesta.</p>
+<p>La sesión es un JWT de una hora. El token lleva el identificador, los roles y los permisos. Esos datos los firma el servidor. Los demás módulos leen <b>req.usuario</b> y no aceptan la identidad en el cuerpo de la petición.</p>
+<p>Los roles son Administrador, Docente y Estudiante. Las diferencias finas se resuelven con permisos. El permiso usado por los casos es <b>CREAR_CASOS</b>. El administrador puede crear docentes, asignar y quitar roles, y asignar y quitar permisos. Un docente o un estudiante no puede usar esas rutas. Hay un seed que crea los tres roles, el permiso inicial y el primer administrador, sin duplicar datos si se ejecuta otra vez.</p>
+<p>El patrón <b>Proxy</b> protege operaciones de negocio: si no hay usuario responde 401 y si falta el permiso responde 403, sin llamar al servicio real. También dejó la colección de Postman de su módulo.</p>
+<p>Rutas principales: <b>POST /api/acceso/estudiantes/ingreso</b>, <b>POST /api/acceso/ingreso</b> y <b>/api/acceso/admin</b>.</p>
+<h3>Pruebas unitarias</h3>
+<p>Las pruebas unitarias de Sofía cubren los códigos y su hash, las contraseñas, el token, la autenticación, los roles, los permisos, el Proxy, el seed y el ingreso del estudiante, del docente y del administrador. No usan la base de datos real. La prueba de MySQL de este módulo queda omitida si no hay una base de prueba.</p>
+
+<h2>5. Laura Ramos — actividades, sesiones y notificaciones</h2>
+<p>Laura implementó la programación de actividades y el ciclo de la sesión.</p>
+<p>Al agendar se valida que el caso exista y esté Publicado, que el espacio académico y el docente estén activos, que el usuario sea docente, que la rúbrica pertenezca a ese caso y esté activa, y que cada estudiante exista, esté activo y tenga el rol Estudiante. El tiempo límite de la actividad no puede superar el tiempo estimado del caso. La fecha de fin tiene que ser posterior a la de inicio.</p>
+<p>Cada estudiante autorizado recibe un código. Al integrar el módulo con el de acceso, el código que va al correo es el texto generado y en la base se guarda solo el hash, usando <b>crearCodigoAutorizacion()</b>. Así el estudiante sí puede entrar.</p>
+<p>La sesión de simulación usa el patrón <b>State</b>. Los estados son Sin iniciar, En curso y Finalizado. No se puede finalizar antes de iniciar, ni volver a iniciar una sesión finalizada. Los motivos de cierre previstos son finalización, tiempo agotado, cierre del docente y cierre automático.</p>
+<p>La actividad programada tiene estado propio: Programada, Iniciada y Cerrada. El docente autenticado puede iniciarla y cerrarla. Esas rutas son <b>POST /api/actividades</b>, <b>GET /api/actividades/:id</b>, <b>POST /api/actividades/:id/iniciar</b> y <b>POST /api/actividades/:id/cerrar</b>. Los códigos no salen en la respuesta HTTP.</p>
+<p>Las notificaciones usan <b>Factory</b> y <b>Strategy</b>. Hay estrategia de convocatoria y de cambio de estudiante. Al programar la actividad se llama al servicio de notificaciones y se arma el mensaje de cada estudiante, con el caso, el enlace y el código. El transporte real de correo todavía no está configurado: en este avance se construye el mensaje.</p>
+<h3>Pruebas unitarias</h3>
+<p>Las pruebas unitarias de Laura cubren la programación de la actividad, el rechazo de un caso que no está publicado, el tiempo límite, los códigos de autorización, el controlador, los estados de la sesión y la construcción de los mensajes de notificación.</p>
+
+<h2>6. Valeria Tobar — participación y respuestas</h2>
+<p>Valeria implementó el registro y la consulta de respuestas del estudiante.</p>
+<p>Registrar una respuesta comprueba que la sesión exista, que pertenezca a ese estudiante y que esté En curso. La opción tiene que pertenecer a la pregunta y la pregunta al caso de la actividad. La consulta también está permitida después de finalizar y no revela si la opción era la esperada ni la puntuación.</p>
+<p>El caso de estudio permite volver y cambiar la respuesta hasta que la sesión termine. El servicio usa esa regla: si la sesión sigue En curso, una respuesta ya dada se actualiza; si ya finalizó, no se puede cambiar. El cálculo de progreso devuelve el total de preguntas, las respondidas y las pendientes.</p>
+<p>El patrón <b>Observer</b> avisa a los observadores cuando ocurre un evento de participación, por ejemplo al finalizar. Las consultas usan los nombres de tabla del esquema, con mayúscula inicial, para que funcionen también en MySQL sobre Linux. Las rutas son <b>POST /api/participacion/respuestas</b> y <b>GET /api/participacion/sesiones/:sesionId/respuestas</b>. El estudiante se toma del token.</p>
+<h3>Pruebas unitarias</h3>
+<p>Las pruebas unitarias de Valeria cubren el registro de una respuesta, el rechazo de una sesión ajena o que no está en curso, el cambio de una respuesta antes de finalizar, la consulta, el cálculo del progreso y el Observer. La prueba con MySQL real queda omitida si no hay una base de prueba.</p>
+
+<h2>7. Patrones de diseño pedidos en la guía</h2>
+<table>
+  <tr><th>Patrón</th><th>Dónde quedó</th></tr>
+  <tr><td>Builder</td><td>Construcción del caso, sus escenas, preguntas, opciones y rúbrica</td></tr>
+  <tr><td>State</td><td>Estados de la sesión: Sin iniciar, En curso y Finalizado</td></tr>
+  <tr><td>Proxy</td><td>Protección de operaciones según el usuario autenticado y su permiso</td></tr>
+  <tr><td>Factory</td><td>Creación del tipo de notificación</td></tr>
+  <tr><td>Strategy</td><td>Mensaje de convocatoria y mensaje de cambio de estudiante</td></tr>
+  <tr><td>Observer</td><td>Aviso a los observadores de los eventos de participación</td></tr>
+</table>
+
+<h2>8. Integración del avance</h2>
+<p>Cada integrante trabajó en su rama. Al juntarlas, Git no marcó conflictos grandes porque los archivos eran distintos, pero los módulos no se entendían entre sí. Esos desajustes se corrigieron en la rama de entrega:</p>
+<ul>
+  <li>Actividades guarda el hash del código y el correo lleva el código en claro. Acceso busca por el hash.</li>
+  <li>El estudiante puede cambiar una respuesta mientras la sesión sigue en curso.</li>
+  <li>Participación usa los nombres de tabla del esquema.</li>
+  <li>Los estados del caso coinciden con la base: Borrador, Publicado y Archivado.</li>
+  <li>Las rutas de actividades y participación quedaron montadas en la aplicación.</li>
+  <li>Las rutas de casos exigen autenticación y no exponen la opción esperada a un estudiante.</li>
+  <li>La actividad tiene estado para registrar que el docente la inició o la cerró.</li>
+  <li>Al programar una actividad se llama al servicio de notificaciones.</li>
+</ul>
+
+<h2>9. Pruebas unitarias y de integración</h2>
+<p>Las pruebas unitarias revisan cada módulo por separado, sin MySQL real. Las del módulo de casos se ejecutan en la carpeta <b>backend</b> con <b>npm run test:unit</b>: 54 pruebas, 54 aprobadas y 0 fallidas. Cubren la validación, el Builder, la rúbrica, la publicación, el archivo y la persistencia. Las de acceso, actividades, notificaciones, sesiones y participación se ejecutan con <b>npm test</b>.</p>
+<p>Las pruebas de integración cruzan piezas que en la unidad se prueban solas. Comprueban que las rutas HTTP exijan autenticación, que el permiso <b>CREAR_CASOS</b> proteja la creación del caso, que el docente salga de la sesión y no del cuerpo de la petición, y que actividades y participación queden montadas en la aplicación. Sofía y Valeria dejaron además una prueba de integración con MySQL real. Esas dos solo corren cuando existe una base de prueba; con <b>npm test</b> aparecen omitidas y no tocan la base del proyecto.</p>
+
+<h2>10. Versionamiento y trabajo colaborativo</h2>
+<p>El código está en GitHub, en el repositorio https://github.com/lsramos498/simulador-psicologia-social. Cada integrante desarrolló en su propia rama y el historial conserva esos aportes:</p>
+<ul>
+  <li><b>stefania</b>, Stefanía Díaz Raigoza: modelo de datos, casos, Builder y pruebas del módulo.</li>
+  <li><b>feature/sofia-acceso-permisos</b>, Sofía Gallego: acceso, permisos, Proxy y administración.</li>
+  <li><b>feature/RF-04-18-19-actividades-sesiones</b>, Laura Ramos: actividades, estado de la sesión y notificaciones.</li>
+  <li><b>feature/valeria-participacion-respuestas</b>, Valeria Tobar: participación, respuestas, progreso y Observer.</li>
+</ul>
+<p>La rama compartida de integración es <b>develop</b>. Ahí se reunió el trabajo de las cuatro. La rama de entrega <b>stefania</b> quedó al día con ese resultado, para que la revisión vea los módulos juntos, las correcciones entre módulos y las pruebas.</p>
+
+<h2>11. Lo que este avance no incluye</h2>
+<p>Queda para los siguientes avances, porque no estaba en la parte construida estos días:</p>
+<ul>
+  <li>El cálculo de la nota, la nota parcial de quien no termina y el cero de quien no participa.</li>
+  <li>Mostrar el resultado y la retroalimentación al final de la simulación.</li>
+  <li>La consulta del docente por estudiante, la descarga del reporte, la retroalimentación general y la autorización de una repetición.</li>
+  <li>El ingreso tardío, el control del tiempo máximo durante la sesión y el cierre automático un día después.</li>
+  <li>El envío real del correo. Hoy se arma el mensaje.</li>
+  <li>SonarQube y un manual único de instalación de todo el sistema.</li>
+</ul>
+
+<p>Con este avance el equipo deja funcionando, en backend, la base de datos, el acceso, la creación y publicación de casos, el agendamiento de actividades y el registro de respuestas, con los seis patrones de la guía y con pruebas automatizadas.</p>
+
+</body>
+</html>
