@@ -44,7 +44,7 @@ export function crearRutasSesiones(obtenerServicio) {
 
 let servicioPorDefecto;
 
-async function obtenerServicioPorDefecto() {
+export async function obtenerServicioSesionesPorDefecto() {
   if (!servicioPorDefecto) {
     const { pool } = await import('../config/database.js');
 
@@ -56,4 +56,4 @@ async function obtenerServicioPorDefecto() {
   return servicioPorDefecto;
 }
 
-export default crearRutasSesiones(obtenerServicioPorDefecto);
+export default crearRutasSesiones(obtenerServicioSesionesPorDefecto);

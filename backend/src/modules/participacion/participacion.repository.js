@@ -12,6 +12,7 @@ export function crearRepositorioParticipacion(pool) {
         `, [sesionId]);
         return filas[0] ?? null;
       },
+
       async opcionValida(casoId, decisionId, opcionId) {
         const [filas] = await conexion.execute(`
           SELECT o.id FROM OpcionDecision o
@@ -21,6 +22,7 @@ export function crearRepositorioParticipacion(pool) {
         `, [casoId, decisionId, opcionId]);
         return filas.length > 0;
       },
+
       async obtenerRespuesta(sesionId, decisionId) {
         const [filas] = await conexion.execute(`
           SELECT id FROM RespuestaEstudiante
@@ -28,6 +30,7 @@ export function crearRepositorioParticipacion(pool) {
         `, [sesionId, decisionId]);
         return filas[0] ?? null;
       },
+
       async insertarRespuesta({ sesionId, decisionId, opcionId }) {
         const [resultado] = await conexion.execute(`
           INSERT INTO RespuestaEstudiante
@@ -36,6 +39,7 @@ export function crearRepositorioParticipacion(pool) {
         `, [sesionId, decisionId, opcionId]);
         return resultado.insertId;
       },
+
       async actualizarRespuesta(respuestaId, opcionId) {
         const [resultado] = await conexion.execute(`
           UPDATE RespuestaEstudiante
@@ -44,6 +48,7 @@ export function crearRepositorioParticipacion(pool) {
         `, [opcionId, respuestaId]);
         return resultado.affectedRows;
       },
+
       async consultarRespuestas(sesionId) {
         // No exponer corrección ni puntuación durante la participación.
         const [filas] = await conexion.execute(`
@@ -60,11 +65,16 @@ export function crearRepositorioParticipacion(pool) {
 
   return {
     ...consultas(pool),
+
     async enTransaccion(operacion) {
       const conexion = await pool.getConnection();
+
       try {
         await conexion.beginTransaction();
-        const resultado = await operacion(consultas(conexion));
+
+        // Se entregan las consultas transaccionales y la conexión física.
+        const resultado = await operacion(consultas(conexion), conexion);
+
         await conexion.commit();
         return resultado;
       } catch (error) {
@@ -74,6 +84,7 @@ export function crearRepositorioParticipacion(pool) {
           // Conservar el error original aunque se haya perdido la conexión.
           error.cause ??= errorRollback;
         }
+
         throw error;
       } finally {
         conexion.release();

@@ -1,4 +1,3 @@
-
 export function crearRepositorioSesiones(pool) {
   if (!pool) {
     throw new Error('Se requiere una conexión a la base de datos.');
@@ -31,6 +30,17 @@ export function crearRepositorioSesiones(pool) {
     }
   }
 
+    async function obtenerReferenciaSesion(conexion, sesionId) {
+    const [filas] = await conexion.execute(
+      `SELECT id, actividad_id, estudiante_id
+       FROM SesionSimulacion
+       WHERE id = ?`,
+      [sesionId]
+    );
+
+    return filas[0] ?? null;
+  }
+
   /**
    * Consulta la actividad y bloquea su registro
    * para evitar modificaciones simultáneas.
@@ -39,6 +49,7 @@ export function crearRepositorioSesiones(pool) {
     const [filas] = await conexion.execute(
       `SELECT
           id,
+          caso_id AS casoId,
           docente_id,
           fechaInicio,
           fechaFin,
@@ -58,17 +69,9 @@ export function crearRepositorioSesiones(pool) {
    * Verifica que el estudiante esté autorizado
    * para participar en la actividad.
    */
-  async function obtenerAutorizacion(
-    conexion,
-    actividadId,
-    estudianteId
-  ) {
+  async function obtenerAutorizacion(conexion, actividadId, estudianteId) {
     const [filas] = await conexion.execute(
-      `SELECT
-          id,
-          actividad_id,
-          estudiante_id,
-          estado
+      `SELECT id, actividad_id, estudiante_id, estado
        FROM EstudianteAutorizado
        WHERE actividad_id = ?
          AND estudiante_id = ?
@@ -83,22 +86,10 @@ export function crearRepositorioSesiones(pool) {
    * Recupera la última sesión del estudiante
    * dentro de una actividad.
    */
-  async function obtenerUltimaSesion(
-    conexion,
-    actividadId,
-    estudianteId
-  ) {
+  async function obtenerUltimaSesion(conexion, actividadId, estudianteId) {
     const [filas] = await conexion.execute(
-      `SELECT
-          id,
-          actividad_id,
-          estudiante_id,
-          numeroIntento,
-          estado,
-          inicio,
-          fin,
-          segundosConsumidos,
-          motivoCierre
+      `SELECT id, actividad_id, estudiante_id, numeroIntento,
+              estado, inicio, fin, segundosConsumidos, motivoCierre
        FROM SesionSimulacion
        WHERE actividad_id = ?
          AND estudiante_id = ?
@@ -113,16 +104,8 @@ export function crearRepositorioSesiones(pool) {
 
   async function obtenerSesionPorId(conexion, sesionId) {
     const [filas] = await conexion.execute(
-      `SELECT
-          id,
-          actividad_id,
-          estudiante_id,
-          numeroIntento,
-          estado,
-          inicio,
-          fin,
-          segundosConsumidos,
-          motivoCierre
+      `SELECT id, actividad_id, estudiante_id, numeroIntento,
+              estado, inicio, fin, segundosConsumidos, motivoCierre
        FROM SesionSimulacion
        WHERE id = ?
        FOR UPDATE`,
@@ -138,14 +121,8 @@ export function crearRepositorioSesiones(pool) {
   async function insertarSesion(conexion, sesion) {
     const [resultado] = await conexion.execute(
       `INSERT INTO SesionSimulacion (
-          actividad_id,
-          estudiante_id,
-          numeroIntento,
-          estado,
-          inicio,
-          fin,
-          segundosConsumidos,
-          motivoCierre
+          actividad_id, estudiante_id, numeroIntento, estado,
+          inicio, fin, segundosConsumidos, motivoCierre
        )
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
@@ -160,10 +137,7 @@ export function crearRepositorioSesiones(pool) {
       ]
     );
 
-    return {
-      ...sesion,
-      id: resultado.insertId
-    };
+    return { ...sesion, id: resultado.insertId };
   }
 
   /**
@@ -172,11 +146,8 @@ export function crearRepositorioSesiones(pool) {
   async function actualizarSesion(conexion, sesion) {
     const [resultado] = await conexion.execute(
       `UPDATE SesionSimulacion
-       SET estado = ?,
-           inicio = ?,
-           fin = ?,
-           segundosConsumidos = ?,
-           motivoCierre = ?
+       SET estado = ?, inicio = ?, fin = ?,
+           segundosConsumidos = ?, motivoCierre = ?
        WHERE id = ?`,
       [
         sesion.estado,
@@ -195,14 +166,14 @@ export function crearRepositorioSesiones(pool) {
     return sesion;
   }
 
-return {
-  enTransaccion,
-  obtenerActividad,
-  obtenerAutorizacion,
-  obtenerUltimaSesion,
-  obtenerSesionPorId,
-  insertarSesion,
-  actualizarSesion
-};
-
+  return {
+    enTransaccion,
+    obtenerReferenciaSesion,
+    obtenerActividad,
+    obtenerAutorizacion,
+    obtenerUltimaSesion,
+    obtenerSesionPorId,
+    insertarSesion,
+    actualizarSesion
+  };
 }

@@ -1,4 +1,3 @@
-
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -40,6 +39,7 @@ function crearPoolSimulado() {
       if (sql.includes('FROM ActividadProgramada')) {
         return [[{
           id: 1,
+          casoId: 100,
           docente_id: 10,
           estado: 'Iniciada'
         }]];
@@ -55,6 +55,18 @@ function crearPoolSimulado() {
       }
 
       if (sql.includes('FROM SesionSimulacion')) {
+        const esReferencia =
+          sql.includes('actividad_id, estudiante_id') &&
+          !sql.includes('numeroIntento');
+
+        if (esReferencia) {
+          return [[{
+            id: 5,
+            actividad_id: 1,
+            estudiante_id: 20
+          }]];
+        }
+
         return [[{
           id: 5,
           actividad_id: 1,
@@ -137,6 +149,7 @@ describe('Repositorio de sesiones', () => {
     );
 
     assert.equal(actividad.id, 1);
+    assert.equal(actividad.casoId, 100);
     assert.equal(actividad.estado, 'Iniciada');
     assert.match(datos.consultas[0].sql, /FOR UPDATE/);
     assert.deepEqual(datos.consultas[0].parametros, [1]);
@@ -176,6 +189,27 @@ describe('Repositorio de sesiones', () => {
 
     assert.equal(sesion.id, 5);
     assert.equal(sesion.estudiante_id, 20);
+  });
+
+  test('consulta la referencia de una sesión sin bloquearla', async () => {
+    const { pool, datos } = crearPoolSimulado();
+    const repositorio = crearRepositorioSesiones(pool);
+
+    const referencia = await repositorio.enTransaccion(
+      (conexion) => repositorio.obtenerReferenciaSesion(conexion, 5)
+    );
+
+    assert.deepEqual(referencia, {
+      id: 5,
+      actividad_id: 1,
+      estudiante_id: 20
+    });
+
+    const consulta = datos.consultas[0];
+
+    assert.match(consulta.sql, /WHERE id = \\?/);
+    assert.doesNotMatch(consulta.sql, /FOR UPDATE/i);
+    assert.deepEqual(consulta.parametros, [5]);
   });
 
   test('inserta una sesión y devuelve su identificador', async () => {
