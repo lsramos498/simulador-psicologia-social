@@ -27,9 +27,9 @@ function crearRepositorioFalso() {
     obtenerPermisoPorNombre: async (n) => permisos.find((p) => p.nombre === n) ?? null,
     existeCorreo: async (c) => usuarios.some((u) => u.correo === c),
     existeUsuario: async (id) => usuarios.some((u) => u.id === id),
-    async crearUsuarioConRol({ correo, rolId }) {
+    async crearUsuarioConRol({ nombres, apellidos, correo, rolId }) {
       const id = usuarios.length + 1;
-      usuarios.push({ id, correo });
+      usuarios.push({ id, nombres, apellidos, correo });
       usuarioRol.push({ usuarioId: id, rolId });
       return id;
     },
@@ -51,7 +51,13 @@ function crearRepositorioFalso() {
       nombre: r.nombre,
       permisos: rolPermiso.filter((f) => f.rolId === r.id).map(() => 'CREAR_CASOS')
     })),
-    listarPermisos: async () => permisos.map(({ nombre, descripcion }) => ({ nombre, descripcion }))
+    listarPermisos: async () => permisos.map(({ nombre, descripcion }) => ({ nombre, descripcion })),
+    listarUsuariosPorRol: async (nombreRol) => {
+      const rol = roles.find((r) => r.nombre === nombreRol);
+      return usuarioRol.filter((f) => f.rolId === rol?.id)
+        .map((f) => usuarios.find((u) => u.id === f.usuarioId))
+        .map(({ id, nombres, apellidos, correo }) => ({ id, nombres, apellidos, correo, activo: true }));
+    }
   };
 }
 
@@ -162,6 +168,54 @@ test('un error de base de datos responde 500 sin detalles', async () => {
   } finally {
     console.error = errorOriginal;
   }
+});
+
+// ---------- Estudiantes ----------
+
+const ESTUDIANTE = { nombres: 'Luis', apellidos: 'Estudiante', correo: 'luis.estudiante@unihumboldt.edu.co' };
+
+test('sin token, crear y listar estudiantes responde 401', async () => {
+  const appPrueba = crearAppDePrueba();
+  await request(appPrueba).post('/api/acceso/admin/estudiantes').send(ESTUDIANTE).expect(401);
+  await request(appPrueba).get('/api/acceso/admin/estudiantes').expect(401);
+});
+
+test('docentes y estudiantes no pueden crear ni listar estudiantes en administración (403)', async () => {
+  const appPrueba = crearAppDePrueba();
+  for (const token of [tokenDocente, tokenEstudiante]) {
+    await request(appPrueba).post('/api/acceso/admin/estudiantes')
+      .set('Authorization', `Bearer ${token}`).send(ESTUDIANTE).expect(403);
+    await request(appPrueba).get('/api/acceso/admin/estudiantes')
+      .set('Authorization', `Bearer ${token}`).expect(403);
+  }
+});
+
+test('el administrador crea un estudiante (201) sin exponer contraseña ni hash', async () => {
+  const res = await request(crearAppDePrueba()).post('/api/acceso/admin/estudiantes')
+    .set('Authorization', `Bearer ${tokenAdmin}`).send(ESTUDIANTE).expect(201);
+  assert.equal(res.body.data.correo, ESTUDIANTE.correo);
+  assert.deepEqual(res.body.data.roles, ['Estudiante']);
+  assert.doesNotMatch(JSON.stringify(res.body), /contrasena|hash/i);
+});
+
+test('crear estudiante incompleto responde 400 y repetido responde 409', async () => {
+  const appPrueba = crearAppDePrueba();
+  await request(appPrueba).post('/api/acceso/admin/estudiantes')
+    .set('Authorization', `Bearer ${tokenAdmin}`).send({ nombres: 'Luis' }).expect(400);
+  await request(appPrueba).post('/api/acceso/admin/estudiantes')
+    .set('Authorization', `Bearer ${tokenAdmin}`).send(ESTUDIANTE).expect(201);
+  await request(appPrueba).post('/api/acceso/admin/estudiantes')
+    .set('Authorization', `Bearer ${tokenAdmin}`).send(ESTUDIANTE).expect(409);
+});
+
+test('el administrador lista los estudiantes (200) sin contraseñas', async () => {
+  const appPrueba = crearAppDePrueba();
+  await request(appPrueba).post('/api/acceso/admin/estudiantes')
+    .set('Authorization', `Bearer ${tokenAdmin}`).send(ESTUDIANTE).expect(201);
+  const res = await request(appPrueba).get('/api/acceso/admin/estudiantes')
+    .set('Authorization', `Bearer ${tokenAdmin}`).expect(200);
+  assert.deepEqual(res.body.data.map((e) => e.correo), [ESTUDIANTE.correo]);
+  assert.doesNotMatch(JSON.stringify(res.body), /contrasena|hash/i);
 });
 
 // ---------- Registradas en la aplicación ----------

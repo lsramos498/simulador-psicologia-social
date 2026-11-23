@@ -176,6 +176,17 @@ await pool.execute('UPDATE Usuario SET activo = FALSE WHERE id = ?', [docenteId]
 r = await http('POST', '/api/acceso/ingreso', { body: { correo: correoDocente, contrasena: claveDocente } });
 caso('E2E-32', 'Docente inactivo no puede ingresar → 403', 403, r.status);
 await pool.execute('UPDATE Usuario SET activo = TRUE WHERE id = ?', [docenteId]);
+const estudianteApi = { nombres: 'Estudiante', apellidos: 'API', correo: `est-api-${sufijo}@lumina.test` };
+r = await http('POST', '/api/acceso/admin/estudiantes', { token: tokAdmin, body: estudianteApi });
+caso('E2E-51', 'Administrador crea estudiante (201) sin devolver contraseña ni hash', true,
+  r.status === 201 && !/contrasena|hash/i.test(JSON.stringify(r.datos)));
+r = await http('GET', '/api/acceso/admin/estudiantes', { token: tokAdmin });
+caso('E2E-52', 'Administrador lista estudiantes e incluye el creado', true,
+  r.status === 200 && r.datos?.data?.some((e) => e.correo === estudianteApi.correo));
+r = await http('POST', '/api/acceso/admin/estudiantes', { token: tokDocente, body: { ...estudianteApi, correo: `x-${sufijo}@lumina.test` } });
+caso('E2E-53', 'Docente no puede crear estudiantes en administración → 403', 403, r.status);
+r = await http('POST', '/api/acceso/ingreso', { body: { correo: estudianteApi.correo, contrasena: 'cualquiera' } });
+caso('E2E-54', 'El estudiante creado no puede entrar con contraseña → 401', 401, r.status);
 
 // ---------- 4. Estudiantes: código de autorización (RF-01, RF-20) ----------
 const [[rolEstudiante]] = await pool.execute("SELECT id FROM Rol WHERE nombre = 'Estudiante'");
@@ -206,8 +217,8 @@ async function crearActividad(inicio, fin, estado) {
     [casoId, espacioId, docenteId, rubricaId, estado]
   );
 }
-const actividad1 = await crearActividad('DATE_SUB(NOW(), INTERVAL 1 HOUR)', 'DATE_ADD(NOW(), INTERVAL 1 HOUR)', 'Iniciada');
-const actividad2 = await crearActividad('DATE_SUB(NOW(), INTERVAL 1 HOUR)', 'DATE_ADD(NOW(), INTERVAL 1 HOUR)', 'Iniciada');
+const actividad1 = await crearActividad('DATE_SUB(NOW(), INTERVAL 1 HOUR)', 'DATE_ADD(NOW(), INTERVAL 1 HOUR)', 'Programada');
+const actividad2 = await crearActividad('DATE_SUB(NOW(), INTERVAL 1 HOUR)', 'DATE_ADD(NOW(), INTERVAL 1 HOUR)', 'Programada');
 const actividadFutura = await crearActividad('DATE_ADD(NOW(), INTERVAL 1 DAY)', 'DATE_ADD(NOW(), INTERVAL 2 DAY)', 'Programada');
 async function autorizar(actividadId, estudianteId, estado = 'Autorizado') {
   const { codigo, codigoHash } = crearCodigoAutorizacion();
@@ -222,6 +233,14 @@ const codigo1 = await autorizar(actividad1, estudiante1);
 const codigo2 = await autorizar(actividad2, estudiante2);
 const codigoFuturo = await autorizar(actividadFutura, estudiante1);
 const codigoRetirado = await autorizar(actividad2, estudiante1, 'Retirado');
+// El docente inicia sus actividades por la API: así se preparan las sesiones
+// de los estudiantes convocados, como en el flujo real.
+for (const actividadId of [actividad1, actividad2]) {
+  const inicio = await http('POST', `/api/actividades/${actividadId}/iniciar`, { token: tokDocente });
+  if (inicio.status !== 200) {
+    console.error(`No se pudo iniciar la actividad ${actividadId}: ${inicio.status} ${JSON.stringify(inicio.datos)}`);
+  }
+}
 const [[guardado]] = await pool.execute(
   'SELECT codigoAutorizacion FROM EstudianteAutorizado WHERE actividad_id = ? AND estudiante_id = ?',
   [actividad1, estudiante1]
@@ -259,7 +278,7 @@ r = await http('POST', `/api/sesiones/actividades/${actividad2}/iniciar`, { toke
 caso('E2E-44', 'Estudiante inicia sesión en una actividad que NO es la suya → 403', 403, r.status);
 r = await http('POST', `/api/sesiones/actividades/${actividad1}/iniciar`, { token: tokEstudiante1 });
 caso('E2E-45', 'Estudiante inicia sesión en SU actividad', [200, 201], r.status);
-const sesionId = r.datos?.sesion?.id;
+const sesionId = r.datos?.data?.id ?? r.datos?.sesion?.id;
 r = await http('POST', `/api/sesiones/actividades/${actividad1}/iniciar`, { token: tokDocente });
 caso('E2E-46', 'Docente en la ruta de sesión del estudiante → 403 (requiereRol)', 403, r.status);
 r = await http('POST', '/api/acceso/estudiantes/ingreso', { body: { correo: `est-dos-${sufijo}@lumina.test`, codigo: codigo2 } });

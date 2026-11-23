@@ -107,6 +107,8 @@ Todas exigen token (`401`) y el rol `Administrador` (`403`).
 | `GET /roles` | | Roles con sus permisos |
 | `GET /permisos` | | Catálogo de permisos |
 | `POST /docentes` | `{ nombres, apellidos, correo, contrasena }` | Crea un usuario con rol `Docente` (`201`; `400` si la contraseña no cumple la política; `409` si el correo existe) |
+| `POST /estudiantes` | `{ nombres, apellidos, correo }` | Crea un usuario con rol `Estudiante` (`201`; `400` si faltan datos o el correo no es válido; `409` si el correo existe). Se le guarda un hash aleatorio que nadie conoce: el estudiante entra solo con su correo y el código de la convocatoria |
+| `GET /estudiantes` | | Lista los estudiantes (id, nombres, apellidos, correo, activo), sin contraseñas |
 | `POST /usuarios/:id/roles` | `{ "rol": "Docente" }` | Asigna un rol existente |
 | `DELETE /usuarios/:id/roles/:rol` | | Quita un rol (`409` si el administrador intenta quitarse el suyo) |
 | `POST /roles/:rol/permisos` | `{ "permiso": "CREAR_CASOS" }` | Asigna un permiso del catálogo a un rol |
@@ -231,7 +233,7 @@ para no duplicar la verificación de permisos.
 | Unitarias | `autorizacion`, `codigos`, `contrasenas`, `limiteIntentos`, `errores`, `servicioProtegido.proxy`, `seed`, `acceso.repository`, `administracion.service`, `administracion.repository` | Cada función aislada; MySQL se reemplaza por un pool, una conexión o un repositorio falso |
 | Integración (HTTP) | `acceso.ingreso`, `acceso.ingreso-docente`, `administracion.routes`, `autenticacion`, `autorizacion` (rutas) | Varias piezas juntas a través de peticiones HTTP con `supertest` |
 | Integración (MySQL real) | `acceso.mysql` | Seed, creación de docente, permisos, ingreso de docente y de estudiante contra la base real |
-| De punta a punta (HTTP + MySQL real) | `scripts/e2e-acceso.mjs` | 55 comprobaciones con el servidor encendido: ingreso, tokens alterados o vencidos, rutas sin token, roles, permisos, Proxy, código del estudiante y operaciones que no le corresponden a cada usuario en todos los módulos |
+| De punta a punta (HTTP + MySQL real) | `scripts/e2e-acceso.mjs` | 59 comprobaciones con el servidor encendido: ingreso, tokens alterados o vencidos, rutas sin token, roles, permisos, Proxy, código del estudiante y operaciones que no le corresponden a cada usuario en todos los módulos |
 
 ```
 npm test                                  # todas (la de MySQL real se salta)
@@ -262,12 +264,12 @@ termina con código 1.
 
 ### Zona horaria
 
-Node.js y MySQL deben usar la misma zona horaria (la de Colombia, `America/Bogota`). El
-ingreso del estudiante compara la hora de Node.js con `fechaInicio` y `fechaFin` de la
-actividad; si MySQL está en UTC y Node.js en Colombia, las fechas creadas con `NOW()` quedan
-corridas 5 horas y el estudiante recibe `403 La actividad todavía no ha comenzado`. En un
-computador con Windows ambos usan la zona del sistema; en un servidor, configurar
-`default-time-zone = '-05:00'` en MySQL y `TZ=America/Bogota` en Node.js.
+La conexión a MySQL lee y escribe las fechas en la hora de Colombia (`DB_TIMEZONE`, por
+defecto `-05:00`, en `config/database.js`). Aun así, MySQL también debe estar en esa zona: el
+ingreso del estudiante compara la hora de Node.js con `fechaInicio` y `fechaFin`, y las fechas
+que MySQL crea con `NOW()` quedan corridas 5 horas si MySQL está en UTC (el estudiante recibe
+`403 La actividad todavía no ha comenzado`). En un computador con Windows MySQL usa la zona del
+sistema; en un servidor, configurar `default-time-zone = '-05:00'` en MySQL.
 
 ## Colección de Postman
 

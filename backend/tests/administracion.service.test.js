@@ -52,7 +52,13 @@ function crearRepositorioFalso() {
       permisos: bd.rolPermiso.filter((f) => f.rolId === r.id)
         .map((f) => bd.permisos.find((p) => p.id === f.permisoId).nombre)
     })),
-    listarPermisos: async () => bd.permisos.map(({ nombre, descripcion }) => ({ nombre, descripcion }))
+    listarPermisos: async () => bd.permisos.map(({ nombre, descripcion }) => ({ nombre, descripcion })),
+    listarUsuariosPorRol: async (nombreRol) => {
+      const rol = bd.roles.find((r) => r.nombre === nombreRol);
+      return bd.usuarioRol.filter((f) => f.rolId === rol?.id)
+        .map((f) => bd.usuarios.find((u) => u.id === f.usuarioId))
+        .map(({ id, nombres, apellidos, correo }) => ({ id, nombres, apellidos, correo, activo: true }));
+    }
   };
 }
 
@@ -209,4 +215,75 @@ test('lista el catálogo de permisos', async () => {
 
 test('exige el repositorio de administración', () => {
   assert.throws(() => crearServicioAdministracion(null), TypeError);
+});
+
+// ---------- Crear y listar estudiantes ----------
+
+const ESTUDIANTE = { nombres: ' Luis ', apellidos: 'Estudiante', correo: ' Luis.Estudiante@unihumboldt.edu.co ' };
+
+test('crea un estudiante con rol Estudiante, datos limpios y quién lo creó', async () => {
+  const repositorio = crearRepositorioFalso();
+  const servicio = crearServicioAdministracion(repositorio);
+
+  const creado = await servicio.crearEstudiante(ESTUDIANTE, ADMIN_ID);
+
+  assert.deepEqual(creado, {
+    id: 2,
+    nombres: 'Luis',
+    apellidos: 'Estudiante',
+    correo: 'luis.estudiante@unihumboldt.edu.co',
+    roles: ['Estudiante']
+  });
+  assert.deepEqual(repositorio.bd.usuarioRol.at(-1), { usuarioId: 2, rolId: 3, asignadoPor: ADMIN_ID });
+});
+
+test('el estudiante recibe un hash aleatorio: ninguna contraseña conocida sirve para entrar', async () => {
+  const repositorio = crearRepositorioFalso();
+  const servicio = crearServicioAdministracion(repositorio);
+  await servicio.crearEstudiante(ESTUDIANTE, ADMIN_ID);
+  await servicio.crearEstudiante({ ...ESTUDIANTE, correo: 'otro.estudiante@unihumboldt.edu.co' }, ADMIN_ID);
+
+  const [primero, segundo] = repositorio.bd.usuarios.slice(1);
+  assert.match(primero.contrasenaHash, /^scrypt\$/);
+  assert.notEqual(primero.contrasenaHash, segundo.contrasenaHash);
+  for (const intento of ['', 'Luis', 'luis.estudiante@unihumboldt.edu.co', '12345678']) {
+    assert.equal(await verificarContrasena(intento, primero.contrasenaHash), false);
+  }
+});
+
+test('el resultado de crear estudiante no incluye contraseña ni hash', async () => {
+  const servicio = crearServicioAdministracion(crearRepositorioFalso());
+  const creado = await servicio.crearEstudiante(ESTUDIANTE, ADMIN_ID);
+  assert.doesNotMatch(JSON.stringify(creado), /contrasena|hash/i);
+});
+
+test('rechaza con 400 si faltan datos del estudiante y dice cuáles', async () => {
+  const servicio = crearServicioAdministracion(crearRepositorioFalso());
+  await esperarError(servicio.crearEstudiante({ nombres: 'Luis' }, ADMIN_ID), 400, /apellidos, correo/);
+  await esperarError(servicio.crearEstudiante(null, ADMIN_ID), 400, /nombres/);
+});
+
+test('rechaza con 400 un correo de estudiante inválido o datos demasiado largos', async () => {
+  const servicio = crearServicioAdministracion(crearRepositorioFalso());
+  await esperarError(servicio.crearEstudiante({ ...ESTUDIANTE, correo: 'sin-arroba' }, ADMIN_ID), 400, /correo/);
+  await esperarError(servicio.crearEstudiante({ ...ESTUDIANTE, nombres: 'x'.repeat(101) }, ADMIN_ID), 400, /longitud/);
+});
+
+test('rechaza con 409 un estudiante con correo repetido, sin crearlo', async () => {
+  const repositorio = crearRepositorioFalso();
+  const servicio = crearServicioAdministracion(repositorio);
+  await servicio.crearEstudiante(ESTUDIANTE, ADMIN_ID);
+  const total = repositorio.bd.usuarios.length;
+
+  await esperarError(servicio.crearEstudiante(ESTUDIANTE, ADMIN_ID), 409);
+  assert.equal(repositorio.bd.usuarios.length, total);
+});
+
+test('lista solo los usuarios con rol Estudiante', async () => {
+  const servicio = crearServicioAdministracion(crearRepositorioFalso());
+  await servicio.crearEstudiante(ESTUDIANTE, ADMIN_ID);
+  await servicio.crearDocente(DOCENTE, ADMIN_ID);
+
+  const estudiantes = await servicio.listarEstudiantes();
+  assert.deepEqual(estudiantes.map((e) => e.correo), ['luis.estudiante@unihumboldt.edu.co']);
 });
