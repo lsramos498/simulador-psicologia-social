@@ -2,8 +2,10 @@
 
 Índice único de evidencias y casos. No inventa veredictos: remite a los aportes ya ejecutados y a los casos pendientes del PDF base.
 
-**Fecha de consolidación:** 22 de noviembre de 2026  
-**Ramas de referencia:** `stefania` → `develop` (incluye PR #14, PR #15 y front por rol)
+**Fecha de consolidación:** 23 de noviembre de 2026  
+**Rama de referencia:** `develop` (= `stefania` al tip de integración)
+
+**Suite backend (23 nov):** `npm test` → **486** pruebas, **483** aprobadas, **0** fallidas, **3** omitidas (MySQL real).
 
 ---
 
@@ -15,31 +17,58 @@
 | `Anexo-Postman-y-unitarias-LUMINA.md` | Newman + unitarias de avance (9 nov) | Ejecutado |
 | `Plan-pruebas-casos-de-uso-faltantes.md` | CP-27 a CP-43 (plantilla PT-DCP-01) | Escritos; no ejecutados en ese doc |
 | `PT-DCP-01-casos-stefania.md` | Módulo Casos (Stefanía) | Ejecutado 8 nov |
-| `PT-DCP-01-acceso-sofia.md` | Acceso / permisos (Sofía) + actualizaciones | Ejecutado; actualizado 14–22 nov |
+| `PT-DCP-01-acceso-sofia.md` | Acceso / permisos (Sofía) + actualizaciones | Ejecutado; actualizado 14–23 nov |
 | Capturas manuales | Flujo web (Casos, borrador listo sin publicar) | Carpeta local `Desktop/capturas-manual-lumina/` |
 
 ---
 
-## 2. Cierre de seguridad Acceso (PR #14 y #15)
+## 2. Integraciones en `develop` (cierre)
 
-Ya documentados y aprobados en `PT-DCP-01-acceso-sofia.md`:
+| Origen | Qué entró | Estado |
+|---|---|---|
+| Sofía PR #14 | Código no viaja en la respuesta de `enviar-codigo` | Integrado |
+| Sofía PR #15 | RF-10: estudiante solo ve el caso de su actividad | Integrado |
+| Sofía PR #16 | RF-22 ingreso tardío, cierre automático, texto login | Integrado |
+| Stefanía | Front por rol, login enviar código, plan de pruebas | Integrado |
+| Laura `feature/laura-cierre-backend-2026` | Parte compatible (`participacion.repository`) | Integrado parcial |
+| Valeria `feature/valeria-rf16-reporte-csv` | RF-16 CSV + RF-26 comentario docente + UI Seguimiento | Integrado |
+| Fix `cerrarVencidas` | Pasa `estadoAnterior` al UPDATE | Integrado |
+
+**Migración RF-26:** `backend/database/migrations/001_rf26_comentario_docente.sql`  
+Columna `Evaluacion.comentarioDocente` aplicada en bases local y de prueba.
+
+---
+
+## 3. Cierre de seguridad Acceso (PR #14, #15, #16)
+
+Ya documentados en `PT-DCP-01-acceso-sofia.md`:
 
 | ID | RF | Objetivo | Evidencia |
 |---|---|---|---|
-| CP-ACC-11B | RF-01, RF-20 | `enviar-codigo` nunca devuelve el código en la respuesta HTTP | `acceso.enviar-codigo.test.js` (PR #14) |
-| CP-ACC-12 | RF-10, RF-20 | El estudiante solo consulta el caso de su actividad | `acceso.caso-autorizado.test.js` (PR #15) |
-
-Comando de verificación rápida (backend):
+| CP-ACC-11B | RF-01, RF-20 | `enviar-codigo` nunca devuelve el código en la respuesta HTTP | `acceso.enviar-codigo.test.js` |
+| CP-ACC-12 | RF-10, RF-20 | El estudiante solo consulta el caso de su actividad | `acceso.caso-autorizado.test.js` |
+| (RF-22) | RF-22 | Umbral de ingreso tardío al iniciar sesión | `acceso.ingreso-tardio.test.js`, `sesiones.service.test.js` |
 
 ```bash
-npm test -- tests/acceso.enviar-codigo.test.js tests/acceso.caso-autorizado.test.js
+npm test -- tests/acceso.enviar-codigo.test.js tests/acceso.caso-autorizado.test.js tests/acceso.ingreso-tardio.test.js
 ```
 
 ---
 
-## 3. Casos funcionales pendientes de ejecución manual (CP-27…CP-43)
+## 4. Valeria — RF-16 / RF-26
 
-Detalle completo en `Plan-pruebas-casos-de-uso-faltantes.md`. Resumen por módulo:
+| RF | Objetivo | Evidencia |
+|---|---|---|
+| RF-16 | Reporte CSV de participación | `reporteParticipacion.*.test.js` |
+| RF-26 | Comentario del docente en evaluación | `comentarioDocente.routes.test.js` |
+
+UI: `SeguimientoPage.jsx`, contraste en “Tu práctica”.
+
+---
+
+## 5. Casos funcionales pendientes de ejecución manual (CP-27…CP-43)
+
+Detalle en `Plan-pruebas-casos-de-uso-faltantes.md`. Resumen:
 
 | Rango | Módulo | Foco |
 |---|---|---|
@@ -48,40 +77,33 @@ Detalle completo en `Plan-pruebas-casos-de-uso-faltantes.md`. Resumen por módul
 | CP-33…CP-34 | Actividades | Datos obligatorios, convocatoria y hash del código |
 | CP-35…CP-38 | Sesiones | Iniciar, finalizar, tiempo agotado, cierre docente |
 | CP-39…CP-40 | Participación | Progreso sin claves; calificación con rúbrica al cerrar |
-| CP-42 | Acceso | Umbral de ingreso tardío |
+| CP-42 | Acceso | Umbral de ingreso tardío (cubierto también por pruebas RF-22) |
 | CP-43 | Aplicación web | Recorrido por rol (admin, docente, estudiante) |
 
 ---
 
-## 4. Frontend (aporte Stefanía)
+## 6. Frontend (aporte Stefanía + Valeria)
 
-Cubierto en código en `stefania` / `develop`:
-
-- Login: enviar código (sin “Jugar”); modo demo / SMTP Lumina
+- Login: enviar código; modo demo / SMTP Lumina
 - Vistas por rol: administrador, docente, estudiante
-- Práctica del estudiante y editor de casos
-
-Caso de smoke alineado con CP-43: ingresar por rol y completar una tarea típica sin llamar la API a mano.
-
----
-
-## 5. Pendiente coordinado (Laura)
-
-`feature/laura-cierre-backend-2026` chocaba con `develop` en 7 archivos de participación y sesiones.
-
-**Qué quedó en `develop` hoy**
-
-- Se conservó la API RF-23 ya en `develop`/`stefania` (validador puro, monitor, progreso/retroalimentación).
-- Se integró el cambio compatible de `participacion.repository` (`enTransaccion` entrega también la conexión).
-
-**Qué falta con Laura**
-
-- Rebase de su validación transaccional (`validarSesionParaResponder(sesionId, estudianteId, conexion)`) sobre el `develop` actual.
-- No mezclar a ciegas: su firma y repositorio (`obtenerReferenciaSesion`, etc.) no son drop-in sobre el servicio actual.
+- Práctica del estudiante, editor de casos
+- Seguimiento docente: CSV + comentario (Valeria)
 
 ---
 
-## 6. Cómo correr el paquete de pruebas
+## 7. Ramas que no requieren merge adicional
+
+| Rama | Motivo |
+|---|---|
+| `feature/sofia-cierre-final` | Ya contenida vía PR #16 |
+| `feature/laura-cierre-backend-2026` | Tip ya ancestro de `develop`; API transaccional alternativa queda fuera a propósito |
+| `feature/valeria-participacion-mejoras` | Divergida y superada por el módulo de participación ya en `develop` (progreso HTTP, etc.). No mergear a ciegas |
+
+Si Laura quiere reintroducir su validador transaccional, debe rebasear sobre este `develop`.
+
+---
+
+## 8. Cómo correr el paquete de pruebas
 
 ```bash
 cd backend
