@@ -533,6 +533,10 @@ test('Cierra automáticamente actividades con más de 24 horas desde fechaFin', 
       ];
     },
     async actualizarEstado(id, estado, estadoAnterior) {
+      // Igual que mysql2: un parámetro undefined hace fallar la consulta.
+      if ([id, estado, estadoAnterior].includes(undefined)) {
+        throw new TypeError('Bind parameters must not contain undefined');
+      }
       actualizadas.push({ id, estado, estadoAnterior });
       return 1;
     }
@@ -540,6 +544,7 @@ test('Cierra automáticamente actividades con más de 24 horas desde fechaFin', 
 
   const cerradas = await servicio.cerrarVencidas();
   assert.equal(cerradas.length, 2);
+  // Se envía el estado anterior para el UPDATE ... WHERE estado = ? (evita cerrar algo que cambió).
   assert.deepEqual(actualizadas, [
     { id: 11, estado: 'Cerrada', estadoAnterior: 'Iniciada' },
     { id: 12, estado: 'Cerrada', estadoAnterior: 'Programada' }

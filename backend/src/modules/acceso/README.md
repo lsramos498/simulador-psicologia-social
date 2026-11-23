@@ -13,7 +13,8 @@ Requisitos (hoja «16 oct»): RF-01, RF-02, RF-03 y RF-20.
 | Permisos | Se asignan a los roles (`RolPermiso`). Permiso confirmado por los requisitos: `CREAR_CASOS`. Los demás nombres están pendientes de acordar. |
 | Estudiantes | Deben existir antes, estar activos y tener el rol `Estudiante`. No se crean automáticamente. |
 | Códigos | Se guardan con hash (HMAC-SHA256), nunca en texto plano. |
-| Ventana de acceso | Entre `fechaInicio` y `fechaFin` de `ActividadProgramada`, sujeta a confirmación con la profesora (RF-22). |
+| Ventana de acceso | Entre `fechaInicio` y `fechaFin` de `ActividadProgramada`. |
+| Ingreso tardío (RF-22) | El estudiante no puede **iniciar** su participación después de `fechaInicio + INGRESO_TARDIO_FRACCION × tiempo límite` (por defecto la mitad). Quien ya inició puede volver a entrar. La base del cálculo es configurable mientras la profesora la confirma (`0` la desactiva). |
 | Token de sesión | JWT con duración de 1 hora. |
 | Cierre de sesión | El cliente elimina el token. El servidor lo acepta hasta que vence; la invalidación inmediata requeriría una lista de revocación. |
 | Primer administrador | Seed con datos tomados de variables de entorno: crea los 3 roles, el catálogo inicial de permisos y el administrador. |
@@ -291,5 +292,5 @@ La ejecución crea un docente de demostración con un correo único.
 - Nombres del resto del catálogo de permisos (hoy solo `CREAR_CASOS`).
 - Guardar el límite de intentos fuera de la memoria si el sistema llega a usar varios servidores.
 - Pantallas del frontend (cuando exista el proyecto de React).
-- Umbral de ingreso tardío (RF-22), con la profesora.
+- Confirmar con la profesora la base del ingreso tardío (RF-22): hoy es la mitad del tiempo límite desde `fechaInicio`, configurable con `INGRESO_TARDIO_FRACCION`.
 - `Usuario.contrasenaHash` opcional en el esquema (Stefanía).

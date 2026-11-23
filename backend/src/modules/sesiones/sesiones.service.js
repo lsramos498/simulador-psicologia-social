@@ -1,3 +1,4 @@
+import { esIngresoTardio } from '../acceso/ingresoTardio.js';
 import { crearErrorHttp } from '../acceso/errores.js';
 import { calcularEvaluacion } from '../evaluacion/evaluacion.js';
 import { EventosParticipacion } from '../participacion/eventosParticipacion.js';
@@ -367,6 +368,15 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date()) {
       const finVentana = new Date(fila.fechaFin).getTime();
       if (ahora.getTime() < inicioVentana || ahora.getTime() > finVentana) {
         throw crearErrorHttp('La actividad está fuera de la ventana de acceso.', 403);
+      }
+      // RF-22: no se puede iniciar si ya pasó la mitad del tiempo (ver acceso/ingresoTardio.js).
+      if (esIngresoTardio(fila, ahora)) {
+        const error = crearErrorHttp(
+          'Ingreso tardío: ya pasó el tiempo permitido para iniciar esta actividad. Habla con tu docente.',
+          403
+        );
+        error.codigo = 'INGRESO_TARDIO';
+        throw error;
       }
 
       const sesion = filaASesion(fila);
