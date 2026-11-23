@@ -532,8 +532,8 @@ test('Cierra automáticamente actividades con más de 24 horas desde fechaFin', 
         { id: 12, docenteId: 2, estado: 'Programada', fechaFin: '2026-11-01 10:00:00' }
       ];
     },
-    async actualizarEstado(id, estado) {
-      actualizadas.push({ id, estado });
+    async actualizarEstado(id, estado, estadoAnterior) {
+      actualizadas.push({ id, estado, estadoAnterior });
       return 1;
     }
   }, () => ({ codigo: 'CODIGO', codigoHash: 'hash-CODIGO' }), () => new Date('2026-11-03T12:00:00'));
@@ -541,8 +541,8 @@ test('Cierra automáticamente actividades con más de 24 horas desde fechaFin', 
   const cerradas = await servicio.cerrarVencidas();
   assert.equal(cerradas.length, 2);
   assert.deepEqual(actualizadas, [
-    { id: 11, estado: 'Cerrada' },
-    { id: 12, estado: 'Cerrada' }
+    { id: 11, estado: 'Cerrada', estadoAnterior: 'Iniciada' },
+    { id: 12, estado: 'Cerrada', estadoAnterior: 'Programada' }
   ]);
 });
 
