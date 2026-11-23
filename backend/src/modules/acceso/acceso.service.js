@@ -261,7 +261,13 @@ export function crearServicioAcceso(repositorio, {
       }
 
       const llegoAlCorreo = envio?.canal === 'Correo' && !envio?.demo;
-      const mostrarEnPantalla = process.env.ACCESO_CODIGO_EN_PANTALLA === 'true';
+      // SMTP_MODE=demo|pantalla implica entrega en UI (sin buzón real).
+      // ACCESO_CODIGO_EN_PANTALLA=true fuerza lo mismo en otros modos (p. ej. ethereal).
+      const modoSmtp = String(process.env.SMTP_MODE || '').trim().toLowerCase();
+      const mostrarEnPantalla =
+        process.env.ACCESO_CODIGO_EN_PANTALLA === 'true' ||
+        modoSmtp === 'demo' ||
+        modoSmtp === 'pantalla';
       if (!llegoAlCorreo && !mostrarEnPantalla) {
         return respuestaGenerica; // no se reemplaza un código que nadie recibió
       }

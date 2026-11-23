@@ -18,7 +18,9 @@ const datosConvocatoria = {
   },
   mensajePersonalizado: 'Prepárate para participar.',
   urlAcceso: 'https://lumina.edu.co/actividad/10',
-  codigoAutorizacion: 'ABC23456'
+  codigoAutorizacion: 'ABC23456',
+  docenteCorreo: 'docente.casos@unihumboldt.edu.co',
+  docenteNombre: 'Docente Casos'
 };
 test('Genera correctamente un correo de convocatoria', () => {
   const resultado = convocatoria.crearMensaje(datosConvocatoria);
@@ -36,6 +38,15 @@ test('Genera correctamente un correo de convocatoria', () => {
   assert.match(resultado.text, /ABC23456/);
   assert.match(resultado.text, /Prepárate para participar/);
   assert.match(resultado.html, /lumina\.edu\.co/);
+  assert.equal(resultado.replyTo, 'docente.casos@unihumboldt.edu.co');
+  assert.match(resultado.text, /Docente Casos/);
+  assert.match(resultado.text, /Remitente técnico: Lumina/);
+});
+
+test('La convocatoria sin docente no exige Reply-To', () => {
+  const { docenteCorreo, docenteNombre, ...sinDocente } = datosConvocatoria;
+  const resultado = convocatoria.crearMensaje(sinDocente);
+  assert.equal(resultado.replyTo, undefined);
 });
 test('Protege el contenido HTML de datos no confiables', () => {
   const resultado = convocatoria.crearMensaje({

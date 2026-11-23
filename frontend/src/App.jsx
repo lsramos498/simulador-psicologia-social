@@ -32,7 +32,7 @@ export default function App() {
         <div className="login-splash-bg" aria-hidden="true" />
         <div className="login-splash-vignette" aria-hidden="true" />
         <div className="login-splash-center">
-          <h1 className="login-title-3d" style={{ fontSize: '3rem' }}>
+          <h1 className="login-title-3d login-title-compact">
             LUMINA
           </h1>
           <div className="login-splash-form">

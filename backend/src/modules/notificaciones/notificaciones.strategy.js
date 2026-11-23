@@ -24,6 +24,39 @@ function validarCorreo(correo) {
   return destinatario;
 }
 
+/**
+ * Correo institucional del docente para Reply-To.
+ * El From técnico sigue siendo el del sistema (SMTP_FROM / Lumina).
+ * No usa cuentas personales ni contraseñas del docente.
+ */
+function correoInstitucionalOpcional(correo, etiqueta = 'El correo del docente') {
+  if (correo == null || correo === '') {
+    return null;
+  }
+  if (typeof correo !== 'string') {
+    throw new TypeError(`${etiqueta} no es válido.`);
+  }
+  const limpio = correo.trim();
+  if (!limpio) {
+    return null;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(limpio)) {
+    throw new TypeError(`${etiqueta} no es válido.`);
+  }
+  return limpio;
+}
+
+function nombreDocenteOpcional(nombre) {
+  if (nombre == null || nombre === '') {
+    return null;
+  }
+  if (typeof nombre !== 'string') {
+    return null;
+  }
+  const limpio = nombre.trim();
+  return limpio || null;
+}
+
 function escaparHtml(valor) {
   return String(valor)
     .replace(/&/g, '&amp;')
@@ -59,7 +92,9 @@ export class NotificacionConvocatoriaStrategy {
     caso,
     mensajePersonalizado,
     urlAcceso,
-    codigoAutorizacion
+    codigoAutorizacion,
+    docenteCorreo,
+    docenteNombre
   }) {
     const correo = validarCorreo(destinatario);
     const titulo = validarTexto(
@@ -87,8 +122,18 @@ export class NotificacionConvocatoriaStrategy {
       codigoAutorizacion,
       'El código de autorización'
     );
+    const replyTo = correoInstitucionalOpcional(docenteCorreo);
+    const nombreDocente = nombreDocenteOpcional(docenteNombre);
+    const lineaDocente = replyTo
+      ? (nombreDocente
+        ? `Convocada por ${nombreDocente} (${replyTo}) a través de Lumina.`
+        : `Convocada por el docente (${replyTo}) a través de Lumina.`)
+      : 'Este mensaje lo envía Lumina (sistema institucional).';
+
     const partesTexto = [
       `Convocatoria: ${titulo}`,
+      '',
+      lineaDocente,
       '',
       desarrollo,
       contexto,
@@ -96,23 +141,28 @@ export class NotificacionConvocatoriaStrategy {
       mensaje,
       '',
       `Ingresa a la actividad: ${url}`,
-      `Código de autorización: ${codigo}`
+      `Código de autorización: ${codigo}`,
+      '',
+      'Remitente técnico: Lumina. Si respondes, el correo puede llegar al docente institucional.'
     ];
 
     const contenidoHtml = [
       `<h2>Convocatoria: ${escaparHtml(titulo)}</h2>`,
+      `<p>${escaparHtml(lineaDocente)}</p>`,
       desarrollo ? `<p>${escaparHtml(desarrollo)}</p>` : '',
       contexto ? `<p>${escaparHtml(contexto)}</p>` : '',
       `<p>${escaparHtml(mensaje)}</p>`,
       `<p><a href="${escaparHtml(url)}">Ingresar a Lumina</a></p>`,
-      `<p><strong>Código de autorización:</strong> ${escaparHtml(codigo)}</p>`
+      `<p><strong>Código de autorización:</strong> ${escaparHtml(codigo)}</p>`,
+      '<p><em>Remitente técnico: Lumina. Reply-To: correo institucional del docente.</em></p>'
     ].filter(Boolean).join('\n');
 
     return {
       to: correo,
       subject: `Convocatoria: ${titulo}`,
       text: partesTexto.join('\n'),
-      html: contenidoHtml
+      html: contenidoHtml,
+      ...(replyTo ? { replyTo } : {})
     };
   }
 }
@@ -122,7 +172,9 @@ export class NotificacionCambioEstudianteStrategy {
     casoTitulo,
     accion,
     codigoAutorizacion,
-    urlAcceso
+    urlAcceso,
+    docenteCorreo,
+    docenteNombre
   }) {
     const correo = validarCorreo(destinatario);
     const titulo = validarTexto(
@@ -137,11 +189,21 @@ export class NotificacionCambioEstudianteStrategy {
         'La acción de cambio de estudiante no es válida.'
       );
     }
+    const replyTo = correoInstitucionalOpcional(docenteCorreo);
+    const nombreDocente = nombreDocenteOpcional(docenteNombre);
     const partes = [
       accion === ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO
         ? `Has sido agregado a la convocatoria del caso "${titulo}".`
         : `Has sido retirado de la convocatoria del caso "${titulo}".`
     ];
+
+    if (replyTo) {
+      partes.push(
+        nombreDocente
+          ? `Gestión realizada por ${nombreDocente} (${replyTo}) a través de Lumina.`
+          : `Gestión realizada por el docente (${replyTo}) a través de Lumina.`
+      );
+    }
 
     if (
       accion === ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO &&
@@ -160,6 +222,9 @@ export class NotificacionCambioEstudianteStrategy {
     const htmlPartes = [
       `<p>${escaparHtml(partes[0])}</p>`
     ];
+    if (replyTo) {
+      htmlPartes.push(`<p>${escaparHtml(partes[1])}</p>`);
+    }
     if (codigoAutorizacion && accion === ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO) {
       htmlPartes.push(
         `<p><strong>Código de autorización:</strong> ${escaparHtml(String(codigoAutorizacion).trim())}</p>`
@@ -174,7 +239,8 @@ export class NotificacionCambioEstudianteStrategy {
       to: correo,
       subject: `Actualización de convocatoria: ${titulo}`,
       text: mensaje,
-      html: htmlPartes.join('\n')
+      html: htmlPartes.join('\n'),
+      ...(replyTo ? { replyTo } : {})
     };
   }
 }

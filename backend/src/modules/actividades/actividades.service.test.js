@@ -560,6 +560,16 @@ test('Agrega un estudiante y envía CAMBIO_ESTUDIANTE', async () => {
         async obtenerEstudiantes() {
           return [{ id: 30, activo: 1, esEstudiante: 1, correo: 'nuevo@unihumboldt.edu.co' }];
         },
+        async obtenerDocente() {
+          return {
+            id: 2,
+            nombres: 'Docente',
+            apellidos: 'Casos',
+            correo: 'docente.casos@unihumboldt.edu.co',
+            activo: 1,
+            esDocente: 1
+          };
+        },
         async obtenerAutorizacion() {
           return null;
         },
@@ -596,6 +606,7 @@ test('Agrega un estudiante y envía CAMBIO_ESTUDIANTE', async () => {
   assert.equal(enviados[0].tipo, 'CAMBIO_ESTUDIANTE');
   assert.equal(enviados[0].accion, 'AGREGADO');
   assert.equal(enviados[0].destinatario, 'nuevo@unihumboldt.edu.co');
+  assert.equal(enviados[0].docenteCorreo, 'docente.casos@unihumboldt.edu.co');
 });
 
 test('Retira un estudiante autorizado y notifica el cambio', async () => {
@@ -605,6 +616,16 @@ test('Retira un estudiante autorizado y notifica el cambio', async () => {
       return operacion({
         async obtenerEstudiantes() {
           return [{ id: 20, activo: 1, esEstudiante: 1, correo: 'ana@unihumboldt.edu.co' }];
+        },
+        async obtenerDocente() {
+          return {
+            id: 2,
+            nombres: 'Docente',
+            apellidos: 'Casos',
+            correo: 'docente.casos@unihumboldt.edu.co',
+            activo: 1,
+            esDocente: 1
+          };
         },
         async obtenerAutorizacion() {
           return { id: 5, estudianteId: 20, estado: 'Autorizado' };

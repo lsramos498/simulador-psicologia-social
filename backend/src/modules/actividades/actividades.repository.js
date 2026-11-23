@@ -38,6 +38,9 @@
         const [filas] = await conexion.execute(
           `SELECT
              u.id,
+             u.nombres,
+             u.apellidos,
+             u.correoInstitucional AS correo,
              u.activo,
              EXISTS (
                SELECT 1

@@ -123,6 +123,25 @@ test('ACCESO_CODIGO_EN_PANTALLA=true (solo demos locales) sí muestra y guarda e
   }
 });
 
+test('SMTP_MODE=demo también muestra el código en pantalla sin ACCESO_CODIGO_EN_PANTALLA', async () => {
+  const anterior = process.env.SMTP_MODE;
+  const bandera = process.env.ACCESO_CODIGO_EN_PANTALLA;
+  process.env.SMTP_MODE = 'demo';
+  delete process.env.ACCESO_CODIGO_EN_PANTALLA;
+  try {
+    const { servicio, actualizaciones } = crearEscenario({ envio: { canal: 'Sistema', demo: true } });
+    const res = await request(crearApp(servicio)).post(ruta).send({ correo: CORREO }).expect(200);
+    assert.equal(res.body.codigo, 'NUEVO234');
+    assert.equal(actualizaciones.length, 1);
+  } finally {
+    if (anterior === undefined) delete process.env.SMTP_MODE;
+    else process.env.SMTP_MODE = anterior;
+    if (bandera === undefined) delete process.env.ACCESO_CODIGO_EN_PANTALLA;
+    else process.env.ACCESO_CODIGO_EN_PANTALLA = bandera;
+  }
+});
+
+
 test('máximo 5 solicitudes por correo: la 6.ª responde 429 aunque las anteriores salieron bien', async () => {
   const { servicio, enviados } = crearEscenario();
   const app = crearApp(servicio);

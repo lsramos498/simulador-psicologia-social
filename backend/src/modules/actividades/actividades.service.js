@@ -317,6 +317,14 @@ export function crearServicioActividades(
           );
         }
 
+        const docenteCorreo = typeof docente.correo === 'string'
+          ? docente.correo.trim()
+          : '';
+        const docenteNombre = [docente.nombres, docente.apellidos]
+          .filter((parte) => typeof parte === 'string' && parte.trim())
+          .map((parte) => parte.trim())
+          .join(' ');
+
         if (Number(docente.activo) !== 1) {
           throw errorActividad(
             'DOCENTE_INACTIVO',
@@ -467,7 +475,10 @@ export function crearServicioActividades(
               },
               mensajePersonalizado: actividad.mensajePersonalizado,
               urlAcceso: process.env.URL_ACCESO || 'http://localhost:5173',
-              codigoAutorizacion: codigo
+              codigoAutorizacion: codigo,
+              // From = Lumina (SMTP_FROM). Reply-To = correo institucional del docente.
+              docenteCorreo: docenteCorreo || undefined,
+              docenteNombre: docenteNombre || undefined
             });
           }
         }
@@ -592,6 +603,12 @@ export function crearServicioActividades(
         const actividad = await exigirActividadEditable(repositorio, actividadId, docenteId);
         const estudiantes = await tx.obtenerEstudiantes([estudianteId]);
         const estudiante = estudiantes[0];
+        const docente = await tx.obtenerDocente(docenteId);
+        const docenteCorreo = typeof docente?.correo === 'string' ? docente.correo.trim() : '';
+        const docenteNombre = [docente?.nombres, docente?.apellidos]
+          .filter((parte) => typeof parte === 'string' && parte.trim())
+          .map((parte) => parte.trim())
+          .join(' ');
 
         if (!estudiante) {
           throw errorActividad(
@@ -680,7 +697,9 @@ export function crearServicioActividades(
               casoTitulo: actividad.casoTitulo || `Caso ${actividad.casoId}`,
               accion: ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO,
               codigoAutorizacion: codigo,
-              urlAcceso: process.env.URL_ACCESO || 'http://localhost:5173'
+              urlAcceso: process.env.URL_ACCESO || 'http://localhost:5173',
+              docenteCorreo: docenteCorreo || undefined,
+              docenteNombre: docenteNombre || undefined
             }
             : null
         };
@@ -701,6 +720,12 @@ export function crearServicioActividades(
       const fecha = normalizarFecha(reloj(), 'fechaRegistro');
       const { autorizacion, notificacion } = await repositorio.enTransaccion(async (tx) => {
         const actividad = await exigirActividadEditable(repositorio, actividadId, docenteId);
+        const docente = await tx.obtenerDocente(docenteId);
+        const docenteCorreo = typeof docente?.correo === 'string' ? docente.correo.trim() : '';
+        const docenteNombre = [docente?.nombres, docente?.apellidos]
+          .filter((parte) => typeof parte === 'string' && parte.trim())
+          .map((parte) => parte.trim())
+          .join(' ');
         const actual = await tx.obtenerAutorizacion(actividadId, estudianteId, true);
 
         if (!actual) {
@@ -750,7 +775,9 @@ export function crearServicioActividades(
               estudianteId,
               destinatario: String(estudiante.correo).trim(),
               casoTitulo: actividad.casoTitulo || `Caso ${actividad.casoId}`,
-              accion: ACCIONES_CAMBIO_ESTUDIANTE.RETIRADO
+              accion: ACCIONES_CAMBIO_ESTUDIANTE.RETIRADO,
+              docenteCorreo: docenteCorreo || undefined,
+              docenteNombre: docenteNombre || undefined
             }
             : null
         };
