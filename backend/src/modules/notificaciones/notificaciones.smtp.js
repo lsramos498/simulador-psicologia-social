@@ -128,7 +128,10 @@ export function crearTransporteSMTP(configuracion = process.env) {
         text: mensaje.text,
         html: mensaje.html,
         // Reply-To = correo institucional del docente; From = sistema Lumina.
-        ...(mensaje.replyTo ? { replyTo: mensaje.replyTo } : {})
+        ...(mensaje.replyTo ? { replyTo: mensaje.replyTo } : {}),
+        ...(Array.isArray(mensaje.attachments) && mensaje.attachments.length > 0
+          ? { attachments: mensaje.attachments }
+          : {})
       });
 
       return {
@@ -171,7 +174,10 @@ export async function crearTransporteEthereal(configuracion = process.env) {
         subject: mensaje.subject,
         text: mensaje.text,
         html: mensaje.html,
-        ...(mensaje.replyTo ? { replyTo: mensaje.replyTo } : {})
+        ...(mensaje.replyTo ? { replyTo: mensaje.replyTo } : {}),
+        ...(Array.isArray(mensaje.attachments) && mensaje.attachments.length > 0
+          ? { attachments: mensaje.attachments }
+          : {})
       });
 
       const previewUrl = nodemailer.getTestMessageUrl(info) || null;

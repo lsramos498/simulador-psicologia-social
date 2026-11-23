@@ -1,3 +1,5 @@
+import { envolverCorreoLumina } from './notificaciones.plantilla.js';
+
 function validarTexto(valor, campo, { permitirSaltos = false } = {}) {
   if (typeof valor !== 'string' || !valor.trim()) {
     throw new TypeError(`${campo} es obligatorio.`);
@@ -65,6 +67,26 @@ function escaparHtml(valor) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+function parrafo(texto) {
+  return `<p style="margin:0 0 14px;">${escaparHtml(texto)}</p>`;
+}
+
+function cajaCodigo(codigo) {
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 18px;">
+      <tr>
+        <td style="padding:16px 18px;border-radius:14px;background:linear-gradient(180deg,#2a1c14,#1a1428);border:1px solid rgba(243,210,122,0.45);text-align:center;">
+          <div style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,236,200,0.7);margin-bottom:8px;">
+            🔑 Tu código de acceso
+          </div>
+          <div style="font-family:Consolas,'Courier New',monospace;font-size:28px;letter-spacing:0.18em;color:#f3d27a;font-weight:700;">
+            ${escaparHtml(codigo)}
+          </div>
+        </td>
+      </tr>
+    </table>`;
+}
 function validarUrl(url) {
   const valor = validarTexto(url, 'La URL de acceso');
   let resultado;
@@ -131,7 +153,7 @@ export class NotificacionConvocatoriaStrategy {
       : 'Este mensaje lo envía Lumina (sistema institucional).';
 
     const partesTexto = [
-      `Convocatoria: ${titulo}`,
+      `✨ Convocatoria Lumina: ${titulo}`,
       '',
       lineaDocente,
       '',
@@ -141,27 +163,34 @@ export class NotificacionConvocatoriaStrategy {
       mensaje,
       '',
       `Ingresa a la actividad: ${url}`,
-      `Código de autorización: ${codigo}`,
+      `🔑 Código de autorización: ${codigo}`,
       '',
       'Remitente técnico: Lumina. Si respondes, el correo puede llegar al docente institucional.'
     ];
 
-    const contenidoHtml = [
-      `<h2>Convocatoria: ${escaparHtml(titulo)}</h2>`,
-      `<p>${escaparHtml(lineaDocente)}</p>`,
-      desarrollo ? `<p>${escaparHtml(desarrollo)}</p>` : '',
-      contexto ? `<p>${escaparHtml(contexto)}</p>` : '',
-      `<p>${escaparHtml(mensaje)}</p>`,
-      `<p><a href="${escaparHtml(url)}">Ingresar a Lumina</a></p>`,
-      `<p><strong>Código de autorización:</strong> ${escaparHtml(codigo)}</p>`,
-      '<p><em>Remitente técnico: Lumina. Reply-To: correo institucional del docente.</em></p>'
+    const cuerpoHtml = [
+      parrafo(`👋 ${lineaDocente}`),
+      desarrollo ? parrafo(`📖 ${desarrollo}`) : '',
+      contexto ? parrafo(`🏫 ${contexto}`) : '',
+      parrafo(`💬 ${mensaje}`),
+      cajaCodigo(codigo)
     ].filter(Boolean).join('\n');
+
+    const { html, attachments } = envolverCorreoLumina({
+      kicker: '✨ Convocatoria académica',
+      tituloHero: escaparHtml(titulo),
+      cuerpoHtml,
+      ctaUrl: escaparHtml(url),
+      ctaTexto: 'Entrar a Lumina',
+      pieHtml: '📬 Remitente: <strong style="color:#f3d27a;">Lumina</strong>. Si respondes, el mensaje puede llegar al correo institucional del docente.'
+    });
 
     return {
       to: correo,
-      subject: `Convocatoria: ${titulo}`,
+      subject: `✨ Convocatoria Lumina: ${titulo}`,
       text: partesTexto.join('\n'),
-      html: contenidoHtml,
+      html,
+      attachments,
       ...(replyTo ? { replyTo } : {})
     };
   }
@@ -219,27 +248,33 @@ export class NotificacionCambioEstudianteStrategy {
     }
 
     const mensaje = partes.join('\n');
-    const htmlPartes = [
-      `<p>${escaparHtml(partes[0])}</p>`
-    ];
-    if (replyTo) {
-      htmlPartes.push(`<p>${escaparHtml(partes[1])}</p>`);
-    }
-    if (codigoAutorizacion && accion === ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO) {
-      htmlPartes.push(
-        `<p><strong>Código de autorización:</strong> ${escaparHtml(String(codigoAutorizacion).trim())}</p>`
-      );
-    }
-    if (urlAcceso && accion === ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO) {
-      const url = validarUrl(urlAcceso);
-      htmlPartes.push(`<p><a href="${escaparHtml(url)}">Ingresar a Lumina</a></p>`);
-    }
+    const esAgregado = accion === ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO;
+    const url = esAgregado && urlAcceso ? validarUrl(urlAcceso) : null;
+    const codigo = esAgregado && codigoAutorizacion
+      ? validarTexto(codigoAutorizacion, 'El código de autorización')
+      : null;
+
+    const cuerpoHtml = [
+      parrafo(`${esAgregado ? '🎉' : 'ℹ️'} ${partes[0]}`),
+      replyTo ? parrafo(`👩‍🏫 ${partes[1]}`) : '',
+      codigo ? cajaCodigo(codigo) : ''
+    ].filter(Boolean).join('\n');
+
+    const { html, attachments } = envolverCorreoLumina({
+      kicker: esAgregado ? '🎉 Actualización de convocatoria' : 'ℹ️ Actualización de convocatoria',
+      tituloHero: escaparHtml(titulo),
+      cuerpoHtml,
+      ctaUrl: url ? escaparHtml(url) : null,
+      ctaTexto: 'Entrar a Lumina',
+      pieHtml: '📬 Enviado por <strong style="color:#f3d27a;">Lumina</strong>.'
+    });
 
     return {
       to: correo,
-      subject: `Actualización de convocatoria: ${titulo}`,
+      subject: `${esAgregado ? '🎉' : 'ℹ️'} Actualización Lumina: ${titulo}`,
       text: mensaje,
-      html: htmlPartes.join('\n'),
+      html,
+      attachments,
       ...(replyTo ? { replyTo } : {})
     };
   }

@@ -32,15 +32,18 @@ test('Genera correctamente un correo de convocatoria', () => {
 
   assert.equal(
     resultado.subject,
-    'Convocatoria: Conflicto social'
+    '✨ Convocatoria Lumina: Conflicto social'
   );
 
   assert.match(resultado.text, /ABC23456/);
   assert.match(resultado.text, /Prepárate para participar/);
   assert.match(resultado.html, /lumina\.edu\.co/);
+  assert.match(resultado.html, /Tu código de acceso/);
+  assert.match(resultado.html, /LUMINA|cid:lumina-portada/);
   assert.equal(resultado.replyTo, 'docente.casos@unihumboldt.edu.co');
   assert.match(resultado.text, /Docente Casos/);
   assert.match(resultado.text, /Remitente técnico: Lumina/);
+  assert.ok(Array.isArray(resultado.attachments));
 });
 
 test('La convocatoria sin docente no exige Reply-To', () => {
@@ -78,8 +81,9 @@ test('Genera una notificación cuando un estudiante es agregado', () => {
     'estudiante@universidad.edu.co'
   );
 
-  assert.match(resultado.subject, /Actualización de convocatoria/);
+  assert.match(resultado.subject, /Actualización Lumina/);
   assert.match(resultado.text, /Has sido agregado/);
+  assert.match(resultado.html, /Has sido agregado/);
 });
 
 test('Genera una notificación cuando un estudiante es retirado', () => {
