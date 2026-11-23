@@ -103,7 +103,8 @@ test('Al iniciar la actividad se preparan las sesiones de los convocados', async
 });
 
 test('El estudiante pasa su sesión a En curso dentro de la ventana', async () => {
-  const repo = crearRepositorio();
+  // Llega 2 minutos después del inicio: antes de la mitad del tiempo límite (RF-22).
+  const repo = crearRepositorio({ fila: { fechaInicio: new Date('2026-11-09T14:58:00') } });
   const sesion = await crearServicioSesiones(repo).iniciarPropia(3, 7, ahora);
 
   assert.equal(sesion.estado, 'En curso');
@@ -167,4 +168,27 @@ test('El cierre de una sesión que nunca empezó queda en cero y como ausencia',
   assert.equal(cierre.sesion.motivoCierre, 'CierreDocente');
   assert.equal(cierre.evaluacion.resultado, 0);
   assert.deepEqual(repo.llamadas.find((llamada) => llamada[0] === 'asistencia'), ['asistencia', 'Ausente']);
+});
+
+test('RF-22: después de la mitad del tiempo límite no se puede iniciar (403 INGRESO_TARDIO)', async () => {
+  // Actividad desde las 14:00 con 10 minutos: el límite para iniciar es 14:05.
+  const repo = crearRepositorio();
+  const servicio = crearServicioSesiones(repo);
+  await assert.rejects(
+    servicio.iniciarPropia(3, 7, new Date('2026-11-09T14:06:00')),
+    { statusCode: 403, codigo: 'INGRESO_TARDIO' }
+  );
+  assert.equal(repo.llamadas.some(([nombre]) => nombre === 'asistencia'), false);
+});
+
+test('RF-22: justo en la mitad del tiempo todavía puede iniciar', async () => {
+  const repo = crearRepositorio();
+  const sesion = await crearServicioSesiones(repo).iniciarPropia(3, 7, new Date('2026-11-09T14:05:00'));
+  assert.equal(sesion.estado, 'En curso');
+});
+
+test('RF-22: quien ya inició puede volver a entrar aunque sea tarde', async () => {
+  const repo = crearRepositorio({ fila: { estado: 'En curso', inicio: new Date('2026-11-09T14:01:00') } });
+  const sesion = await crearServicioSesiones(repo).iniciarPropia(3, 7, new Date('2026-11-09T14:08:00'));
+  assert.equal(sesion.estado, 'En curso');
 });

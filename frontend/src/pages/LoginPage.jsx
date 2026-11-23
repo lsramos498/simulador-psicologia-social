@@ -179,7 +179,7 @@ export default function LoginPage({ onSesion }) {
             <h2>Iniciar sesión</h2>
             <p className="login-form-lead">
               {modo === 'estudiante'
-                ? 'Escribe tu correo, envía el código y úsalo para entrar.'
+                ? 'Escribe tu correo y el código de tu convocatoria. Si no lo tienes, pídelo a tu correo.'
                 : 'Docentes y administradores: correo y contraseña.'}
             </p>
 

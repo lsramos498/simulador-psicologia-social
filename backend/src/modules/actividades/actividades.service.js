@@ -567,7 +567,8 @@ export function crearServicioActividades(
       for (const actividad of vencidas) {
         const filas = await repositorio.actualizarEstado(
           actividad.id,
-          ESTADOS_ACTIVIDAD.CERRADA
+          ESTADOS_ACTIVIDAD.CERRADA,
+          actividad.estado
         );
         if (filas) {
           cerradas.push({
