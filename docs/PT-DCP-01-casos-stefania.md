@@ -34,9 +34,9 @@ Resultado global: **56** pruebas unitarias del módulo (suite `test:unit`) + **7
 | CP-CASOS-13 | RF-06 | Casos | Editar escena en borrador | Mock servicio | `actualizarEscena` / PATCH escenas | Nombre y contexto nuevos | Nombre recortado guardado | Nombre recortado | **Aprobado** | `casos.edicion.*.test.js` | 2026-11-08 |
 | CP-CASOS-14 | RF-07/RF-08 | Casos | Editar opción y explicación | Mock servicio | `actualizarOpcion` | Texto + explicación | Persistencia de ambos | Persistencia de ambos | **Aprobado** | edicion service/routes | 2026-11-08 |
 
-## Pendiente de consolidar (otras integrantes)
+## Consolidación
 
-Laura, Sofía y Valeria deben enviar a Stefanía sus filas con el mismo formato. **No inventar veredictos** de módulos ajenos.
+Índice único: `Plan-pruebas-consolidado.md` (22 nov 2026). Sofía ya consolidó Acceso en `PT-DCP-01-acceso-sofia.md` (incluye PR #14 y #15). Laura: rebase pendiente de su cierre de sesiones/participación sobre `develop`. **No inventar veredictos** de módulos ajenos.
 
 ## Evidencia de ejecución
 
