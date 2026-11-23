@@ -334,6 +334,7 @@ Table Evaluacion (
   fechaEvaluacion datetime [not null]
   resultado decimal(8,2) [not null, default: 0]
   retroalimentacionGeneral text
+  comentarioDocente text
 
   indexes {
     (id, rubrica_id) [unique]

@@ -109,6 +109,49 @@ export function crearRepositorioSesiones(pool) {
         return filas;
       },
 
+      async consultarReporteParticipacion(actividadId, docenteId) {
+        // Un intento cerrado sin inicio puede tener nota por ausencia. Se usa esa
+        // nota únicamente si no hay una evaluación de un intento iniciado.
+        const [filas] = await conexion.execute(
+          `SELECT a.id AS actividadId, a.docente_id AS docenteId, a.caso_id AS casoId,
+                  u.id AS estudianteId, u.nombres, u.apellidos, u.correoInstitucional AS correo,
+                  COALESCE(s.estado, 'Ausente') AS estado,
+                  s.numeroIntento AS intentoParticipacion,
+                  CASE WHEN s.id IS NOT NULL THEN (
+                    SELECT COUNT(*) FROM RespuestaEstudiante r
+                    WHERE r.sesion_id = s.id AND r.opcion_id IS NOT NULL
+                  ) END AS preguntasRespondidas,
+                  CASE WHEN s.id IS NOT NULL THEN (
+                    SELECT COUNT(*) FROM Decision d
+                    INNER JOIN Escena e ON e.id = d.escena_id
+                    WHERE e.caso_id = a.caso_id
+                  ) END AS totalPreguntas,
+                  ev.resultado AS notaOficial, nota.numeroIntento AS intentoNota
+           FROM ActividadProgramada a
+           LEFT JOIN EstudianteAutorizado ea ON ea.actividad_id = a.id AND a.docente_id = ?
+           LEFT JOIN Usuario u ON u.id = ea.estudiante_id
+           LEFT JOIN SesionSimulacion s ON s.id = (
+             SELECT intento.id FROM SesionSimulacion intento
+             WHERE intento.actividad_id = ea.actividad_id
+               AND intento.estudiante_id = ea.estudiante_id AND intento.inicio IS NOT NULL
+             ORDER BY intento.numeroIntento DESC
+             LIMIT 1
+           )
+           LEFT JOIN SesionSimulacion nota ON nota.id = (
+             SELECT intento.id FROM SesionSimulacion intento
+             INNER JOIN Evaluacion evaluada ON evaluada.sesion_id = intento.id
+             WHERE intento.actividad_id = ea.actividad_id AND intento.estudiante_id = ea.estudiante_id
+             ORDER BY (intento.inicio IS NOT NULL) DESC, intento.numeroIntento DESC
+             LIMIT 1
+           )
+           LEFT JOIN Evaluacion ev ON ev.sesion_id = nota.id
+           WHERE a.id = ?
+           ORDER BY u.apellidos, u.nombres, u.id`,
+          [docenteId, actividadId]
+        );
+        return filas;
+      },
+
       async listarVencidas(ahora) {
         const [filas] = await conexion.execute(
           `${sesionSelect}
@@ -239,7 +282,7 @@ export function crearRepositorioSesiones(pool) {
 
       async obtenerEvaluacion(sesionId) {
         const [filas] = await conexion.execute(
-          `SELECT e.id, e.resultado, e.retroalimentacionGeneral, e.fechaEvaluacion,
+          `SELECT e.id, e.resultado, e.retroalimentacionGeneral, e.comentarioDocente, e.fechaEvaluacion,
                   rc.criterio_id AS criterioId, rc.puntuacion, rc.observacion
            FROM Evaluacion e
            LEFT JOIN ResultadoCriterio rc ON rc.evaluacion_id = e.id
@@ -252,6 +295,7 @@ export function crearRepositorioSesiones(pool) {
           id: filas[0].id,
           resultado: Number(filas[0].resultado),
           retroalimentacionGeneral: filas[0].retroalimentacionGeneral,
+          comentarioDocente: filas[0].comentarioDocente,
           fechaEvaluacion: filas[0].fechaEvaluacion,
           criterios: filas
             .filter((fila) => fila.criterioId != null)
@@ -261,6 +305,20 @@ export function crearRepositorioSesiones(pool) {
               observacion: fila.observacion
             }))
         };
+      },
+
+      async guardarComentarioDocente(sesionId, comentarioDocente) {
+        const [filas] = await conexion.execute(
+          'SELECT id, comentarioDocente FROM Evaluacion WHERE sesion_id = ? FOR UPDATE',
+          [sesionId]
+        );
+        const evaluacion = filas[0];
+        if (!evaluacion) return null;
+        await conexion.execute(
+          'UPDATE Evaluacion SET comentarioDocente = ? WHERE id = ?',
+          [comentarioDocente, evaluacion.id]
+        );
+        return { comentarioDocente, creado: evaluacion.comentarioDocente === null };
       }
     };
   }

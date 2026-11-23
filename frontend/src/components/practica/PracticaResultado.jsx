@@ -9,6 +9,12 @@ export default function PracticaResultado({ caso, evaluacion, retroItems, onSali
         </p>
       ) : null}
       {evaluacion?.retroalimentacionGeneral ? <p>{evaluacion.retroalimentacionGeneral}</p> : null}
+      {evaluacion?.comentarioDocente ? (
+        <div className="sim-resultado-rubrica">
+          <h3>Comentario docente</h3>
+          <p style={{ whiteSpace: 'pre-wrap' }}>{evaluacion.comentarioDocente}</p>
+        </div>
+      ) : null}
       {retroItems.length > 0 ? (
         <div className="sim-resultado-rubrica">
           <h3>Retroalimentación</h3>

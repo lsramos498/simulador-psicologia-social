@@ -422,6 +422,39 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date()) {
       return { sesion: publica(fila), evaluacion };
     },
 
+    async guardarComentarioDocente(sesionId, docenteId, texto) {
+      validarIdentificador(sesionId, 'sesionId');
+      const comentario = typeof texto === 'string' ? texto.trim() : '';
+      if (!comentario) throw crearErrorHttp('Escribe un comentario.', 400);
+      if (Buffer.byteLength(comentario, 'utf8') > 65_535) {
+        throw crearErrorHttp('El comentario supera el tamaño permitido.', 400);
+      }
+
+      return repositorio.enTransaccion(async (tx) => {
+        const sesion = await tx.obtenerPorId(sesionId, true);
+        if (!sesion) throw crearErrorHttp('La sesión no existe.', 404);
+        if (Number(sesion.docenteId) !== docenteId) {
+          throw crearErrorHttp('Solo el docente creador puede comentar este resultado.', 403);
+        }
+        if (sesion.estado !== ESTADOS_SESION.FINALIZADO) {
+          throw crearErrorHttp('La sesión debe estar finalizada.', 409);
+        }
+        const guardado = await tx.guardarComentarioDocente(sesionId, comentario);
+        if (!guardado) throw crearErrorHttp('La sesión no tiene una evaluación registrada.', 409);
+        return guardado;
+      });
+    },
+
+    async consultarReporteParticipacion(actividadId, docenteId) {
+      validarIdentificador(actividadId, 'actividadId');
+      const filas = await repositorio.consultarReporteParticipacion(actividadId, docenteId);
+      if (!filas.length) throw crearErrorHttp('La actividad no existe.', 404);
+      if (Number(filas[0].docenteId) !== docenteId) {
+        throw crearErrorHttp('Solo el docente creador puede descargar el reporte.', 403);
+      }
+      return filas.filter((fila) => fila.estudianteId != null);
+    },
+
     async listarPorActividad(actividadId, actor) {
       validarIdentificador(actividadId, 'actividadId');
       const filas = await repositorio.listarPorActividad(actividadId);

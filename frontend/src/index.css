@@ -267,6 +267,14 @@ a {
   color: #b8f5d4;
 }
 
+.alert-ok.practica-aviso {
+  border-color: #78bf9a;
+  background: #e1f7ea;
+  color: #164a35;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 .field {
   display: grid;
   gap: 0.4rem;

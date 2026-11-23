@@ -446,6 +446,7 @@ CREATE TABLE Evaluacion (
   fechaEvaluacion DATETIME NOT NULL,
   resultado DECIMAL(8,2) NOT NULL DEFAULT 0,
   retroalimentacionGeneral TEXT NULL,
+  comentarioDocente TEXT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uk_evaluacion_sesion (sesion_id),
   UNIQUE KEY uk_evaluacion_id_rubrica (id, rubrica_id),

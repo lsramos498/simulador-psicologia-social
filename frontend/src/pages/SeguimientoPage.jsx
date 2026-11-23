@@ -4,6 +4,8 @@ import {
   consultarProgresoSesion,
   consultarRespuestasSesion,
   consultarRetroalimentacionSesion,
+  descargarReporteParticipacion,
+  guardarComentarioDocente,
   listarActividades,
   monitorearSesionesActividad,
   obtenerActividad,
@@ -12,6 +14,7 @@ import {
 } from '../api/client';
 import { mensajeError } from '../utils/casoHelpers';
 import { enriquecerRespuestas } from '../utils/casoPreguntas';
+import { esAdministrador, esDocente } from '../utils/roles';
 
 export default function SeguimientoPage({ sesion, onIrActividades }) {
   const { token } = sesion;
@@ -25,6 +28,8 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
   const [mensaje, setMensaje] = useState('');
   const [cargando, setCargando] = useState(true);
   const [trabajando, setTrabajando] = useState(false);
+  const [descargando, setDescargando] = useState(false);
+  const [comentario, setComentario] = useState('');
 
   async function cargarActividades() {
     setCargando(true);
@@ -119,6 +124,7 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
         }
       }
       const crudas = resp?.data || [];
+      setComentario(ses.data?.evaluacion?.comentarioDocente ?? '');
       setDetalle({
         sesion: sesionData,
         evaluacion: ses.data?.evaluacion || null,
@@ -126,6 +132,27 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
         respuestas: enriquecerRespuestas(crudas, caso),
         retro: Array.isArray(retro?.data) ? retro.data : retro?.data || []
       });
+    } catch (err) {
+      setError(mensajeError(err));
+    } finally {
+      setTrabajando(false);
+    }
+  }
+
+  async function guardarComentario(evento) {
+    evento.preventDefault();
+    const sesionId = detalle.sesion.id;
+    setTrabajando(true);
+    setError('');
+    setMensaje('');
+    try {
+      const { data } = await guardarComentarioDocente(token, sesionId, comentario);
+      setDetalle((actual) => actual?.sesion.id === sesionId ? {
+        ...actual,
+        evaluacion: { ...actual.evaluacion, comentarioDocente: data.comentarioDocente }
+      } : actual);
+      setComentario(data.comentarioDocente);
+      setMensaje('Comentario docente guardado.');
     } catch (err) {
       setError(mensajeError(err));
     } finally {
@@ -148,7 +175,35 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
     }
   }
 
+  async function descargarReporte() {
+    setDescargando(true);
+    setError('');
+    try {
+      const archivo = await descargarReporteParticipacion(token, actividadId);
+      const url = URL.createObjectURL(archivo);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = `participacion-actividad-${actividadId}.csv`;
+      document.body.append(enlace);
+      try {
+        enlace.click();
+      } finally {
+        enlace.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch (err) {
+      setError(mensajeError(err));
+    } finally {
+      setDescargando(false);
+    }
+  }
+
   const enCurso = sesiones.filter((s) => s.estado === 'En curso').length;
+  const puedeDescargar = esDocente(sesion.usuario) && !esAdministrador(sesion.usuario);
+  const puedeComentar = esDocente(sesion.usuario) && detalle?.sesion?.estado === 'Finalizado'
+    && detalle.sesion.actividadId === actividadDetalle?.id
+    && Number(actividadDetalle?.docenteId) === Number(sesion.usuario?.id)
+    && Boolean(detalle.evaluacion);
 
   return (
     <section className="crear-caso">
@@ -161,14 +216,26 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
             {enCurso ? ` · ${enCurso} en curso` : ''}
           </p>
         </div>
-        <button
-          type="button"
-          className="btn-ghost-dark"
-          disabled={trabajando || !actividadId}
-          onClick={() => cargarSesiones()}
-        >
-          Actualizar
-        </button>
+        <div className="ficha-acciones">
+          <button
+            type="button"
+            className="btn-ghost-dark"
+            disabled={trabajando || !actividadId}
+            onClick={() => cargarSesiones()}
+          >
+            Actualizar
+          </button>
+          {puedeDescargar ? (
+            <button
+              type="button"
+              className="btn-ghost-dark"
+              disabled={descargando || !actividadId}
+              onClick={descargarReporte}
+            >
+              {descargando ? 'Descargando…' : 'Descargar reporte CSV'}
+            </button>
+          ) : null}
+        </div>
       </header>
 
       {mensaje ? <div className="alert alert-ok">{mensaje}</div> : null}
@@ -273,6 +340,33 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
             <p className="sim-nota">
               Nota oficial: <strong>{detalle.evaluacion.resultado}</strong>
             </p>
+          ) : null}
+          {detalle.evaluacion?.comentarioDocente ? (
+            <div>
+              <h4>Comentario docente guardado</h4>
+              <p style={{ whiteSpace: 'pre-wrap' }}>{detalle.evaluacion.comentarioDocente}</p>
+            </div>
+          ) : null}
+          {puedeComentar ? (
+            <form onSubmit={guardarComentario}>
+              <div className="field">
+                <label htmlFor="comentario-docente">Comentario docente</label>
+                <textarea
+                  id="comentario-docente"
+                  rows={4}
+                  value={comentario}
+                  disabled={trabajando}
+                  onChange={(evento) => setComentario(evento.target.value)}
+                />
+              </div>
+              <button
+                type="submit"
+                className="btn-play"
+                disabled={trabajando || !comentario.trim()}
+              >
+                Guardar comentario
+              </button>
+            </form>
           ) : null}
           {detalle.progreso ? (
             <p className="muted-light">

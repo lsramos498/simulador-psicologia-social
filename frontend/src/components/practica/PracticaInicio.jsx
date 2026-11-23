@@ -23,7 +23,7 @@ export default function PracticaInicio({
           Actualizar
         </button>
       </header>
-      {mensaje ? <div className="alert alert-ok">{mensaje}</div> : null}
+      {mensaje ? <div className="alert alert-ok practica-aviso">{mensaje}</div> : null}
       {error ? <div className="alert">{error}</div> : null}
       {cargando ? <p className="muted-light">Consultando tu convocatoria…</p> : null}
 

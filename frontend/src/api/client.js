@@ -74,8 +74,8 @@ function urlApi(ruta) {
   return `${API_BASE}${ruta}`;
 }
 
-async function pedir(ruta, { method = 'GET', body, token } = {}) {
-  const headers = { Accept: 'application/json' };
+async function pedir(ruta, { method = 'GET', body, token, formato = 'application/json' } = {}) {
+  const headers = { Accept: formato };
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }
@@ -88,6 +88,13 @@ async function pedir(ruta, { method = 'GET', body, token } = {}) {
     headers,
     body: body === undefined ? undefined : JSON.stringify(body)
   });
+
+  if (respuesta.ok && formato === 'text/csv') {
+    if (!/^text\/csv(?:\s*;|$)/i.test(respuesta.headers.get('Content-Type') || '')) {
+      throw new Error('El servidor no devolvió el reporte CSV.');
+    }
+    return respuesta.blob();
+  }
 
   let payload = null;
   const texto = await respuesta.text();
@@ -413,6 +420,14 @@ export function obtenerSesion(token, sesionId) {
   return pedir(`/api/sesiones/${sesionId}`, { token });
 }
 
+export function guardarComentarioDocente(token, sesionId, comentarioDocente) {
+  return pedir(`/api/sesiones/${sesionId}/comentario-docente`, {
+    method: 'PUT',
+    token,
+    body: { comentarioDocente }
+  });
+}
+
 export function finalizarSesion(token, sesionId) {
   return pedir(`/api/sesiones/${sesionId}/finalizar`, { method: 'POST', token });
 }
@@ -465,6 +480,13 @@ export function cerrarVencidasActividades(token) {
 
 export function monitorearSesionesActividad(token, actividadId) {
   return pedir(`/api/sesiones/actividades/${actividadId}/monitor`, { token });
+}
+
+export function descargarReporteParticipacion(token, actividadId) {
+  return pedir(`/api/sesiones/actividades/${actividadId}/reporte-participacion.csv`, {
+    token,
+    formato: 'text/csv'
+  });
 }
 
 export function cerrarSesionDocente(token, sesionId) {
