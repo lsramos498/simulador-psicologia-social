@@ -82,3 +82,61 @@ export function requiereActividadAutorizada(obtenerActividadId = (req) => req.pa
     'No está autorizado para esta actividad'
   );
 }
+
+/**
+ * RF-10 / RF-20: un estudiante solo puede consultar el caso de SU actividad
+ * (la actividadId que trae su token desde el ingreso con código).
+ *
+ *   router.get('/:id', autenticar, requiereCasoDeSuActividad(buscarCasoDeActividad), verCaso);
+ *
+ * - buscarCasoDeActividad(actividadId) → id del caso de esa actividad (o null).
+ * - obtenerCasoPedido(req) indica qué caso pide la ruta (por defecto req.params.id).
+ * Si la ruta no pide un caso concreto (por ejemplo, el listado), deja en
+ * req.casoAutorizadoId el caso permitido para que la ruta filtre.
+ *
+ * Docentes y administradores pasan: sus reglas las aplica el módulo de casos.
+ * Responde 401 sin usuario, 403 si el caso no es el de su actividad y 500
+ * (sin detalles) si falla la consulta.
+ */
+export function requiereCasoDeSuActividad(
+  buscarCasoDeActividad,
+  obtenerCasoPedido = (req) => req.params?.id
+) {
+  // Falla al definir la ruta, no en cada petición
+  if (typeof buscarCasoDeActividad !== 'function' || typeof obtenerCasoPedido !== 'function') {
+    throw new TypeError('requiereCasoDeSuActividad necesita funciones para buscar y leer el caso');
+  }
+
+  return async (req, res, next) => {
+    if (!req.usuario) {
+      return res.status(401).json({ error: 'Debe autenticarse para continuar' });
+    }
+    if (!tieneRol(req.usuario, ROLES.ESTUDIANTE)) {
+      return next();
+    }
+
+    const actividadId = Number(req.usuario.actividadId);
+    if (!Number.isInteger(actividadId) || actividadId <= 0) {
+      return res.status(403).json({ error: 'No está autorizado para este caso' });
+    }
+
+    let casoPermitido;
+    try {
+      casoPermitido = Number(await buscarCasoDeActividad(actividadId));
+    } catch (error) {
+      console.error('No se pudo verificar el caso del estudiante:', error?.message);
+      return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+    if (!Number.isInteger(casoPermitido) || casoPermitido <= 0) {
+      return res.status(403).json({ error: 'No está autorizado para este caso' });
+    }
+
+    const pedido = obtenerCasoPedido(req);
+    if (pedido !== undefined && Number(pedido) !== casoPermitido) {
+      return res.status(403).json({ error: 'No está autorizado para este caso' });
+    }
+
+    req.casoAutorizadoId = casoPermitido;
+    return next();
+  };
+}

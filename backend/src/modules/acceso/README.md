@@ -154,7 +154,21 @@ router.post('/:id/sesiones', autenticar, requiereActividadAutorizada(), iniciarS
 
 Si el usuario es Estudiante y la actividad de la ruta (`req.params.id` por defecto) no es la `actividadId`
 de su token, responde `403`. Docentes y administradores pasan; su control lo hace el módulo de actividades.
-Integración con la ruta de inicio de sesión del estudiante: pendiente de coordinar con Laura.
+Integrado en `POST /api/sesiones/actividades/:actividadId/iniciar`, junto con `requiereRol(ESTUDIANTE)`.
+
+**Limitar al estudiante al caso de su actividad** (RF-10; usado en `GET /api/casos` y `GET /api/casos/:id`):
+
+```js
+import { requiereCasoDeSuActividad } from '../modules/acceso/autorizar.middleware.js';
+import { buscarCasoDeActividadPorDefecto } from '../modules/acceso/casoDeActividad.js';
+
+router.get('/:id', autenticar, requiereCasoDeSuActividad(buscarCasoDeActividadPorDefecto), verCaso);
+```
+
+Busca el caso de la `actividadId` del token (SQL parametrizado). Si el estudiante pide otro caso responde
+`403` y el servicio no se consulta; en un listado deja `req.casoAutorizadoId` para que la ruta muestre solo
+ese caso. Sin `actividadId` en el token, o si la actividad ya no existe: `403`. Si falla la consulta: `500`
+sin detalles. Docentes y administradores pasan.
 
 **Proteger una operación de negocio** (patrón Proxy):
 

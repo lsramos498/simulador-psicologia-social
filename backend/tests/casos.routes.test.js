@@ -15,6 +15,7 @@ function appCon(servicio) {
   const app = express();
   app.use(express.json());
   app.use('/api/casos', crearRutasCasos(async () => servicio));
+  app.servicioDePrueba = servicio;
   return app;
 }
 
@@ -196,9 +197,17 @@ test('un estudiante autenticado no recibe la opción esperada ni su explicación
 
   await request(app).get('/api/casos/1').expect(401);
 
-  const response = await request(app)
+  // RF-10: el estudiante entra con la actividad 4, cuyo caso es el 1.
+  const appEstudiante = express();
+  appEstudiante.use(express.json());
+  appEstudiante.use('/api/casos', crearRutasCasos(async () => ({
+    obtener: app.servicioDePrueba.obtener
+  }), { buscarCasoDeActividad: async (actividadId) => (actividadId === 4 ? 1 : null) }));
+  const tokenEstudiante = firmarToken({ id: 8, roles: ['Estudiante'], permisos: [], actividadId: 4 });
+
+  const response = await request(appEstudiante)
     .get('/api/casos/1')
-    .set('Authorization', `Bearer ${tokenDe(8, [], ['Estudiante'])}`)
+    .set('Authorization', `Bearer ${tokenEstudiante}`)
     .expect(200);
 
   const opcion = response.body.data.escenas[0].decisiones[0].opciones[0];

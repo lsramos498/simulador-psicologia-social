@@ -12,6 +12,9 @@
  *  - `requierePermiso('CREAR_CASOS')`: protege las rutas de edición.
  *  - `POST /` usa el patrón Proxy de protección (acceso/servicioProtegido.proxy.js)
  *    en lugar de un middleware, para no duplicar la verificación de CREAR_CASOS.
+ *  - RF-10: un estudiante solo ve el caso de SU actividad (la del token):
+ *    `GET /:id` de otro caso responde 403 y `GET /` le lista solo ese caso
+ *    (acceso/autorizar.middleware.js → requiereCasoDeSuActividad).
  *  - Ocultar respuestas: un estudiante que consulta `GET /:id` no recibe
  *    `esCorrecta`, `explicacion` ni `fundamentoTeorico` (ver
  *    `ocultarRespuestasCorrectas`); si no, vería las respuestas antes de resolver.
@@ -19,7 +22,8 @@
 import { Router } from 'express';
 import { autenticar } from '../modules/acceso/autenticar.middleware.js';
 import { ROLES, tienePermiso, tieneRol } from '../modules/acceso/autorizacion.js';
-import { requierePermiso } from '../modules/acceso/autorizar.middleware.js';
+import { requiereCasoDeSuActividad, requierePermiso } from '../modules/acceso/autorizar.middleware.js';
+import { buscarCasoDeActividadPorDefecto } from '../modules/acceso/casoDeActividad.js';
 import { crearServicioProtegido } from '../modules/acceso/servicioProtegido.proxy.js';
 import { crearRepositorioCasos } from '../modules/casos/casos.repository.js';
 import { crearServicioCasos } from '../modules/casos/casos.service.js';
@@ -139,12 +143,18 @@ const docente = [autenticar, requierePermiso('CREAR_CASOS')];
  * @returns {import('express').Router}
  * @throws {TypeError} Si `obtenerServicio` no es una función.
  */
-export function crearRutasCasos(obtenerServicio) {
+export function crearRutasCasos(
+  obtenerServicio,
+  { buscarCasoDeActividad = buscarCasoDeActividadPorDefecto } = {}
+) {
   if (typeof obtenerServicio !== 'function') {
     throw new TypeError('Se requiere una función que entregue el servicio de casos.');
   }
 
   const router = Router();
+  // RF-10: el estudiante solo accede al caso de la actividad de su token.
+  const casoDeSuActividad = requiereCasoDeSuActividad(buscarCasoDeActividad);
+  const listadoDeSuActividad = requiereCasoDeSuActividad(buscarCasoDeActividad, () => undefined);
 
     /**
      * Ejecuta una acción con el servicio y centraliza el manejo de errores:
@@ -160,11 +170,14 @@ export function crearRutasCasos(obtenerServicio) {
     }
   }
 
-  router.get('/', autenticar, (req, res) => ejecutar(res, async (servicio) => {
-    const data = await servicio.listar({
+  router.get('/', autenticar, listadoDeSuActividad, (req, res) => ejecutar(res, async (servicio) => {
+    const todos = await servicio.listar({
       creadorId: req.query.creadorId,
       estado: req.query.estado
     });
+    const data = req.casoAutorizadoId
+      ? todos.filter((caso) => Number(caso.id) === req.casoAutorizadoId)
+      : todos;
     return res.status(200).json({ total: data.length, data });
   }));
 
@@ -190,7 +203,7 @@ export function crearRutasCasos(obtenerServicio) {
     return res.status(201).json({ data: caso });
   }));
 
-  router.get('/:id', autenticar, (req, res) => ejecutar(res, async (servicio) => {
+  router.get('/:id', autenticar, casoDeSuActividad, (req, res) => ejecutar(res, async (servicio) => {
     const caso = await servicio.obtener(req.params.id);
     const entregado = entregarCaso(req, caso);
     try {
