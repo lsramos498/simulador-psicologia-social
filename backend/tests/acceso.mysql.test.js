@@ -57,7 +57,8 @@ test('MySQL real: seed, administración, ingreso de docente y de estudiante', {
   let docenteId;
 
   const administracion = crearServicioAdministracion(crearRepositorioAdministracion(poolEnTransaccion));
-  const acceso = crearServicioAcceso(crearRepositorioAcceso(poolEnTransaccion));
+  const repositorioAcceso = crearRepositorioAcceso(poolEnTransaccion);
+  const acceso = crearServicioAcceso(repositorioAcceso);
 
   await t.test('el seed crea los roles, el permiso y un administrador', async () => {
     const resultado = await ejecutarSeedInicial(conexionInterna, {
@@ -101,10 +102,9 @@ test('MySQL real: seed, administración, ingreso de docente y de estudiante', {
     );
   });
 
-  await t.test('el estudiante convocado ingresa con correo y código', async () => {
+  await t.test('el estudiante ingresa con correo y OTP de sesión', async () => {
     const correoEstudiante = `estudiante-${etiqueta}@prueba.invalid`;
 
-    // Datos mínimos de una convocatoria real, según schema.sql.
     const [estudiante] = await ejecutar(
       `INSERT INTO Usuario (nombres, apellidos, correoInstitucional, contrasenaHash, activo, fechaCreacion)
        VALUES ('Estudiante', 'Prueba', ?, 'fixture-sin-contrasena', TRUE, NOW())`,
@@ -112,41 +112,22 @@ test('MySQL real: seed, administración, ingreso de docente y de estudiante', {
     );
     await administracion.asignarRol(estudiante.insertId, 'Estudiante', adminId);
 
-    const [espacio] = await ejecutar(
-      'INSERT INTO EspacioAcademico (nombre) VALUES (?)',
-      [`Espacio ${etiqueta}`]
-    );
-    const [caso] = await ejecutar(
-      `INSERT INTO Caso (creador_id, titulo, desarrolloSituacional, contextoHistoria,
-                         tiempoEstimadoSegundos, estado, fechaCreacion)
-       VALUES (?, ?, 'Desarrollo de prueba', 'Contexto de prueba', 3600, 'Publicado', NOW())`,
-      [docenteId, `Caso ${etiqueta}`]
-    );
-    const [rubrica] = await ejecutar(
-      'INSERT INTO Rubrica (caso_id, nombre, fechaCreacion) VALUES (?, ?, NOW())',
-      [caso.insertId, `Rúbrica ${etiqueta}`]
-    );
-    const [actividad] = await ejecutar(
-      `INSERT INTO ActividadProgramada (caso_id, espacioAcademico_id, docente_id, rubrica_id,
-                                        fechaInicio, fechaFin, tiempoLimiteSegundos, fechaCreacion)
-       VALUES (?, ?, ?, ?, DATE_SUB(NOW(), INTERVAL 1 HOUR), DATE_ADD(NOW(), INTERVAL 1 HOUR), 1800, NOW())`,
-      [caso.insertId, espacio.insertId, docenteId, rubrica.insertId]
-    );
-
+    // Flujo actual: OTP de sesión (CodigoLoginEstudiante), no código de actividad.
     const { codigo, codigoHash } = crearCodigoAutorizacion();
-    await ejecutar(
-      `INSERT INTO EstudianteAutorizado (actividad_id, estudiante_id, codigoAutorizacion, fechaAutorizacion)
-       VALUES (?, ?, ?, NOW())`,
-      [actividad.insertId, estudiante.insertId, codigoHash]
+    const expiraEn = new Date(Date.now() + 10 * 60_000);
+    await repositorioAcceso.guardarCodigoLogin(
+      estudiante.insertId,
+      codigoHash,
+      expiraEn,
+      new Date()
     );
 
     const { token } = await acceso.ingresarEstudiante({ correo: correoEstudiante, codigo });
     const usuario = verificarToken(token);
     assert.equal(usuario.id, estudiante.insertId);
-    assert.equal(usuario.actividadId, actividad.insertId);
     assert.deepEqual(usuario.roles, ['Estudiante']);
+    assert.equal(usuario.actividadId, undefined);
 
-    // Código equivocado → 401. El estudiante no puede usar el ingreso con contraseña → 401.
     await assert.rejects(
       acceso.ingresarEstudiante({ correo: correoEstudiante, codigo: 'ZZZZ9999' }),
       (error) => error.statusCode === 401

@@ -1,0 +1,39 @@
+{
+  "status": 201,
+  "data": {
+    "mensaje": "Actividad programada correctamente.",
+    "data": {
+      "id": 48,
+      "casoId": 46,
+      "espacioAcademicoId": 2,
+      "docenteId": 3,
+      "rubricaId": 35,
+      "fechaInicio": "2026-11-25 22:35:41",
+      "fechaFin": "2026-11-26 00:10:41",
+      "tiempoLimiteSegundos": 600,
+      "lugar": "Campus virtual PT-DCP completo",
+      "mensajePersonalizado": "Flujo completo PT-DCP",
+      "intentosPermitidos": 1,
+      "estudiantesIds": [
+        22
+      ],
+      "estado": "Programada",
+      "fechaCreacion": "2026-11-25 22:40:41",
+      "notificaciones": [
+        {
+          "estudianteId": 22,
+          "destinatario": "sdiaz_549@unihumboldt.edu.co",
+          "estado": "Enviada",
+          "canal": "Correo",
+          "previewUrl": null
+        }
+      ],
+      "codigosDeAcceso": [
+        {
+          "estudianteId": 22,
+          "codigo": "QM7F4SUP"
+        }
+      ]
+    }
+  }
+}

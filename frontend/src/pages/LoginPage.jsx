@@ -22,6 +22,7 @@ export default function LoginPage({ onSesion }) {
   const [contrasena, setContrasena] = useState('');
   const [codigo, setCodigo] = useState('');
   const [codigoEnviado, setCodigoEnviado] = useState(false);
+  const [codigoDemoLocal, setCodigoDemoLocal] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [enviandoCodigo, setEnviandoCodigo] = useState(false);
   const [error, setError] = useState('');
@@ -45,6 +46,7 @@ export default function LoginPage({ onSesion }) {
     setContrasena('');
     setCodigo('');
     setCodigoEnviado(false);
+    setCodigoDemoLocal(false);
   }
 
   function volverPortada() {
@@ -61,10 +63,12 @@ export default function LoginPage({ onSesion }) {
     setContrasena('');
     setCodigo('');
     setCodigoEnviado(false);
+    setCodigoDemoLocal(false);
   }
 
   async function pedirCodigo() {
     setError('');
+    setCodigoDemoLocal(false);
     if (!esCorreoInstitucional(correo)) {
       setError('Usa tu correo institucional (.edu.co).');
       correoRef.current?.focus();
@@ -73,9 +77,19 @@ export default function LoginPage({ onSesion }) {
 
     setEnviandoCodigo(true);
     try {
-      await enviarCodigoEstudiante({ correo });
+      const respuesta = await enviarCodigoEstudiante({ correo });
       setCodigoEnviado(true);
-      setCodigo('');
+      // Solo en demos locales el backend puede devolver el OTP (ACCESO_CODIGO_EN_PANTALLA).
+      const codigoDemo =
+        respuesta?.codigoAutorizacion ||
+        respuesta?.data?.codigoAutorizacion ||
+        '';
+      if (codigoDemo) {
+        setCodigo(String(codigoDemo).toUpperCase());
+        setCodigoDemoLocal(Boolean(respuesta?.demoLocal || respuesta?.data?.demoLocal));
+      } else {
+        setCodigo('');
+      }
     } catch (err) {
       setError(err.message || 'No se pudo enviar el código.');
     } finally {
@@ -194,6 +208,7 @@ export default function LoginPage({ onSesion }) {
                 onChange={(e) => {
                   setCorreo(e.target.value);
                   setCodigoEnviado(false);
+                  setCodigoDemoLocal(false);
                   setCodigo('');
                 }}
                 placeholder={
@@ -247,12 +262,20 @@ export default function LoginPage({ onSesion }) {
                     autoComplete="off"
                     inputMode="text"
                     value={codigo}
-                    onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+                    onChange={(e) => {
+                      setCodigoDemoLocal(false);
+                      setCodigo(e.target.value.toUpperCase());
+                    }}
                     placeholder="Código"
                     required
                     disabled={cargando}
                   />
                 </div>
+                {codigoDemoLocal ? (
+                  <p className="login-demo-otp" role="status">
+                    Demo local: el código ya está listo (solo en este entorno).
+                  </p>
+                ) : null}
               </>
             )}
 

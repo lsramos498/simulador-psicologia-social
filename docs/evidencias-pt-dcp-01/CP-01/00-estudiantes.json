@@ -1,0 +1,40 @@
+{
+  "status": 200,
+  "sample": [
+    {
+      "id": 22,
+      "nombres": "Stefania",
+      "apellidos": "Diaz",
+      "correo": "sdiaz_549@unihumboldt.edu.co",
+      "activo": 1
+    },
+    {
+      "id": 4,
+      "nombres": "Estudiante",
+      "apellidos": "Flujo",
+      "correo": "luminasistema9@gmail.com",
+      "activo": 1
+    },
+    {
+      "id": 24,
+      "nombres": "Maria",
+      "apellidos": "Lopez",
+      "correo": "maria.lopez.demo@unihumboldt.edu.co",
+      "activo": 1
+    },
+    {
+      "id": 25,
+      "nombres": "Carlos",
+      "apellidos": "Ruiz",
+      "correo": "carlos.ruiz.demo@unihumboldt.edu.co",
+      "activo": 1
+    },
+    {
+      "id": 26,
+      "nombres": "Valeria",
+      "apellidos": "Tovar",
+      "correo": "vtobar_469@unihumboldt.edu.co",
+      "activo": 1
+    }
+  ]
+}

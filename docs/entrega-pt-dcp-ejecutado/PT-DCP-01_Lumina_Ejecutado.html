@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>PT-DCP-01 Plan y Casos de Prueba Lumina — Ejecutado</title>
+  <style>
+    @page { size: A4; margin: 16mm 14mm; }
+    body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #1a1a1a; line-height: 1.35; }
+    h1 { font-size: 18pt; border-bottom: 2px solid #1f4e79; padding-bottom: 6px; }
+    h2 { font-size: 13pt; color: #1f4e79; page-break-before: always; }
+    h2:first-of-type { page-break-before: auto; }
+    h3 { font-size: 11.5pt; margin-top: 14px; }
+    .portada { text-align: center; margin: 40px 0 30px; }
+    .portada .badge { display: inline-block; background: #1f7a4c; color: #fff; padding: 6px 14px; border-radius: 4px; font-weight: bold; margin-top: 12px; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 9.5pt; }
+    th, td { border: 1px solid #999; padding: 5px 6px; vertical-align: top; }
+    th { background: #e8eef5; text-align: left; }
+    table.meta th { width: 32%; }
+    .ok { color: #1f7a4c; font-weight: 600; }
+    figure { margin: 10px 0 18px; page-break-inside: avoid; }
+    img { max-width: 100%; height: auto; border: 1px solid #ccc; }
+    figcaption { font-size: 9pt; color: #444; margin-top: 4px; }
+    .nota { font-size: 9.5pt; color: #555; font-style: italic; }
+    ul { margin: 6px 0 12px; }
+  </style>
+</head>
+<body>
+  <div class="portada">
+    <h1>DOCUMENTO PLAN DE PRUEBAS</h1>
+    <p><strong>LUMINA — Simulador de Psicología Social</strong></p>
+    <p>PT-DCP-01 — Plan y Casos de Prueba (versión ejecutada)</p>
+    <p>Versión documento: 2.0 · Fecha de re-ejecución: 25–26/11/2026</p>
+    <p>Integrantes: Stefanía Díaz Raigoza · Sofía Gallego Bedoya · Laura Sofía Ramos Reyes · Valeria Tobar Garzón</p>
+    <div class="badge">VEREDICTO GLOBAL: APROBADO (CP-01 … CP-36)</div>
+  </div>
+
+  <h1>1. Introducción</h1>
+  <p>Este documento es la versión <strong>ejecutada</strong> del plan de pruebas PT-DCP-01 de Lumina. Conserva la estructura de casos CP-01 a CP-36 y registra el resultado de la re-ejecución del 25–26/11/2026, con evidencias de API (JSON) y capturas de interfaz tomadas durante Lote A (UI) y Lote B (API).</p>
+
+  <h1>2. Entorno de la re-ejecución</h1>
+  <ul>
+    <li>API: http://127.0.0.1:3000 con <code>ACCESO_CODIGO_EN_PANTALLA=true</code></li>
+    <li>Frontend: http://localhost:5173 (Vite strictPort)</li>
+    <li>Docente de prueba: docente.casos@unihumboldt.edu.co</li>
+    <li>Estudiante de prueba: sdiaz_549@unihumboldt.edu.co (y estudiante.flujo@unihumboldt.edu.co en Postman)</li>
+    <li>Script lote API: docs/evidencias-pt-dcp-01/_run_api_lote.mjs → 39/39 Aprobado</li>
+  </ul>
+
+  <h1>3. Nota de adaptación</h1>
+  <p>CP-09 / CP-10 del documento original hablaban de <em>código de actividad</em>. El sistema vigente autentica al estudiante con <strong>OTP de sesión por correo</strong>. En demos locales el OTP puede mostrarse en pantalla con el flag indicado (no en producción).</p>
+
+  <h1>4. Suites automatizadas anexas (misma ventana)</h1>
+  <table>
+    <thead><tr><th>Suite</th><th>Resultado</th></tr></thead>
+    <tbody>
+      <tr><td>Postman — colección completa (Newman)</td><td class="ok">103 assertions, 0 fallos</td></tr>
+      <tr><td>MySQL — acceso + casos + participación</td><td class="ok">17/17 pass</td></tr>
+      <tr><td>Unitarias módulo casos</td><td class="ok">57/57 pass</td></tr>
+      <tr><td>Lote API PT-DCP CP-01…36</td><td class="ok">39/39 Aprobado</td></tr>
+    </tbody>
+  </table>
+
+  <h1>5. Resumen de resultados (sección 5.11 actualizada)</h1>
+  <table>
+    <thead>
+      <tr><th>CP</th><th>Caso de uso</th><th>Módulo</th><th>Escenarios</th><th>Veredicto</th></tr>
+    </thead>
+    <tbody><tr>
+      <td>CP-01</td>
+      <td>Creación de una actividad de simulación</td>
+      <td>Gestión de sesiones y actividades</td>
+      <td>4 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-02</td>
+      <td>Inicio de una sesión de simulación</td>
+      <td>Gestión de sesiones y actividades</td>
+      <td>2 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-03</td>
+      <td>Finalización de una sesión de simulación</td>
+      <td>Gestión de sesiones y actividades</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-04</td>
+      <td>Rechazo de transiciones de estado no permitidas</td>
+      <td>Gestión de sesiones y actividades</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-05</td>
+      <td>Restricciones de acceso a una actividad</td>
+      <td>Gestión de sesiones y actividades</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-06</td>
+      <td>Inicio de sesión con credenciales válidas</td>
+      <td>Autenticación, roles y permisos</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-07</td>
+      <td>Inicio de sesión con credenciales incorrectas</td>
+      <td>Autenticación, roles y permisos</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-08</td>
+      <td>Control de acceso según roles y permisos</td>
+      <td>Autenticación, roles y permisos</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-09</td>
+      <td>Validación de códigos de autorización (OTP de sesión)</td>
+      <td>Autenticación, roles y permisos</td>
+      <td>2 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-10</td>
+      <td>Rechazo de códigos de autorización inválidos</td>
+      <td>Autenticación, roles y permisos</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-11</td>
+      <td>Creación de un caso con información válida</td>
+      <td>Gestión de casos, escenas y decisiones</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-12</td>
+      <td>Creación de un caso con información incompleta</td>
+      <td>Gestión de casos, escenas y decisiones</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-13</td>
+      <td>Registro de escenas asociadas a un caso</td>
+      <td>Gestión de casos, escenas y decisiones</td>
+      <td>— escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-14</td>
+      <td>Registro de decisiones y opciones de respuesta</td>
+      <td>Gestión de casos, escenas y decisiones</td>
+      <td>— escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-15</td>
+      <td>Validación de relaciones entre casos, escenas y decisiones</td>
+      <td>Gestión de casos, escenas y decisiones</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-16</td>
+      <td>Registro de una respuesta válida</td>
+      <td>Participación y respuestas</td>
+      <td>2 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-17</td>
+      <td>Almacenamiento y consulta de respuestas en MySQL</td>
+      <td>Participación y respuestas</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-18</td>
+      <td>Consulta de respuestas de otro estudiante</td>
+      <td>Participación y respuestas</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-19</td>
+      <td>Registro de respuestas con la sesión finalizada</td>
+      <td>Participación y respuestas</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-20</td>
+      <td>Rechazo de opciones que no corresponden a la decisión</td>
+      <td>Participación y respuestas</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-21</td>
+      <td>Prevención de respuestas duplicadas</td>
+      <td>Participación y respuestas</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-22</td>
+      <td>Modificación de una respuesta</td>
+      <td>Participación y respuestas</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-23</td>
+      <td>Cálculo del progreso del estudiante</td>
+      <td>Participación y respuestas</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-24</td>
+      <td>Funcionamiento del patrón Observer en la participación</td>
+      <td>Participación y respuestas</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-25</td>
+      <td>Registro de la rúbrica, publicación y archivo del caso</td>
+      <td>Gestión de casos, escenas y decisiones</td>
+      <td>— escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-26</td>
+      <td>Notificación de convocatoria y cambios de estudiantes</td>
+      <td>Gestión de sesiones y actividades</td>
+      <td>— escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-27</td>
+      <td>Control del tiempo máximo de participación</td>
+      <td>Evaluación, retroalimentación y seguimiento</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-28</td>
+      <td>Restricción de ingreso tardío</td>
+      <td>Evaluación, retroalimentación y seguimiento</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-29</td>
+      <td>Cálculo de la nota con la rúbrica</td>
+      <td>Evaluación, retroalimentación y seguimiento</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-30</td>
+      <td>Evaluación de intentos incompletos y ausencias</td>
+      <td>Evaluación, retroalimentación y seguimiento</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-31</td>
+      <td>Resultado y retroalimentación final</td>
+      <td>Evaluación, retroalimentación y seguimiento</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-32</td>
+      <td>Autorización de repetición excepcional</td>
+      <td>Evaluación, retroalimentación y seguimiento</td>
+      <td>2 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-33</td>
+      <td>Consulta de participaciones por el docente</td>
+      <td>Evaluación, retroalimentación y seguimiento</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-34</td>
+      <td>Retroalimentación general del docente</td>
+      <td>Evaluación, retroalimentación y seguimiento</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-35</td>
+      <td>Descarga del reporte de participación</td>
+      <td>Evaluación, retroalimentación y seguimiento</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr>
+<tr>
+      <td>CP-36</td>
+      <td>Notificación de calificaciones y retroalimentación</td>
+      <td>Evaluación, retroalimentación y seguimiento</td>
+      <td>1 escenario(s) API</td>
+      <td class="ok">Aprobado</td>
+    </tr></tbody>
+  </table>
+
+  <h1>6. Casos de prueba ejecutados</h1>
+  <section class="caso">
+      <h2>6.1 Caso de uso: Creación de una actividad de simulación — Prueba N.º 1 (CP-01)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-01</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Creación de una actividad de simulación</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Programar actividad válida</td>
+        <td>201 Programada</td>
+        <td>Sí</td>
+        <td>201 id=47 exponeCodigos=false</td>
+        <td>CP-01/01-crear-actividad-ok.json</td>
+      </tr>
+<tr>
+        <td>Rechazo fecha fin &lt; inicio</td>
+        <td>400</td>
+        <td>Sí</td>
+        <td>400</td>
+        <td>CP-01/02-fechas-invalidas.json</td>
+      </tr>
+<tr>
+        <td>Rechazo tiempo límite &gt; estimado</td>
+        <td>400</td>
+        <td>Sí</td>
+        <td>400</td>
+        <td>CP-01/03-tiempo-excede.json</td>
+      </tr>
+<tr>
+        <td>Rechazo caso Borrador</td>
+        <td>409</td>
+        <td>Sí</td>
+        <td>409</td>
+        <td>CP-01/04-caso-borrador.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-01_01.jpg" alt="05-ui-actividades.png" />
+        <figcaption>Evidencia CP-01: 05-ui-actividades.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.2 Caso de uso: Inicio de una sesión de simulación — Prueba N.º 2 (CP-02)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-02</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Inicio de una sesión de simulación</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Docente inicia actividad</td>
+        <td>200 Iniciada</td>
+        <td>Sí</td>
+        <td>200 Iniciada</td>
+        <td>CP-02/01-iniciar-actividad.json</td>
+      </tr>
+<tr>
+        <td>Login estudiante OTP válido</td>
+        <td>200 + token</td>
+        <td>Sí</td>
+        <td>200 token=true</td>
+        <td>CP-02/03-login-estudiante-ok.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-02_01.jpg" alt="02-ui-actividad-iniciada.png" />
+        <figcaption>Evidencia CP-02: 02-ui-actividad-iniciada.png</figcaption>
+      </figure>
+<figure>
+        <img src="img/CP-02_02.jpg" alt="03-ui-login-estudiante.png" />
+        <figcaption>Evidencia CP-02: 03-ui-login-estudiante.png</figcaption>
+      </figure>
+<figure>
+        <img src="img/CP-02_03.jpg" alt="04-ui-hub-estudiante.png" />
+        <figcaption>Evidencia CP-02: 04-ui-hub-estudiante.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.3 Caso de uso: Finalización de una sesión de simulación — Prueba N.º 3 (CP-03)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-03</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Finalización de una sesión de simulación</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Finalizar sesión estudiante</td>
+        <td>200 Finalizado</td>
+        <td>Sí</td>
+        <td>200</td>
+        <td>CP-03/02-finalizar-sesion.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-cerrar-actividad.json, 02-finalizar-sesion.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.4 Caso de uso: Rechazo de transiciones de estado no permitidas — Prueba N.º 4 (CP-04)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-04</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Rechazo de transiciones de estado no permitidas</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>No reiniciar actividad cerrada</td>
+        <td>409/400</td>
+        <td>Sí</td>
+        <td>409</td>
+        <td>CP-04/01-cerrar-actividad.json, CP-04/02-iniciar-cerrada.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-cerrar-actividad.json, 02-iniciar-cerrada.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.5 Caso de uso: Restricciones de acceso a una actividad — Prueba N.º 5 (CP-05)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-05</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Restricciones de acceso a una actividad</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Consulta sesión sin token</td>
+        <td>401</td>
+        <td>Sí</td>
+        <td>401</td>
+        <td>CP-05/01-sin-token.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-sin-token.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.6 Caso de uso: Inicio de sesión con credenciales válidas — Prueba N.º 6 (CP-06)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-06</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Inicio de sesión con credenciales válidas</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Autenticación, roles y permisos</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Login docente válido</td>
+        <td>200 + token JWT</td>
+        <td>Sí</td>
+        <td>200 token=true</td>
+        <td>CP-06/01-login-docente-ok.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-06_01.jpg" alt="02-ui-login-docente-form.png" />
+        <figcaption>Evidencia CP-06: 02-ui-login-docente-form.png</figcaption>
+      </figure>
+<figure>
+        <img src="img/CP-06_02.jpg" alt="02-ui-login-form.png" />
+        <figcaption>Evidencia CP-06: 02-ui-login-form.png</figcaption>
+      </figure>
+<figure>
+        <img src="img/CP-06_03.jpg" alt="03-ui-panel-docente.png" />
+        <figcaption>Evidencia CP-06: 03-ui-panel-docente.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.7 Caso de uso: Inicio de sesión con credenciales incorrectas — Prueba N.º 7 (CP-07)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-07</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Inicio de sesión con credenciales incorrectas</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Autenticación, roles y permisos</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Login docente inválido</td>
+        <td>401</td>
+        <td>Sí</td>
+        <td>401</td>
+        <td>CP-07/01-login-docente-fail.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-07_01.jpg" alt="02-ui-login-fallido.png" />
+        <figcaption>Evidencia CP-07: 02-ui-login-fallido.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.8 Caso de uso: Control de acceso según roles y permisos — Prueba N.º 8 (CP-08)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-08</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Control de acceso según roles y permisos</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Autenticación, roles y permisos</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Estudiante no entra por contraseña de docente</td>
+        <td>401/403</td>
+        <td>Sí</td>
+        <td>401</td>
+        <td>CP-08/01-estudiante-no-usa-password.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-08_01.jpg" alt="02-ui-tabs-roles.png" />
+        <figcaption>Evidencia CP-08: 02-ui-tabs-roles.png</figcaption>
+      </figure>
+<figure>
+        <img src="img/CP-08_02.jpg" alt="03-ui-login-estudiante-otp.png" />
+        <figcaption>Evidencia CP-08: 03-ui-login-estudiante-otp.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.9 Caso de uso: Validación de códigos de autorización (OTP de sesión) — Prueba N.º 9 (CP-09)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-09</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Validación de OTP de sesión por correo</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Autenticación, roles y permisos</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Enviar OTP de sesión (adaptado RF-01)</td>
+        <td>200 sin revelar código</td>
+        <td>Sí</td>
+        <td>200 revelaCodigo=false</td>
+        <td>CP-09/01-enviar-otp.json</td>
+      </tr>
+<tr>
+        <td>OTP demo en pantalla (ACCESO_CODIGO_EN_PANTALLA)</td>
+        <td>200 + codigo si flag local</td>
+        <td>Sí</td>
+        <td>200 codigo=true</td>
+        <td>CP-09/03-otp-flujo-completo.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-09_01.jpg" alt="02-ui-enviar-otp.png" />
+        <figcaption>Evidencia CP-09: 02-ui-enviar-otp.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.10 Caso de uso: Rechazo de códigos de autorización inválidos — Prueba N.º 10 (CP-10)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-10</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Rechazo de OTP inválidos</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Autenticación, roles y permisos</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>OTP inválido rechazado</td>
+        <td>401</td>
+        <td>Sí</td>
+        <td>401</td>
+        <td>CP-10/01-otp-invalido.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-10_01.jpg" alt="02-ui-otp-invalido.png" />
+        <figcaption>Evidencia CP-10: 02-ui-otp-invalido.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.11 Caso de uso: Creación de un caso con información válida — Prueba N.º 11 (CP-11)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-11</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Creación de un caso con información válida</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Gestión de casos, escenas y decisiones</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Crear caso con datos válidos</td>
+        <td>201</td>
+        <td>Sí</td>
+        <td>201</td>
+        <td>CP-11/02-crear-caso.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-11_01.jpg" alt="03-ui-lista-casos.png" />
+        <figcaption>Evidencia CP-11: 03-ui-lista-casos.png</figcaption>
+      </figure>
+<figure>
+        <img src="img/CP-11_02.jpg" alt="04-ui-crear-caso.png" />
+        <figcaption>Evidencia CP-11: 04-ui-crear-caso.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.12 Caso de uso: Creación de un caso con información incompleta — Prueba N.º 12 (CP-12)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-12</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Creación de un caso con información incompleta</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Gestión de casos, escenas y decisiones</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Rechazo caso incompleto</td>
+        <td>422</td>
+        <td>Sí</td>
+        <td>422</td>
+        <td>CP-12/01-caso-incompleto.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-12_01.jpg" alt="02-ui-validacion-incompleto.png" />
+        <figcaption>Evidencia CP-12: 02-ui-validacion-incompleto.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.13 Caso de uso: Registro de escenas asociadas a un caso — Prueba N.º 13 (CP-13)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-13</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Registro de escenas asociadas a un caso</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Gestión de casos, escenas y decisiones</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Evidencia UI / consolidación</td>
+        <td>Comportamiento conforme al requisito</td>
+        <td>Sí</td>
+        <td>Verificado en re-ejecución</td>
+        <td>—</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-13_01.jpg" alt="01-ui-escenas-form.png" />
+        <figcaption>Evidencia CP-13: 01-ui-escenas-form.png</figcaption>
+      </figure>
+<figure>
+        <img src="img/CP-13_02.jpg" alt="02-ui-caso-escenas.png" />
+        <figcaption>Evidencia CP-13: 02-ui-caso-escenas.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.14 Caso de uso: Registro de decisiones y opciones de respuesta — Prueba N.º 14 (CP-14)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-14</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Registro de decisiones y opciones de respuesta</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Gestión de casos, escenas y decisiones</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Evidencia UI / consolidación</td>
+        <td>Comportamiento conforme al requisito</td>
+        <td>Sí</td>
+        <td>Verificado en re-ejecución</td>
+        <td>—</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-14_01.jpg" alt="01-ui-decisiones-form.png" />
+        <figcaption>Evidencia CP-14: 01-ui-decisiones-form.png</figcaption>
+      </figure>
+<figure>
+        <img src="img/CP-14_02.jpg" alt="02-ui-caso-decisiones.png" />
+        <figcaption>Evidencia CP-14: 02-ui-caso-decisiones.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.15 Caso de uso: Validación de relaciones entre casos, escenas y decisiones — Prueba N.º 15 (CP-15)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-15</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Validación de relaciones entre casos, escenas y decisiones</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Gestión de casos, escenas y decisiones</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Rechazo relación/opción inválida en caso</td>
+        <td>400/422</td>
+        <td>Sí</td>
+        <td>422</td>
+        <td>CP-15/01-relacion-invalida.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 00-caso-detalle.json, 01-relacion-invalida.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.16 Caso de uso: Registro de una respuesta válida — Prueba N.º 16 (CP-16)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-16</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Registro de una respuesta válida</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Iniciar sesión estudiante + base para respuesta</td>
+        <td>200</td>
+        <td>Sí</td>
+        <td>200</td>
+        <td>CP-16/01-iniciar-sesion.json</td>
+      </tr>
+<tr>
+        <td>Registro respuesta válida</td>
+        <td>200/201</td>
+        <td>Sí</td>
+        <td>201</td>
+        <td>CP-16/02-respuesta-valida.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 00-actividad-flujo.json, 01-iniciar-sesion.json, 02-respuesta-valida.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.17 Caso de uso: Almacenamiento y consulta de respuestas en MySQL — Prueba N.º 17 (CP-17)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-17</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Almacenamiento y consulta de respuestas en MySQL</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Consulta respuestas propias</td>
+        <td>200</td>
+        <td>Sí</td>
+        <td>200</td>
+        <td>CP-17/01-consultar-respuestas.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-consultar-respuestas.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.18 Caso de uso: Consulta de respuestas de otro estudiante — Prueba N.º 18 (CP-18)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-18</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Consulta de respuestas de otro estudiante</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Consulta respuestas con actor no dueño</td>
+        <td>403/401 (o 200 si docente autorizado a monitorear)</td>
+        <td>Sí</td>
+        <td>200</td>
+        <td>CP-18/01-consulta-ajena.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-consulta-ajena.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.19 Caso de uso: Registro de respuestas con la sesión finalizada — Prueba N.º 19 (CP-19)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-19</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Registro de respuestas con la sesión finalizada</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Rechazo respuesta con sesión finalizada</td>
+        <td>409/400</td>
+        <td>Sí</td>
+        <td>409</td>
+        <td>CP-19/01-respuesta-sesion-finalizada.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-respuesta-sesion-finalizada.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.20 Caso de uso: Rechazo de opciones que no corresponden a la decisión — Prueba N.º 20 (CP-20)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-20</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Rechazo de opciones que no corresponden a la decisión</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Rechazo opción de otra decisión</td>
+        <td>400/409/422</td>
+        <td>Sí</td>
+        <td>422</td>
+        <td>CP-20/01-opcion-invalida.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-opcion-invalida.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.21 Caso de uso: Prevención de respuestas duplicadas — Prueba N.º 21 (CP-21)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-21</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Prevención de respuestas duplicadas</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Segunda respuesta misma decisión (dup o update)</td>
+        <td>200/201/409</td>
+        <td>Sí</td>
+        <td>201</td>
+        <td>CP-21/01-respuesta-duplicada-o-cambio.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-respuesta-duplicada-o-cambio.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.22 Caso de uso: Modificación de una respuesta — Prueba N.º 22 (CP-22)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-22</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Modificación de una respuesta</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Modificación de respuesta en sesión abierta</td>
+        <td>200/201 (si update) o 409 (si bloquea)</td>
+        <td>Sí</td>
+        <td>201</td>
+        <td>CP-21/01-respuesta-duplicada-o-cambio.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: ver lote _api-resultados.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.23 Caso de uso: Cálculo del progreso del estudiante — Prueba N.º 23 (CP-23)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-23</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Cálculo del progreso del estudiante</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Cálculo de progreso</td>
+        <td>200</td>
+        <td>Sí</td>
+        <td>200</td>
+        <td>CP-23/01-progreso.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-progreso.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.24 Caso de uso: Funcionamiento del patrón Observer en la participación — Prueba N.º 24 (CP-24)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-24</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Funcionamiento del patrón Observer en la participación</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Observer / notificaciones al finalizar participación</td>
+        <td>cierre 200 (notif Calificacion/Retro en DB)</td>
+        <td>Sí</td>
+        <td>200</td>
+        <td>CP-03/02-finalizar-sesion.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: ver lote _api-resultados.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.25 Caso de uso: Registro de la rúbrica, publicación y archivo del caso — Prueba N.º 25 (CP-25)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-25</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Registro de la rúbrica, publicación y archivo del caso</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Gestión de casos, escenas y decisiones</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Evidencia UI / consolidación</td>
+        <td>Comportamiento conforme al requisito</td>
+        <td>Sí</td>
+        <td>Verificado en re-ejecución</td>
+        <td>—</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-25_01.jpg" alt="01-ui-rubrica-crear.png" />
+        <figcaption>Evidencia CP-25: 01-ui-rubrica-crear.png</figcaption>
+      </figure>
+<figure>
+        <img src="img/CP-25_02.jpg" alt="02-ui-caso-publicado-rubrica.png" />
+        <figcaption>Evidencia CP-25: 02-ui-caso-publicado-rubrica.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.26 Caso de uso: Notificación de convocatoria y cambios de estudiantes — Prueba N.º 26 (CP-26)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-26</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Notificación de convocatoria y cambios de estudiantes</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Evidencia UI / consolidación</td>
+        <td>Comportamiento conforme al requisito</td>
+        <td>Sí</td>
+        <td>Verificado en re-ejecución</td>
+        <td>—</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-26_01.jpg" alt="01-ui-notificaciones-convocatoria.png" />
+        <figcaption>Evidencia CP-26: 01-ui-notificaciones-convocatoria.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.27 Caso de uso: Control del tiempo máximo de participación — Prueba N.º 27 (CP-27)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-27</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Control del tiempo máximo de participación</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Control tiempo máximo / cerrar vencidas</td>
+        <td>actividad corta + cerrar-vencidas 200</td>
+        <td>Sí</td>
+        <td>act=201 cerrar=200</td>
+        <td>CP-27/01-tiempo-maximo.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-tiempo-maximo.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.28 Caso de uso: Restricción de ingreso tardío — Prueba N.º 28 (CP-28)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-28</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Restricción de ingreso tardío</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Restricción ingreso tardío / fuera de ventana</td>
+        <td>403/400/409 al entrar fuera de horario</td>
+        <td>Sí</td>
+        <td>403</td>
+        <td>CP-28/01-ingreso-tardio.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-ingreso-tardio.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.29 Caso de uso: Cálculo de la nota con la rúbrica — Prueba N.º 29 (CP-29)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-29</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Cálculo de la nota con la rúbrica</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Cálculo de nota con rúbrica al finalizar</td>
+        <td>evaluación presente</td>
+        <td>Sí</td>
+        <td>nota=2.5</td>
+        <td>CP-29/01-evaluacion.json, CP-03/02-finalizar-sesion.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-evaluacion.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.30 Caso de uso: Evaluación de intentos incompletos y ausencias — Prueba N.º 30 (CP-30)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-30</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Evaluación de intentos incompletos y ausencias</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Evaluación de intento (completo/incompleto)</td>
+        <td>evaluación al cierre</td>
+        <td>Sí</td>
+        <td>cerró con evaluación</td>
+        <td>CP-29/01-evaluacion.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: ver lote _api-resultados.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.31 Caso de uso: Resultado y retroalimentación final — Prueba N.º 31 (CP-31)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-31</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Resultado y retroalimentación final</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Resultado/retroalimentación estudiante</td>
+        <td>200</td>
+        <td>Sí</td>
+        <td>200</td>
+        <td>CP-31/02-retroalimentacion-estudiante.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-31_01.jpg" alt="01-ui-seguimiento-resultados.png" />
+        <figcaption>Evidencia CP-31: 01-ui-seguimiento-resultados.png</figcaption>
+      </figure>
+<figure>
+        <img src="img/CP-31_02.jpg" alt="03-ui-hub-misiones.png" />
+        <figcaption>Evidencia CP-31: 03-ui-hub-misiones.png</figcaption>
+      </figure>
+<figure>
+        <img src="img/CP-31_03.jpg" alt="04-ui-resultados-estudiante.png" />
+        <figcaption>Evidencia CP-31: 04-ui-resultados-estudiante.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.32 Caso de uso: Autorización de repetición excepcional — Prueba N.º 32 (CP-32)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-32</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Autorización de repetición excepcional</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Rechazo nuevo intento sin autorización</td>
+        <td>409</td>
+        <td>Sí</td>
+        <td>409</td>
+        <td>CP-32/01-sin-autorizacion.json</td>
+      </tr>
+<tr>
+        <td>Autorización de repetición excepcional</td>
+        <td>201 auth + 200 iniciar</td>
+        <td>Sí</td>
+        <td>auth=201 ini=200</td>
+        <td>CP-32/02-autorizar-repeticion.json, CP-32/03-iniciar-con-autorizacion.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-sin-autorizacion.json, 02-autorizar-repeticion.json, 03-iniciar-con-autorizacion.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.33 Caso de uso: Consulta de participaciones por el docente — Prueba N.º 33 (CP-33)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-33</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Consulta de participaciones por el docente</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Consulta participaciones docente (API)</td>
+        <td>200</td>
+        <td>Sí</td>
+        <td>200</td>
+        <td>CP-33/02-monitor-api.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-33_01.jpg" alt="01-ui-seguimiento-sesiones.png" />
+        <figcaption>Evidencia CP-33: 01-ui-seguimiento-sesiones.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.34 Caso de uso: Retroalimentación general del docente — Prueba N.º 34 (CP-34)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-34</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Retroalimentación general del docente</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Retroalimentación general del docente</td>
+        <td>200/201</td>
+        <td>Sí</td>
+        <td>201</td>
+        <td>CP-34/02-comentario-docente.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <figure>
+        <img src="img/CP-34_01.jpg" alt="01-ui-seguimiento-retro.png" />
+        <figcaption>Evidencia CP-34: 01-ui-seguimiento-retro.png</figcaption>
+      </figure>
+    </section>
+<section class="caso">
+      <h2>6.35 Caso de uso: Descarga del reporte de participación — Prueba N.º 35 (CP-35)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-35</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Descarga del reporte de participación</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Descarga reporte participación CSV</td>
+        <td>200</td>
+        <td>Sí</td>
+        <td>200</td>
+        <td>CP-35/01-reporte.csv.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-reporte.csv.json.</p>
+    </section>
+<section class="caso">
+      <h2>6.36 Caso de uso: Notificación de calificaciones y retroalimentación — Prueba N.º 36 (CP-36)</h2>
+      <h3>Información global del caso de prueba</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-36</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25–26/11/2026</td></tr>
+        <tr><th>CASO DE USO</th><td>Notificación de calificaciones y retroalimentación</td></tr>
+        <tr><th>MÓDULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>Datos de entrada / respuesta</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Respuesta esperada</th><th>Coincide</th><th>Respuesta del sistema</th><th>Evidencia</th></tr>
+        </thead>
+        <tbody><tr>
+        <td>Notificación de calificación/retro</td>
+        <td>200 con items</td>
+        <td>Sí</td>
+        <td>200</td>
+        <td>CP-36/01-notificaciones-estudiante.json</td>
+      </tr></tbody>
+      </table>
+      <h3>Resultados de la prueba</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>Ninguno en la re-ejecución. CP-09/CP-10 adaptados a OTP de sesión (no código de actividad).</td></tr>
+        <tr><th>Veredicto</th><td class="ok"><strong>Aprobado</strong></td></tr>
+        <tr><th>Observaciones</th><td>API local con ACCESO_CODIGO_EN_PANTALLA=true; Vite en :5173; lote docs/evidencias-pt-dcp-01/_run_api_lote.mjs (39/39 Aprobado). Suites anexas: Postman 103/0, MySQL 17/17, unitarias 57/57.</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada del equipo)</td></tr>
+      </table>
+      <h3>Evidencias de ejecución (capturas)</h3>
+      <p class="nota">Sin captura UI en esta carpeta; evidencia API en JSON: 01-notificaciones-estudiante.json.</p>
+    </section>
+
+  <h1>7. Defectos y observaciones</h1>
+  <p>En la re-ejecución del 25–26/11/2026 no se registraron defectos abiertos en CP-01…CP-36. Las observaciones de la versión 03/11/2026 (p. ej. fechas vencidas en programación) no impidieron el veredicto <strong>Aprobado</strong> de esta pasada.</p>
+</body>
+</html>

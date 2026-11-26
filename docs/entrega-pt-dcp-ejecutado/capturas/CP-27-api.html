@@ -1,0 +1,85 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"/><style>
+  body{margin:0;background:#0f172a;color:#e2e8f0;font-family:Consolas,'Courier New',monospace;font-size:12px}
+  .wrap{padding:18px 20px 24px}
+  h1{margin:0 0 6px;font-size:16px;color:#fff;font-family:Calibri,Arial,sans-serif}
+  .meta{color:#94a3b8;margin-bottom:14px;font-size:11px;font-family:Calibri,Arial,sans-serif}
+  .block{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 12px;margin:0 0 12px}
+  .label{color:#38bdf8;font-weight:700;margin-bottom:6px;font-family:Calibri,Arial,sans-serif;font-size:12px}
+  .req{color:#cbd5e1;white-space:pre-wrap;margin:0 0 8px;line-height:1.35}
+  .status{display:inline-block;padding:2px 8px;border-radius:4px;margin-bottom:8px;font-weight:700}
+  .ok{background:#14532d;color:#86efac}.bad{background:#7f1d1d;color:#fecaca}.neu{background:#334155;color:#e2e8f0}
+  .res{background:#020617;border:1px solid #1e293b;padding:8px;border-radius:6px;white-space:pre-wrap;margin:0;max-height:280px;overflow:hidden;line-height:1.3}
+  </style></head><body><div class="wrap">
+  <h1>Evidencia CP-27 — Lumina API</h1>
+  <div class="meta">Ejecución 25/11/2026 · develop · Node · MySQL · ACCESO_CODIGO_EN_PANTALLA=true · Veredicto: Aprobado</div>
+  <section class="block">
+      <div class="label">tiempo maximo</div>
+      <pre class="req">Evidencia archivo: 01-tiempo-maximo.json</pre>
+      <div class="status neu">HTTP —</div>
+      <pre class="res">{
+  "actividad": {
+    "status": 201,
+    "data": {
+      "mensaje": "Actividad programada correctamente.",
+      "data": {
+        "id": 49,
+        "casoId": 46,
+        "espacioAcademicoId": 2,
+        "docenteId": 3,
+        "rubricaId": 35,
+        "fechaInicio": "2026-11-25 22:40:21",
+        "fechaFin": "2026-11-25 23:40:51",
+        "tiempoLimiteSegundos": 1,
+        "lugar": "CP-27",
+        "mensajePersonalizado": "tiempo corto",
+        "intentosPermitidos": 1,
+        "estudiantesIds": [
+          22
+        ],
+        "estado": "Programada",
+        "fechaCreacion": "2026-11-25 22:40:51",
+        "notificaciones": [
+          {
+            "estudianteId": 22,
+            "destinatario": "sdiaz_549@unihumboldt.edu.co",
+            "estado": "Enviada",
+            "canal": "Correo",
+            "previewUrl": null
+          }
+        ],
+        "codigosDeAcceso": [
+          {
+            "estudianteId": 22,
+            "codigo": "2S469862"
+          }
+        ]
+      }
+    }
+  },
+  "sesion": {
+    "status": 200,
+    "data": {
+      "data": {
+        "id": 68,
+        "actividadId": 49,
+        "estudianteId": 22,
+        "numeroIntento": 1,
+        "estado": "En curso",
+        "inicio": "2026-11-26T03:40:59.198Z",
+        "fin": null,
+        "segundosConsumidos": 0,
+        "motivoCierre": null,
+        "casoId": 46
+      }
+    }
+  },
+  "cerrarVencidas": {
+    "status": 200,
+    "data": {
+      "total": 0,
+      "data": []
+    }
+  }
+}</pre>
+    </section>
+  </div></body></html>

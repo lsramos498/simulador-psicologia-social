@@ -1,0 +1,6 @@
+{
+  "status": 400,
+  "data": {
+    "error": "El tiempo límite no puede superar el tiempo estimado del caso."
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "status": 409,
+  "data": {
+    "error": "Solo se pueden programar casos publicados."
+  }
+}

@@ -260,8 +260,19 @@ export function crearServicioAcceso(repositorio, {
       }
 
       // Guardar siempre que el envío no haya fallado: el OTP debe poder usarse.
-      // Nunca devolvemos el código en la API: el estudiante lo lee en su correo.
+      // En producción el código solo llega por correo. En local, si
+      // ACCESO_CODIGO_EN_PANTALLA=true, también se devuelve para demos/E2E.
       await repositorio.guardarCodigoLogin(usuarioBd.id, codigoHash, expiraEn, ahora);
+
+      const mostrarEnPantalla =
+        String(process.env.ACCESO_CODIGO_EN_PANTALLA || '').toLowerCase() === 'true';
+      if (mostrarEnPantalla) {
+        return {
+          ...respuestaGenerica,
+          codigoAutorizacion: codigo,
+          demoLocal: true
+        };
+      }
 
       return respuestaGenerica;
     },

@@ -120,14 +120,15 @@ test('si el envío lanza un error: respuesta genérica y sin guardar código', a
   }
 });
 
-test('ACCESO_CODIGO_EN_PANTALLA=true tampoco revela el código en la API', async () => {
+test('ACCESO_CODIGO_EN_PANTALLA=true: demo local sí incluye el OTP en la respuesta', async () => {
   process.env.ACCESO_CODIGO_EN_PANTALLA = 'true';
   try {
     const { servicio, codigosGuardados } = crearEscenario({
       envio: { canal: 'Correo', demo: false }
     });
     const res = await request(crearApp(servicio)).post(ruta).send({ correo: CORREO }).expect(200);
-    assert.doesNotMatch(JSON.stringify(res.body), /NUEVO234|codigo"/);
+    assert.equal(res.body.codigoAutorizacion, 'NUEVO234');
+    assert.equal(res.body.demoLocal, true);
     assert.equal(codigosGuardados.length, 1);
   } finally {
     delete process.env.ACCESO_CODIGO_EN_PANTALLA;

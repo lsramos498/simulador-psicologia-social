@@ -1,0 +1,14 @@
+{
+  "status": 201,
+  "data": {
+    "data": {
+      "comentarioDocente": "Retro general PT-DCP-01: buen criterio ético.",
+      "notificacion": {
+        "destinatario": "sdiaz_549@unihumboldt.edu.co",
+        "estado": "Enviada",
+        "canal": "Correo",
+        "previewUrl": null
+      }
+    }
+  }
+}

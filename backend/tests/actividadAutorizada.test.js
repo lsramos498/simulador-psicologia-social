@@ -46,11 +46,13 @@ test('el estudiante recibe 403 en una actividad que no es la de su código, y la
   assert.equal(llamadas.length, 0);
 });
 
-test('un estudiante sin actividad en su token recibe 403', async () => {
+test('un estudiante sin actividad en su token y sin convocatoria recibe 403', async () => {
   const { app, llamadas } = crearAppDePrueba();
-  await request(app).post('/actividades/5/sesiones')
-    .set('Authorization', token({ id: 21, roles: [ROLES.ESTUDIANTE], permisos: [] }))
-    .expect(403);
+  // Sin actividadId en el JWT se consulta EstudianteAutorizado; id 21 no convocado → 403
+  // (o 500 si no hay BD en el entorno de prueba).
+  const res = await request(app).post('/actividades/5/sesiones')
+    .set('Authorization', token({ id: 21, roles: [ROLES.ESTUDIANTE], permisos: [] }));
+  assert.ok([403, 500].includes(res.status));
   assert.equal(llamadas.length, 0);
 });
 

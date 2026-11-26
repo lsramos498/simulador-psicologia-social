@@ -431,6 +431,64 @@ export function crearRepositorioSesiones(pool) {
     return filas[0] ?? null;
   }
 
+  /** RF-25: repetición excepcional pendiente de consumir. */
+  async function obtenerRepeticionAprobada(conexion, actividadId, estudianteId) {
+    const [filas] = await conexion.execute(
+      `SELECT
+          id,
+          actividad_id AS actividadId,
+          estudiante_id AS estudianteId,
+          autorizadoPor_id AS autorizadoPorId,
+          motivo,
+          estado
+       FROM AutorizacionRepeticion
+       WHERE actividad_id = ?
+         AND estudiante_id = ?
+         AND estado = 'Aprobada'
+       ORDER BY id DESC
+       LIMIT 1
+       FOR UPDATE`,
+      [actividadId, estudianteId]
+    );
+    return filas[0] ?? null;
+  }
+
+  async function insertarAutorizacionRepeticion(
+    conexion,
+    { actividadId, estudianteId, autorizadoPorId, motivo, fechaAutorizacion }
+  ) {
+    const [resultado] = await conexion.execute(
+      `INSERT INTO AutorizacionRepeticion (
+          actividad_id,
+          estudiante_id,
+          autorizadoPor_id,
+          fechaAutorizacion,
+          motivo,
+          estado
+       ) VALUES (?, ?, ?, ?, ?, 'Aprobada')`,
+      [actividadId, estudianteId, autorizadoPorId, fechaAutorizacion, motivo]
+    );
+    return {
+      id: resultado.insertId,
+      actividadId,
+      estudianteId,
+      autorizadoPorId,
+      motivo,
+      estado: 'Aprobada',
+      fechaAutorizacion
+    };
+  }
+
+  async function consumirAutorizacionRepeticion(conexion, autorizacionId, consumidaEn) {
+    const [resultado] = await conexion.execute(
+      `UPDATE AutorizacionRepeticion
+          SET estado = 'Consumida', consumidaEn = ?
+        WHERE id = ? AND estado = 'Aprobada'`,
+      [consumidaEn, autorizacionId]
+    );
+    return Number(resultado.affectedRows) === 1;
+  }
+
   /**
    * Recupera la última sesión del estudiante
    * dentro de una actividad.
@@ -598,6 +656,9 @@ export function crearRepositorioSesiones(pool) {
     // Consultas con la conexión explícita (flujo iniciarSesion/finalizarSesion).
     obtenerActividad,
     obtenerAutorizacion,
+    obtenerRepeticionAprobada,
+    insertarAutorizacionRepeticion,
+    consumirAutorizacionRepeticion,
     obtenerUltimaSesion,
     obtenerSesionPorId,
     insertarSesion,

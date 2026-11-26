@@ -1,0 +1,6 @@
+{
+  "status": 400,
+  "data": {
+    "error": "La fecha de finalización debe ser posterior a la de inicio."
+  }
+}

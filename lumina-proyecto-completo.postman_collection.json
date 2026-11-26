@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Lumina - Proyecto completo",
-    "description": "Colección de integración de Lumina: salud, acceso, casos, actividades, sesión del estudiante, respuesta, progreso, calificación y participación.\nEl correo no se envía: al programar la actividad el docente recibe el código en la respuesta.\n\nImportar y ejecutar TODA la colección en orden con el Collection Runner.\nEl token no se escribe a mano: lo guardan las peticiones de ingreso y dura 1 hora.\n\nAntes de ejecutar, en la carpeta backend:\n1. MySQL encendido y npm run db:seed, con el mismo administrador de las variables.\n2. npm run dev (http://localhost:3000).\n\nUsuarios:\n- Administrador: admin@unihumboldt.edu.co / replace_with_strong_password\n- Docente: docente.casos@unihumboldt.edu.co / Docente1234 (la colección lo crea).\n- Estudiante: estudiante.flujo@unihumboldt.edu.co. Entra con el código que devuelve programar la actividad.",
+    "description": "Colección de integración de Lumina: salud, acceso, casos, actividades, sesión del estudiante, respuesta, progreso, calificación y participación.\n\nLogin estudiante = OTP de sesión (POST /api/acceso/estudiantes/enviar-codigo + ingreso). Para demos/E2E usa ACCESO_CODIGO_EN_PANTALLA=true.\n\nImportar y ejecutar TODA la colección en orden con el Collection Runner o newman.\nEl token no se escribe a mano: lo guardan las peticiones de ingreso y dura 1 hora.\n\nAntes de ejecutar, en la carpeta backend:\n1. MySQL encendido y npm run db:seed, con el mismo administrador de las variables.\n2. npm run dev (http://localhost:3000) con ACCESO_CODIGO_EN_PANTALLA=true.\n\nUsuarios:\n- Administrador: admin@unihumboldt.edu.co (ADMIN_CONTRASENA del .env)\n- Docente: docente.casos@unihumboldt.edu.co / Docente1234 (la colección lo crea).\n- Estudiante: estudiante.flujo@unihumboldt.edu.co (OTP de sesión).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -995,7 +995,7 @@
           ]
         },
         {
-          "name": "Crear caso sin permiso (403)",
+          "name": "Crear caso sin permiso CREAR_CASOS (403)",
           "request": {
             "method": "POST",
             "header": [
@@ -1010,7 +1010,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{tokenAdmin}}",
+                  "value": "{{tokenSinCrearCasos}}",
                   "type": "string"
                 }
               ]
@@ -1026,6 +1026,41 @@
             }
           },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.collectionVariables.get('baseUrl') || pm.environment.get('baseUrl') || 'http://127.0.0.1:3000';",
+                  "const correo = pm.collectionVariables.get('estudianteCorreo') || 'estudiante.flujo@unihumboldt.edu.co';",
+                  "return new Promise((resolve, reject) => {",
+                  "  pm.sendRequest({",
+                  "    url: base + '/api/acceso/estudiantes/enviar-codigo',",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json' },",
+                  "    body: { mode: 'raw', raw: JSON.stringify({ correo }) }",
+                  "  }, (errEnviar, enviar) => {",
+                  "    if (errEnviar) { return reject(errEnviar); }",
+                  "    const otpBody = enviar.json() || {};",
+                  "    const codigo = otpBody.codigoAutorizacion;",
+                  "    if (!codigo) { return reject(new Error('Sin OTP: activa ACCESO_CODIGO_EN_PANTALLA=true')); }",
+                  "    pm.sendRequest({",
+                  "      url: base + '/api/acceso/estudiantes/ingreso',",
+                  "      method: 'POST',",
+                  "      header: { 'Content-Type': 'application/json' },",
+                  "      body: { mode: 'raw', raw: JSON.stringify({ correo, codigo }) }",
+                  "    }, (errIngreso, ingreso) => {",
+                  "      if (errIngreso) { return reject(errIngreso); }",
+                  "      const token = (ingreso.json() || {}).token;",
+                  "      if (!token) { return reject(new Error('No se obtuvo token de estudiante')); }",
+                  "      pm.collectionVariables.set('tokenSinCrearCasos', token);",
+                  "      resolve();",
+                  "    });",
+                  "  });",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -2157,7 +2192,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"casoId\": {{casoConstruidoId}},\n  \"espacioAcademicoId\": {{espacioAcademicoId}},\n  \"rubricaId\": {{rubricaId}},\n  \"fechaInicio\": \"2026-11-09T08:00\",\n  \"fechaFin\": \"2026-11-20T22:00\",\n  \"tiempoLimiteSegundos\": 600,\n  \"intentosPermitidos\": 1,\n  \"lugar\": \"Aula 201\",\n  \"mensajePersonalizado\": \"Revisa el caso antes de entrar.\",\n  \"estudiantesIds\": [{{estudianteId}}]\n}",
+              "raw": "{\n  \"casoId\": {{casoConstruidoId}},\n  \"espacioAcademicoId\": {{espacioAcademicoId}},\n  \"rubricaId\": {{rubricaId}},\n  \"fechaInicio\": \"{{fechaInicioActividad}}\",\n  \"fechaFin\": \"{{fechaFinActividad}}\",\n  \"tiempoLimiteSegundos\": 600,\n  \"intentosPermitidos\": 1,\n  \"lugar\": \"Aula 201\",\n  \"mensajePersonalizado\": \"Revisa el caso antes de entrar.\",\n  \"estudiantesIds\": [{{estudianteId}}]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2167,6 +2202,20 @@
             "description": "Usa el espacio y el estudiante creados antes. Si responde 201, data.codigosDeAcceso trae el código con el que entra el estudiante. El correo queda guardado como Fallida porque no hay servidor SMTP."
           },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const pad = (n) => String(n).padStart(2, '0');",
+                  "const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;",
+                  "const inicio = new Date(Date.now() - 5 * 60 * 1000);",
+                  "const fin = new Date(Date.now() + 2 * 60 * 60 * 1000);",
+                  "pm.collectionVariables.set('fechaInicioActividad', fmt(inicio));",
+                  "pm.collectionVariables.set('fechaFinActividad', fmt(fin));"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -2288,7 +2337,53 @@
           ]
         },
         {
-          "name": "Ingreso del estudiante con el código de la convocatoria (200)",
+          "name": "Enviar OTP de sesión al estudiante (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/estudiantes/enviar-codigo",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"{{estudianteCorreo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Flujo actual: OTP de sesión. Con ACCESO_CODIGO_EN_PANTALLA=true el código viene en la respuesta para demos/E2E."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const datos = pm.response.json();",
+                  "if (datos.codigoAutorizacion) {",
+                  "  pm.collectionVariables.set('codigoEstudiante', datos.codigoAutorizacion);",
+                  "  pm.test('demo local entregó OTP', () => pm.expect(datos.codigoAutorizacion).to.be.a('string').and.not.empty);",
+                  "} else if (pm.collectionVariables.get('codigoEstudiante')) {",
+                  "  pm.test('hay código previo de convocatoria (legado)', () => pm.expect(pm.collectionVariables.get('codigoEstudiante')).to.be.ok);",
+                  "} else {",
+                  "  pm.test('sin OTP en respuesta: activa ACCESO_CODIGO_EN_PANTALLA=true', () => pm.expect.fail('Falta codigoAutorizacion'));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingreso del estudiante con OTP de sesión (200)",
           "request": {
             "method": "POST",
             "header": [
@@ -2310,7 +2405,7 @@
                 }
               }
             },
-            "description": "El código sale de programar la actividad. El token queda guardado para la sesión."
+            "description": "OTP de sesión (enviar-codigo). El token no fija actividadId; el estudiante elige misión en el panel."
           },
           "event": [
             {
@@ -2320,9 +2415,9 @@
                 "exec": [
                   "pm.test('responde 200', () => pm.response.to.have.status(200));",
                   "const datos = pm.response.json();",
-                  "pm.test('entrega token y la actividad de su código', () => {",
+                  "pm.test('entrega token de estudiante', () => {",
                   "  pm.expect(datos.token).to.be.a('string').and.not.empty;",
-                  "  pm.expect(datos.usuario.actividadId).to.eql(Number(pm.collectionVariables.get('actividadId')));",
+                  "  pm.expect(datos.usuario.roles).to.include('Estudiante');",
                   "});",
                   "pm.collectionVariables.set('tokenEstudiante', datos.token);"
                 ]

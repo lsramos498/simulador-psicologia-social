@@ -1,0 +1,22 @@
+{
+  "status": 200,
+  "data": {
+    "data": [
+      {
+        "id": 66,
+        "actividadId": 48,
+        "estudianteId": 22,
+        "numeroIntento": 1,
+        "estado": "Finalizado",
+        "inicio": "2026-11-26T03:40:47.000Z",
+        "fin": "2026-11-26T03:40:47.000Z",
+        "segundosConsumidos": 0,
+        "motivoCierre": "Finalizacion",
+        "casoId": 46,
+        "nombres": "Stefania",
+        "apellidos": "Diaz",
+        "correo": "sdiaz_549@unihumboldt.edu.co"
+      }
+    ]
+  }
+}

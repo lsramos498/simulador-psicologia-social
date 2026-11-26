@@ -229,13 +229,31 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date(), not
           return convertirSesionBD(ultimaSesion).toJSON();
         }
 
-        // Si finalizó, se comprueba si quedan intentos.
+        // Si finalizó, se comprueba si quedan intentos o hay repetición excepcional (RF-25).
         if (ultimaSesion.estado === ESTADOS_SESION.FINALIZADO) {
           if (ultimaSesion.numeroIntento >= intentosPermitidos) {
-            throw crearErrorHttp(
-              'El estudiante ha agotado los intentos permitidos para esta actividad.',
-              409
+            const repeticion = await repositorio.obtenerRepeticionAprobada(
+              conexion,
+              actividadId,
+              estudianteId
             );
+            if (!repeticion) {
+              throw crearErrorHttp(
+                'El estudiante ha agotado los intentos permitidos para esta actividad.',
+                409
+              );
+            }
+            const consumida = await repositorio.consumirAutorizacionRepeticion(
+              conexion,
+              repeticion.id,
+              ahora
+            );
+            if (!consumida) {
+              throw crearErrorHttp(
+                'La autorización de repetición ya no está disponible.',
+                409
+              );
+            }
           }
 
           numeroIntento = ultimaSesion.numeroIntento + 1;
@@ -366,9 +384,70 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date(), not
     });
   }
 
+  /**
+   * RF-25 / CP-32: el docente creador autoriza un intento extra excepcional.
+   */
+  async function autorizarRepeticion({
+    actividadId,
+    estudianteId,
+    docenteId,
+    motivo,
+    esAdmin = false
+  }) {
+    validarIdentificador(actividadId, 'actividadId');
+    validarIdentificador(estudianteId, 'estudianteId');
+    validarIdentificador(docenteId, 'docenteId');
+    const motivoLimpio = String(motivo || '').trim();
+    if (motivoLimpio.length < 3) {
+      throw crearErrorHttp('Indica un motivo de al menos 3 caracteres.', 400);
+    }
+
+    return repositorio.enTransaccion(async (conexion) => {
+      const actividad = await repositorio.obtenerActividad(conexion, actividadId);
+      if (!actividad) {
+        throw crearErrorHttp('La actividad no existe.', 404);
+      }
+
+      const creadorId = Number(actividad.docente_id ?? actividad.docenteId);
+      if (!esAdmin && creadorId !== Number(docenteId)) {
+        throw crearErrorHttp('Solo el docente creador puede autorizar la repetición.', 403);
+      }
+
+      const autorizacion = await repositorio.obtenerAutorizacion(
+        conexion,
+        actividadId,
+        estudianteId
+      );
+      if (!autorizacion || autorizacion.estado !== 'Autorizado') {
+        throw crearErrorHttp('El estudiante no está autorizado en esta actividad.', 403);
+      }
+
+      const pendiente = await repositorio.obtenerRepeticionAprobada(
+        conexion,
+        actividadId,
+        estudianteId
+      );
+      if (pendiente) {
+        throw crearErrorHttp(
+          'Ya existe una autorización de repetición pendiente de usar.',
+          409
+        );
+      }
+
+      return repositorio.insertarAutorizacionRepeticion(conexion, {
+        actividadId,
+        estudianteId,
+        autorizadoPorId: Number(docenteId),
+        motivo: motivoLimpio,
+        fechaAutorizacion: reloj()
+      });
+    });
+  }
+
   return {
     iniciarSesion,
     finalizarSesion,
+    autorizarRepeticion,
 
     /**
      * RF-23: valida y bloquea Actividad → Autorización → Sesión
@@ -420,7 +499,8 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date(), not
         throw crearErrorHttp('La sesión no pertenece a este estudiante.', 403);
       }
       if (fila.estado === ESTADOS_SESION.FINALIZADO) {
-        throw crearErrorHttp('La sesión ya finalizó.', 409);
+        // RF-25 / CP-32: si hay intentos o repetición excepcional, abre un intento nuevo.
+        return iniciarSesion({ actividadId, estudianteId });
       }
       if (fila.estado === ESTADOS_SESION.EN_CURSO) {
         return publica(fila);

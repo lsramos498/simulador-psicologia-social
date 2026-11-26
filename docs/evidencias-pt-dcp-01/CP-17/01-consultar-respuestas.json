@@ -1,0 +1,19 @@
+{
+  "status": 200,
+  "data": {
+    "data": [
+      {
+        "id": 20,
+        "sesionId": 66,
+        "decisionId": 49,
+        "opcionId": 101,
+        "fechaRespuesta": "2026-11-26T03:40:47.000Z",
+        "fechaModificacion": null,
+        "opcionTexto": "Acompañar con calma, ayudar a organizar los hechos y respetar el procedimiento del agente",
+        "esCorrecta": 1,
+        "pregunta": "¿Qué conviene hacer primero en la recepción de la comisaría?",
+        "escenaNombre": "Recepción de la comisaría"
+      }
+    ]
+  }
+}

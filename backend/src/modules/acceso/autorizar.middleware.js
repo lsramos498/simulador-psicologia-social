@@ -64,23 +64,54 @@ export function requierePermiso(permiso) {
  * (por defecto, req.params.id).
  */
 export function requiereActividadAutorizada(obtenerActividadId = (req) => req.params?.id) {
-  // Falla al definir la ruta, no en cada petición
   if (typeof obtenerActividadId !== 'function') {
     throw new TypeError('requiereActividadAutorizada necesita una función que entregue la actividad');
   }
 
-  return crearEslabonAutorizacion(
-    (usuario, req) => {
-      if (!tieneRol(usuario, ROLES.ESTUDIANTE)) {
-        return true;
+  // Login OTP de sesión: el JWT no fija actividadId; se valida convocatoria en BD.
+  // Login legacy (código de actividad): actividadId del token debe coincidir.
+  return async (req, res, next) => {
+    if (!req.usuario) {
+      return res.status(401).json({ error: 'Debe autenticarse para continuar' });
+    }
+
+    if (!tieneRol(req.usuario, ROLES.ESTUDIANTE)) {
+      return next();
+    }
+
+    const actividadPedida = Number(obtenerActividadId(req));
+    if (!Number.isInteger(actividadPedida) || actividadPedida <= 0) {
+      return res.status(403).json({ error: 'No está autorizado para esta actividad' });
+    }
+
+    if (Number(req.usuario.actividadId) === actividadPedida) {
+      return next();
+    }
+
+    try {
+      const { pool } = await import('../../config/database.js');
+      const consulta = pool.execute(
+        `SELECT 1 AS ok
+           FROM EstudianteAutorizado
+          WHERE actividad_id = ?
+            AND estudiante_id = ?
+            AND estado = 'Autorizado'
+          LIMIT 1`,
+        [actividadPedida, Number(req.usuario.id)]
+      );
+      const timeout = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('timeout-autorizacion-actividad')), 2500);
+      });
+      const [filas] = await Promise.race([consulta, timeout]);
+      if (filas.length > 0) {
+        return next();
       }
-      const actividadPedida = Number(obtenerActividadId(req));
-      return Number.isInteger(actividadPedida)
-        && actividadPedida > 0
-        && actividadPedida === Number(usuario.actividadId);
-    },
-    'No está autorizado para esta actividad'
-  );
+    } catch {
+      return res.status(403).json({ error: 'No está autorizado para esta actividad' });
+    }
+
+    return res.status(403).json({ error: 'No está autorizado para esta actividad' });
+  };
 }
 
 /**

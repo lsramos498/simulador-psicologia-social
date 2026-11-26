@@ -1,0 +1,12 @@
+{
+  "status": 422,
+  "data": {
+    "error": "La estructura del caso no es válida.",
+    "codigo": "ESTRUCTURA_INVALIDA",
+    "errores": [
+      "El texto de la opción es obligatorio.",
+      "El orden de la opción debe ser un entero entre 1 y 2147483647.",
+      "La explicación de la opción es obligatorio."
+    ]
+  }
+}

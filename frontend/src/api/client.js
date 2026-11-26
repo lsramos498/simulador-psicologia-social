@@ -567,6 +567,15 @@ export function cerrarSesionDocente(token, sesionId) {
   return pedir(`/api/sesiones/${sesionId}/cerrar`, { method: 'POST', token });
 }
 
+/** RF-25 / CP-32: autoriza un intento extra excepcional. */
+export function autorizarRepeticion(token, actividadId, { estudianteId, motivo }) {
+  return pedir(`/api/sesiones/actividades/${actividadId}/autorizar-repeticion`, {
+    method: 'POST',
+    token,
+    body: { estudianteId, motivo }
+  });
+}
+
 /** —— Administración RF-03 —— */
 export function adminListarRoles(token) {
   return pedir('/api/acceso/admin/roles', { token });

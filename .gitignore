@@ -16,3 +16,5 @@ coverage/
 .DS_Store
 Thumbs.db
 .idea/
+docs/entrega-pt-dcp-ejecutado/chrome-profile/
+docs/entrega-pt-dcp-ejecutado/**/chrome-profile/

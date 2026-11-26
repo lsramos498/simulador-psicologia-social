@@ -1,0 +1,14 @@
+{
+  "status": 201,
+  "data": {
+    "data": {
+      "id": 4,
+      "actividadId": 48,
+      "estudianteId": 22,
+      "autorizadoPorId": 3,
+      "motivo": "Repetición excepcional PT-DCP CP-32",
+      "estado": "Aprobada",
+      "fechaAutorizacion": "2026-11-26T03:40:51.085Z"
+    }
+  }
+}

@@ -111,7 +111,12 @@ export function crearServicioParticipacion(repositorio, eventos = new EventosPar
       validarId(sesionId);
       const sesion = await repositorio.obtenerSesion(sesionId);
       comprobarAccesoConsulta(sesion, actor);
-      return repositorio.consultarRespuestas(sesionId);
+      const filas = await repositorio.consultarRespuestas(sesionId);
+      // Durante la sesión no se revela si la opción era correcta (solo en retro final).
+      if (sesion.estado === ESTADOS_SESION.FINALIZADO) {
+        return filas;
+      }
+      return filas.map(({ esCorrecta, ...resto }) => resto);
     },
     async progreso(sesionId, actor) {
       validarId(sesionId);

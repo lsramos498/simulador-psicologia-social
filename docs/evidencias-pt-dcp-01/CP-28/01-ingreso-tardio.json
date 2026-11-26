@@ -1,0 +1,47 @@
+{
+  "crear": {
+    "status": 201,
+    "data": {
+      "mensaje": "Actividad programada correctamente.",
+      "data": {
+        "id": 50,
+        "casoId": 46,
+        "espacioAcademicoId": 2,
+        "docenteId": 3,
+        "rubricaId": 35,
+        "fechaInicio": "2026-11-25 19:40:59",
+        "fechaFin": "2026-11-25 20:40:59",
+        "tiempoLimiteSegundos": 300,
+        "lugar": "CP-28",
+        "mensajePersonalizado": "ventana pasada",
+        "intentosPermitidos": 1,
+        "estudiantesIds": [
+          22
+        ],
+        "estado": "Programada",
+        "fechaCreacion": "2026-11-25 22:40:59",
+        "notificaciones": [
+          {
+            "estudianteId": 22,
+            "destinatario": "sdiaz_549@unihumboldt.edu.co",
+            "estado": "Enviada",
+            "canal": "Correo",
+            "previewUrl": null
+          }
+        ],
+        "codigosDeAcceso": [
+          {
+            "estudianteId": 22,
+            "codigo": "9J66F6D5"
+          }
+        ]
+      }
+    }
+  },
+  "intento": {
+    "status": 403,
+    "data": {
+      "error": "La actividad está fuera de la ventana de acceso."
+    }
+  }
+}

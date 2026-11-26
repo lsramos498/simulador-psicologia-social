@@ -47,6 +47,27 @@ export function crearRutasSesiones(obtenerServicio) {
     }
   );
 
+  /** RF-25 / CP-32: autorizar un intento extra excepcional. */
+  router.post(
+    '/actividades/:actividadId/autorizar-repeticion',
+    autenticar,
+    requiereRol(ROLES.DOCENTE, ROLES.ADMINISTRADOR),
+    async (req, res) => {
+      try {
+        const data = await (await obtenerServicio()).autorizarRepeticion({
+          actividadId: Number(req.params.actividadId),
+          estudianteId: Number(req.body?.estudianteId),
+          docenteId: Number(req.usuario.id),
+          motivo: req.body?.motivo,
+          esAdmin: tieneRol(req.usuario, ROLES.ADMINISTRADOR)
+        });
+        return res.status(201).json({ data });
+      } catch (error) {
+        return responderErrorHttp(res, error, 'sesiones');
+      }
+    }
+  );
+
   router.get(
     '/actividades/:actividadId/reporte-participacion.csv',
     autenticar,

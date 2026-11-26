@@ -1380,6 +1380,13 @@ a {
   color: #ffe0e0;
 }
 
+.login-demo-otp {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.85rem;
+  color: #c8f0c0;
+  line-height: 1.35;
+}
+
 .login-mode-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;

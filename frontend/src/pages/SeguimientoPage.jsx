@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  autorizarRepeticion,
   cerrarSesionDocente,
   consultarProgresoSesion,
   consultarRespuestasSesion,
@@ -345,7 +346,33 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
                         >
                           Cerrar sesión
                         </button>
-                      ) : null}
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-ghost-dark"
+                          disabled={trabajando || !actividadId}
+                          onClick={async () => {
+                            setTrabajando(true);
+                            setError('');
+                            setMensaje('');
+                            try {
+                              await autorizarRepeticion(token, Number(actividadId), {
+                                estudianteId: s.estudianteId,
+                                motivo: 'Repetición excepcional autorizada desde Seguimiento (CP-32).'
+                              });
+                              setMensaje(
+                                `Repetición autorizada para ${s.nombres || 'el estudiante'}.`
+                              );
+                            } catch (err) {
+                              setError(mensajeError(err));
+                            } finally {
+                              setTrabajando(false);
+                            }
+                          }}
+                        >
+                          Autorizar repetición
+                        </button>
+                      )}
                     </div>
                   </article>
                 ))}

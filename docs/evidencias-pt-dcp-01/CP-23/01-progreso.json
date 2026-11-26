@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "data": {
+    "data": {
+      "totalPreguntas": 2,
+      "preguntasRespondidas": 2,
+      "preguntasPendientes": 0
+    }
+  }
+}

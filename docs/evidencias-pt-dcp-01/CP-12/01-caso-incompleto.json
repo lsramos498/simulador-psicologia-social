@@ -1,0 +1,13 @@
+{
+  "status": 422,
+  "data": {
+    "error": "La estructura del caso no es válida.",
+    "codigo": "ESTRUCTURA_INVALIDA",
+    "errores": [
+      "El título es obligatorio.",
+      "El desarrollo situacional es obligatorio.",
+      "El contexto de la historia es obligatorio.",
+      "El tiempo estimado en segundos debe ser un entero entre 1 y 2147483647."
+    ]
+  }
+}

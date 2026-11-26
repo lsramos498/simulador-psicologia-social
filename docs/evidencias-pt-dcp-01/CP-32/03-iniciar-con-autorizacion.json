@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "data": {
+    "data": {
+      "id": 67,
+      "actividadId": 48,
+      "estudianteId": 22,
+      "numeroIntento": 2,
+      "estado": "En curso",
+      "inicio": "2026-11-26T03:40:51.102Z",
+      "fin": null,
+      "segundosConsumidos": 0,
+      "motivoCierre": null
+    }
+  }
+}
