@@ -198,24 +198,8 @@ export function crearRepositorioAcceso(pool) {
       return resultado.affectedRows;
     },
 
-    async asegurarTablaCodigoLogin() {
-      await pool.execute(`
-        CREATE TABLE IF NOT EXISTS CodigoLoginEstudiante (
-          id INT NOT NULL AUTO_INCREMENT,
-          usuario_id INT NOT NULL,
-          codigoHash VARCHAR(64) NOT NULL,
-          expiraEn DATETIME NOT NULL,
-          usado BOOLEAN NOT NULL DEFAULT FALSE,
-          fechaCreacion DATETIME NOT NULL,
-          PRIMARY KEY (id),
-          KEY idx_codigo_login_hash (codigoHash),
-          KEY idx_codigo_login_usuario (usuario_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `);
-    },
 
     async guardarCodigoLogin(usuarioId, codigoHash, expiraEn, fechaCreacion = new Date()) {
-      await this.asegurarTablaCodigoLogin();
       await pool.execute(
         `UPDATE CodigoLoginEstudiante SET usado = TRUE WHERE usuario_id = ? AND usado = FALSE`,
         [usuarioId]
@@ -229,7 +213,6 @@ export function crearRepositorioAcceso(pool) {
     },
 
     async consumirCodigoLogin(codigoHash, ahora = new Date()) {
-      await this.asegurarTablaCodigoLogin();
       if (typeof codigoHash !== 'string' || !HASH_CODIGO_VALIDO.test(codigoHash)) {
         return null;
       }

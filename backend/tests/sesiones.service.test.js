@@ -44,6 +44,10 @@ function crearContexto({
       return operacion(repositorio);
     },
 
+    // RF-25: sin autorización de repetición en estos escenarios.
+    async obtenerRepeticionAprobada() {
+      return null;
+    },
     async obtenerActividad() {
       return datos.actividad;
     },

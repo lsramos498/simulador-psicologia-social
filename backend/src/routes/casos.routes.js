@@ -23,7 +23,10 @@ import { Router } from 'express';
 import { autenticar } from '../modules/acceso/autenticar.middleware.js';
 import { ROLES, tienePermiso, tieneRol } from '../modules/acceso/autorizacion.js';
 import { requiereCasoDeSuActividad, requierePermiso } from '../modules/acceso/autorizar.middleware.js';
-import { buscarCasoDeActividadPorDefecto } from '../modules/acceso/casoDeActividad.js';
+import {
+  buscarCasoDeActividadPorDefecto,
+  buscarCasosDelEstudiantePorDefecto
+} from '../modules/acceso/casoDeActividad.js';
 import { crearServicioProtegido } from '../modules/acceso/servicioProtegido.proxy.js';
 import { crearRepositorioCasos } from '../modules/casos/casos.repository.js';
 import { crearServicioCasos } from '../modules/casos/casos.service.js';
@@ -146,7 +149,10 @@ const docente = [autenticar, requierePermiso('CREAR_CASOS')];
  */
 export function crearRutasCasos(
   obtenerServicio,
-  { buscarCasoDeActividad = buscarCasoDeActividadPorDefecto } = {}
+  {
+    buscarCasoDeActividad = buscarCasoDeActividadPorDefecto,
+    buscarCasosDelEstudiante = buscarCasosDelEstudiantePorDefecto
+  } = {}
 ) {
   if (typeof obtenerServicio !== 'function') {
     throw new TypeError('Se requiere una función que entregue el servicio de casos.');
@@ -154,8 +160,12 @@ export function crearRutasCasos(
 
   const router = Router();
   // RF-10: el estudiante solo accede al caso de la actividad de su token.
-  const casoDeSuActividad = requiereCasoDeSuActividad(buscarCasoDeActividad);
-  const listadoDeSuActividad = requiereCasoDeSuActividad(buscarCasoDeActividad, () => undefined);
+  const casoDeSuActividad = requiereCasoDeSuActividad(
+    buscarCasoDeActividad, (req) => req.params?.id, buscarCasosDelEstudiante
+  );
+  const listadoDeSuActividad = requiereCasoDeSuActividad(
+    buscarCasoDeActividad, () => undefined, buscarCasosDelEstudiante
+  );
 
     /**
      * Ejecuta una acción con el servicio y centraliza el manejo de errores:
@@ -176,8 +186,8 @@ export function crearRutasCasos(
       creadorId: req.query.creadorId,
       estado: req.query.estado
     });
-    const data = req.casoAutorizadoId
-      ? todos.filter((caso) => Number(caso.id) === req.casoAutorizadoId)
+    const data = req.casosAutorizadosIds
+      ? todos.filter((caso) => req.casosAutorizadosIds.includes(Number(caso.id)))
       : todos;
     return res.status(200).json({ total: data.length, data });
   }));

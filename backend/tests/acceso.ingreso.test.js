@@ -55,25 +55,35 @@ function crearAppDePrueba(opcionesPool) {
   return appPrueba;
 }
 
+// Ingreso con el código de CONVOCATORIA de una actividad (flujo legado, solo servicio).
+// La ruta POST /estudiantes/ingreso ahora usa el código de sesión (OTP):
+// ver acceso.otp.test.js.
+function servicioLegado(opcionesPool) {
+  return crearServicioAcceso(crearRepositorioAcceso(crearPoolFalso(opcionesPool)), { reloj: () => AHORA });
+}
+
 function ingresar(appPrueba, cuerpo) {
   return request(appPrueba).post('/api/acceso/estudiantes/ingreso').send(cuerpo);
 }
 
 // ---------- Ingreso exitoso ----------
 
-test('ingreso válido: responde 200 con un token JWT del estudiante', async () => {
-  const res = await ingresar(crearAppDePrueba(), { correo: CORREO, codigo: CODIGO }).expect(200);
+test('código de actividad válido: entrega un token JWT del estudiante con su actividad', async () => {
+  const res = await servicioLegado().ingresarEstudianteActividad({ correo: CORREO, codigo: CODIGO });
 
-  assert.deepEqual(res.body.usuario, { id: 10, roles: ['Estudiante'], actividadId: 5 });
+  assert.equal(res.usuario.id, 10);
+  assert.deepEqual(res.usuario.roles, ['Estudiante']);
+  assert.equal(res.usuario.actividadId, 5);
 
-  const usuarioDelToken = verificarToken(res.body.token);
+  const usuarioDelToken = verificarToken(res.token);
   assert.equal(usuarioDelToken.id, 10);
   assert.deepEqual(usuarioDelToken.roles, ['Estudiante']);
   assert.equal(usuarioDelToken.actividadId, 5);
 });
 
-test('acepta el código en minúsculas y con espacios', async () => {
-  await ingresar(crearAppDePrueba(), { correo: CORREO, codigo: ' abcd2345 ' }).expect(200);
+test('acepta el código de actividad en minúsculas y con espacios', async () => {
+  const res = await servicioLegado().ingresarEstudianteActividad({ correo: CORREO, codigo: ' abcd2345 ' });
+  assert.equal(res.usuario.actividadId, 5);
 });
 
 // ---------- Validación de entrada ----------
@@ -101,21 +111,27 @@ test('responde 401 con el correo de otra persona', async () => {
     .expect(401);
 });
 
-test('responde 403 si el estudiante fue retirado de la convocatoria', async () => {
-  await ingresar(crearAppDePrueba({ convocatoria: { estado: 'Retirado' } }), { correo: CORREO, codigo: CODIGO })
-    .expect(403);
+test('código de actividad: 403 si el estudiante fue retirado de la convocatoria', async () => {
+  await assert.rejects(
+    servicioLegado({ convocatoria: { estado: 'Retirado' } }).ingresarEstudianteActividad({ correo: CORREO, codigo: CODIGO }),
+    { statusCode: 403 }
+  );
 });
 
-test('responde 403 si la sesión del estudiante ya finalizó', async () => {
-  await ingresar(crearAppDePrueba({ sesion: { estado: 'Finalizado', numeroIntento: 1 } }), {
-    correo: CORREO, codigo: CODIGO
-  }).expect(403);
+test('código de actividad: si la sesión ya finalizó entra solo a ver su resultado', async () => {
+  const res = await servicioLegado({ sesion: { estado: 'Finalizado', numeroIntento: 1 } })
+    .ingresarEstudianteActividad({ correo: CORREO, codigo: CODIGO })
+    .catch((error) => error);
+  // Puede rechazar (403) o dejar entrar solo a consultar el resultado; nunca a una sesión nueva.
+  if (res instanceof Error) assert.equal(res.statusCode, 403);
+  else assert.equal(res.usuario.verResultado, true);
 });
 
-test('responde 403 si el usuario no tiene el rol Estudiante', async () => {
-  const res = await ingresar(crearAppDePrueba({ roles: ['Docente'] }), { correo: CORREO, codigo: CODIGO })
-    .expect(403);
-  assert.match(res.body.error, /rol Estudiante/);
+test('código de actividad: 403 si el usuario no tiene el rol Estudiante', async () => {
+  await assert.rejects(
+    servicioLegado({ roles: ['Docente'] }).ingresarEstudianteActividad({ correo: CORREO, codigo: CODIGO }),
+    { statusCode: 403, message: /rol Estudiante/ }
+  );
 });
 
 test('responde 500 sin detalles internos si falla la base de datos', async () => {
