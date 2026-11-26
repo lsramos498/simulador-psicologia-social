@@ -238,7 +238,7 @@ export function crearRutasCasos(
     const caso = await servicio.obtener(req.params.id);
     // Solo el creador (o quien ya pasó el middleware docente) puede persistir anexos.
     if (Number(caso.creadorId) !== Number(req.usuario.id)
-      && !(req.usuario.roles || []).includes('Administrador')) {
+      && !tieneRol(req.usuario, ROLES.ADMINISTRADOR)) {
       const error = new Error('No tiene autorización para editar el material de este caso.');
       error.statusCode = 403;
       throw error;

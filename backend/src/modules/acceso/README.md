@@ -265,12 +265,13 @@ termina con código 1.
 
 ### Zona horaria
 
-La conexión a MySQL lee y escribe las fechas en la hora de Colombia (`DB_TIMEZONE`, por
-defecto `-05:00`, en `config/database.js`). Aun así, MySQL también debe estar en esa zona: el
-ingreso del estudiante compara la hora de Node.js con `fechaInicio` y `fechaFin`, y las fechas
-que MySQL crea con `NOW()` quedan corridas 5 horas si MySQL está en UTC (el estudiante recibe
-`403 La actividad todavía no ha comenzado`). En un computador con Windows MySQL usa la zona del
-sistema; en un servidor, configurar `default-time-zone = '-05:00'` en MySQL.
+La aplicación lee y escribe fechas con el desplazamiento de Colombia (`DB_TIMEZONE`, por
+defecto `-05:00`, en `config/database.js`). Además, cada conexión nueva del pool ejecuta
+`SET SESSION time_zone` con ese mismo valor. Esto es importante porque la zona horaria de sesión
+controla funciones SQL como `NOW()` y `CURTIME()`: si la sesión quedara en UTC, las fechas
+creadas por MySQL podrían quedar desplazadas cinco horas y el estudiante recibiría
+`403 La actividad todavía no ha comenzado`. La zona global del servidor puede configurarse
+también con `default-time-zone = '-05:00'` para alinear otros clientes y procesos externos.
 
 ## Colección de Postman
 

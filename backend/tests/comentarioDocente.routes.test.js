@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
-import test from 'node:test';
+import { after, test } from 'node:test';
 import express from 'express';
 import request from 'supertest';
 import { firmarToken } from '../src/modules/acceso/tokens.js';
@@ -9,6 +9,16 @@ import { crearServicioSesiones } from '../src/modules/sesiones/sesiones.service.
 import { crearRutasSesiones } from '../src/routes/sesiones.routes.js';
 
 process.env.JWT_SECRETO = 'clave-local-para-pruebas-del-comentario-docente';
+
+// Esta suite consulta una ruta de estudiante que puede importar el pool MySQL
+// real al validar una convocatoria distinta a la del token. Al ser un proceso
+// aislado de pruebas, debe cerrarlo al finalizar para no dejar Node abierto.
+let poolMySqlDePrueba = null;
+after(async () => {
+  if (poolMySqlDePrueba) {
+    await poolMySqlDePrueba.end();
+  }
+});
 
 function preparar(t) {
   const db = new DatabaseSync(':memory:');
@@ -122,6 +132,16 @@ test('el estudiante propietario puede consultar el comentario en el resultado de
   assert.equal(evaluacion.resultado, 4.25);
   assert.equal(evaluacion.retroalimentacionGeneral, 'Resultado automático');
   await consultar('51', { ...estudiante, id: 22 }).expect(403);
+
+  // Conserva la referencia del pool real usado por el middleware para cerrarlo
+  // al finalizar esta suite. Si no hay configuración disponible, el middleware
+  // mantiene su respuesta 403 y no queda ningún pool creado por esta prueba.
+  try {
+    const { pool } = await import('../src/config/database.js');
+    poolMySqlDePrueba = pool;
+  } catch {
+    poolMySqlDePrueba = null;
+  }
   await consultar('actividades/4', { ...estudiante, actividadId: 5 }).expect(403);
 });
 

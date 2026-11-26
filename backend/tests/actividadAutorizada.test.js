@@ -15,7 +15,7 @@ import { firmarToken } from '../src/modules/acceso/tokens.js';
  */
 process.env.JWT_SECRETO = 'clave-jwt-de-prueba-solo-para-tests-0123456789';
 
-function crearAppDePrueba(middleware = requiereActividadAutorizada()) {
+function crearAppDePrueba(middleware = requiereActividadAutorizada(undefined, async () => false)) {
   const llamadas = [];
   const app = express();
   app.post('/actividades/:id/sesiones', autenticar, middleware, (req, res) => {
@@ -46,14 +46,29 @@ test('el estudiante recibe 403 en una actividad que no es la de su código, y la
   assert.equal(llamadas.length, 0);
 });
 
-test('un estudiante sin actividad en su token y sin convocatoria recibe 403', async () => {
-  const { app, llamadas } = crearAppDePrueba();
-  // Sin actividadId en el JWT se consulta EstudianteAutorizado; id 21 no convocado → 403
-  // (o 500 si no hay BD en el entorno de prueba).
+test('un estudiante OTP sin convocatoria recibe 403 sin consultar una base real', async () => {
+  const { app, llamadas } = crearAppDePrueba(
+    requiereActividadAutorizada(undefined, async () => false)
+  );
   const res = await request(app).post('/actividades/5/sesiones')
     .set('Authorization', token({ id: 21, roles: [ROLES.ESTUDIANTE], permisos: [] }));
-  assert.ok([403, 500].includes(res.status));
+  assert.equal(res.status, 403);
   assert.equal(llamadas.length, 0);
+});
+
+test('un estudiante OTP con convocatoria autorizada puede continuar', async () => {
+  const consultas = [];
+  const { app, llamadas } = crearAppDePrueba(
+    requiereActividadAutorizada(undefined, async (actividadId, estudianteId) => {
+      consultas.push({ actividadId, estudianteId });
+      return true;
+    })
+  );
+  await request(app).post('/actividades/5/sesiones')
+    .set('Authorization', token({ id: 21, roles: [ROLES.ESTUDIANTE], permisos: [] }))
+    .expect(201);
+  assert.deepEqual(consultas, [{ actividadId: 5, estudianteId: 21 }]);
+  assert.deepEqual(llamadas, ['5']);
 });
 
 test('una actividad que no es un número recibe 403 para el estudiante', async () => {
@@ -67,6 +82,18 @@ test('una actividad que no es un número recibe 403 para el estudiante', async (
 test('sin token responde 401', async () => {
   const { app, llamadas } = crearAppDePrueba();
   await request(app).post('/actividades/5/sesiones').expect(401);
+  assert.equal(llamadas.length, 0);
+});
+
+test('un token legado no puede cambiar a otra actividad', async () => {
+  const consultas = [];
+  const { app, llamadas } = crearAppDePrueba(
+    requiereActividadAutorizada(undefined, async (...args) => { consultas.push(args); return true; })
+  );
+  await request(app).post('/actividades/8/sesiones')
+    .set('Authorization', token(estudianteActividad5))
+    .expect(403);
+  assert.deepEqual(consultas, []);
   assert.equal(llamadas.length, 0);
 });
 

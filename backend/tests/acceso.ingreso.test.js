@@ -3,52 +3,58 @@ import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
 import app from '../src/app.js';
-import { crearRepositorioAcceso } from '../src/modules/acceso/acceso.repository.js';
 import { crearServicioAcceso } from '../src/modules/acceso/acceso.service.js';
 import { hashearCodigoAutorizacion } from '../src/modules/acceso/codigos.js';
 import { verificarToken } from '../src/modules/acceso/tokens.js';
 import { crearRutasAcceso } from '../src/routes/acceso.routes.js';
 
-// Claves ficticias solo para pruebas (las reales van en .env, nunca en Git)
+// Claves ficticias solo para pruebas (las reales van en .env, nunca en Git).
 process.env.CODIGO_AUTORIZACION_SECRETO = 'clave-de-prueba-solo-para-tests-0123456789';
 process.env.JWT_SECRETO = 'clave-jwt-de-prueba-solo-para-tests-0123456789';
 
-const AHORA = new Date('2026-11-03T15:00:00');
 const CORREO = 'estudiante.prueba@unihumboldt.edu.co';
 const CODIGO = 'ABCD2345';
+const CODIGO_HASH = hashearCodigoAutorizacion(CODIGO);
+const USUARIO = Object.freeze({
+  id: 10,
+  nombres: 'Estudiante',
+  apellidos: 'Prueba',
+  correoInstitucional: CORREO,
+  activo: true
+});
 
-// Pool falso: responde como MySQL según la tabla consultada.
-function crearPoolFalso({ convocatoria = {}, sesion = null, roles = ['Estudiante'], falla = null } = {}) {
+// Repositorio falso alineado con el flujo OTP actual: el código se valida en
+// CodigoLoginEstudiante y no en la antigua convocatoria por actividad.
+function crearRepositorioFalso({
+  usuario = USUARIO,
+  roles = ['Estudiante'],
+  codigoValido = true,
+  usuarioIdDelCodigo = 10,
+  falla = null
+} = {}) {
   return {
-    async execute(sql) {
+    async buscarAccesoPorCodigoHash() {
+      return { autorizacion: null, estudiante: null, actividad: null, sesion: null };
+    },
+    async buscarUsuarioPorCorreo(correo) {
       if (falla) throw falla;
-      if (sql.includes('FROM EstudianteAutorizado')) {
-        if (convocatoria === null) return [[]];
-        return [[{
-          actividad_id: 5,
-          estudiante_id: 10,
-          codigoAutorizacion: hashearCodigoAutorizacion(CODIGO),
-          estado: 'Autorizado',
-          usuarioId: 10,
-          correoInstitucional: CORREO,
-          activo: 1,
-          actividadId: 5,
-          fechaInicio: new Date('2026-11-03T14:00:00'),
-          fechaFin: new Date('2026-11-03T18:00:00'),
-          ...convocatoria
-        }]];
-      }
-      if (sql.includes('FROM SesionSimulacion')) return [sesion ? [sesion] : []];
-      if (sql.includes('JOIN RolPermiso')) return [[]];
-      if (sql.includes('JOIN Rol r')) return [roles.map((nombre) => ({ nombre }))];
-      return [[]];
+      if (!usuario || correo !== CORREO) return null;
+      return { ...usuario };
+    },
+    async obtenerRolesYPermisos() {
+      if (falla) throw falla;
+      return { roles: [...roles], permisos: [] };
+    },
+    async consumirCodigoLogin(codigoHash) {
+      if (falla) throw falla;
+      if (!codigoValido || codigoHash !== CODIGO_HASH) return null;
+      return { usuarioId: usuarioIdDelCodigo };
     }
   };
 }
 
-function crearAppDePrueba(opcionesPool) {
-  const repositorio = crearRepositorioAcceso(crearPoolFalso(opcionesPool));
-  const servicio = crearServicioAcceso(repositorio, { reloj: () => AHORA });
+function crearAppDePrueba(opciones = {}) {
+  const servicio = crearServicioAcceso(crearRepositorioFalso(opciones));
   const appPrueba = express();
   appPrueba.use(express.json());
   appPrueba.use('/api/acceso', crearRutasAcceso(async () => servicio));
@@ -59,25 +65,34 @@ function ingresar(appPrueba, cuerpo) {
   return request(appPrueba).post('/api/acceso/estudiantes/ingreso').send(cuerpo);
 }
 
-// ---------- Ingreso exitoso ----------
-
-test('ingreso válido: responde 200 con un token JWT del estudiante', async () => {
+test('ingreso OTP válido: responde 200 con un token JWT del estudiante', async () => {
   const res = await ingresar(crearAppDePrueba(), { correo: CORREO, codigo: CODIGO }).expect(200);
 
-  assert.deepEqual(res.body.usuario, { id: 10, roles: ['Estudiante'], actividadId: 5 });
+  assert.deepEqual(res.body.usuario, {
+    id: 10,
+    roles: ['Estudiante'],
+    nombres: 'Estudiante',
+    apellidos: 'Prueba',
+    correo: CORREO
+  });
 
   const usuarioDelToken = verificarToken(res.body.token);
   assert.equal(usuarioDelToken.id, 10);
   assert.deepEqual(usuarioDelToken.roles, ['Estudiante']);
-  assert.equal(usuarioDelToken.actividadId, 5);
+  assert.equal(usuarioDelToken.actividadId, undefined);
 });
 
-test('acepta el código en minúsculas y con espacios', async () => {
+test('acepta el código OTP en minúsculas y con espacios', async () => {
   await ingresar(crearAppDePrueba(), { correo: CORREO, codigo: ' abcd2345 ' }).expect(200);
 });
 
-// ---------- Validación de entrada ----------
+test('el ingreso OTP no depende de una convocatoria específica ni de actividadId en el token', async () => {
+  const res = await ingresar(crearAppDePrueba(), { correo: CORREO, codigo: CODIGO }).expect(200);
+  assert.equal(res.body.usuario.actividadId, undefined);
+  assert.equal(verificarToken(res.body.token).actividadId, undefined);
+});
 
+// ---------- Validación de entrada ----------
 test('responde 400 si falta el correo o el código', async () => {
   const appPrueba = crearAppDePrueba();
   await ingresar(appPrueba, { codigo: CODIGO }).expect(400);
@@ -88,42 +103,56 @@ test('responde 400 si falta el correo o el código', async () => {
 });
 
 // ---------- Rechazos ----------
-
-test('responde 401 con un código que no existe', async () => {
-  const res = await ingresar(crearAppDePrueba({ convocatoria: null }), { correo: CORREO, codigo: CODIGO })
-    .expect(401);
+test('responde 401 con un código OTP que no existe, expiró o ya fue usado', async () => {
+  const res = await ingresar(crearAppDePrueba({ codigoValido: false }), {
+    correo: CORREO,
+    codigo: CODIGO
+  }).expect(401);
   assert.match(res.body.error, /no válidos/);
   assert.equal(res.body.token, undefined);
 });
 
 test('responde 401 con el correo de otra persona', async () => {
-  await ingresar(crearAppDePrueba(), { correo: 'otra.persona@unihumboldt.edu.co', codigo: CODIGO })
-    .expect(401);
+  await ingresar(crearAppDePrueba(), {
+    correo: 'otra.persona@unihumboldt.edu.co',
+    codigo: CODIGO
+  }).expect(401);
 });
 
-test('responde 403 si el estudiante fue retirado de la convocatoria', async () => {
-  await ingresar(crearAppDePrueba({ convocatoria: { estado: 'Retirado' } }), { correo: CORREO, codigo: CODIGO })
-    .expect(403);
+test('responde 401 si el código pertenece a otro usuario', async () => {
+  await ingresar(crearAppDePrueba({ usuarioIdDelCodigo: 99 }), {
+    correo: CORREO,
+    codigo: CODIGO
+  }).expect(401);
 });
 
-test('responde 403 si la sesión del estudiante ya finalizó', async () => {
-  await ingresar(crearAppDePrueba({ sesion: { estado: 'Finalizado', numeroIntento: 1 } }), {
-    correo: CORREO, codigo: CODIGO
-  }).expect(403);
+test('responde 401 si la cuenta del estudiante está inactiva', async () => {
+  await ingresar(crearAppDePrueba({ usuario: { ...USUARIO, activo: false } }), {
+    correo: CORREO,
+    codigo: CODIGO
+  }).expect(401);
 });
 
 test('responde 403 si el usuario no tiene el rol Estudiante', async () => {
-  const res = await ingresar(crearAppDePrueba({ roles: ['Docente'] }), { correo: CORREO, codigo: CODIGO })
-    .expect(403);
-  assert.match(res.body.error, /rol Estudiante/);
+  const res = await ingresar(crearAppDePrueba({ roles: ['Docente'] }), {
+    correo: CORREO,
+    codigo: CODIGO
+  }).expect(403);
+  assert.match(res.body.error, /solo para estudiantes/);
 });
 
 test('responde 500 sin detalles internos si falla la base de datos', async () => {
-  const falla = Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:3306'), { code: 'ECONNREFUSED' });
+  const falla = Object.assign(
+    new Error('connect ECONNREFUSED 127.0.0.1:3306'),
+    { code: 'ECONNREFUSED' }
+  );
   const errorOriginal = console.error;
   console.error = () => {};
   try {
-    const res = await ingresar(crearAppDePrueba({ falla }), { correo: CORREO, codigo: CODIGO }).expect(500);
+    const res = await ingresar(crearAppDePrueba({ falla }), {
+      correo: CORREO,
+      codigo: CODIGO
+    }).expect(500);
     assert.equal(res.body.error, 'Error interno del servidor');
     assert.ok(!JSON.stringify(res.body).includes('3306'));
   } finally {
@@ -132,16 +161,17 @@ test('responde 500 sin detalles internos si falla la base de datos', async () =>
 });
 
 // ---------- La ruta está registrada en la aplicación ----------
-
 test('la aplicación expone POST /api/acceso/estudiantes/ingreso', async () => {
-  // Sin datos responde 400 antes de conectarse a MySQL.
-  const res = await request(app).post('/api/acceso/estudiantes/ingreso').send({}).expect(400);
+  const res = await request(app)
+    .post('/api/acceso/estudiantes/ingreso')
+    .send({})
+    .expect(400);
   assert.match(res.body.error, /obligatorios/);
 });
-// ---------- Límite de intentos (fuerza bruta) ----------
 
+// ---------- Límite de intentos (fuerza bruta) ----------
 test('después de 5 códigos incorrectos responde 429 para ese correo', async () => {
-  const appPrueba = crearAppDePrueba({ convocatoria: null });
+  const appPrueba = crearAppDePrueba({ codigoValido: false });
   for (let i = 0; i < 5; i += 1) {
     await ingresar(appPrueba, { correo: CORREO, codigo: CODIGO }).expect(401);
   }

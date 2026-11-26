@@ -238,7 +238,7 @@ export function crearServicioAcceso(repositorio, {
       }
 
       const { roles } = await repositorio.obtenerRolesYPermisos(usuarioBd.id);
-      if (!roles.includes(ROLES.ESTUDIANTE)) {
+      if (!tieneRol({ roles }, ROLES.ESTUDIANTE)) {
         return respuestaGenerica;
       }
 

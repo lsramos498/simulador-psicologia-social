@@ -12,7 +12,8 @@ const AHORA = new Date('2026-11-07T15:00:00.000Z');
 function crearContexto({
   actividad = {},
   autorizacion = {},
-  ultimaSesion = null
+  ultimaSesion = null,
+  repeticionAprobada = null
 } = {}) {
   const datos = {
     actividad: {
@@ -33,6 +34,7 @@ function crearContexto({
       ...autorizacion
     },
     ultimaSesion,
+    repeticionAprobada,
     sesiones: [],
     transacciones: 0
   };
@@ -54,6 +56,28 @@ function crearContexto({
 
     async obtenerUltimaSesion() {
       return datos.ultimaSesion;
+    },
+
+    async obtenerRepeticionAprobada() {
+      return datos.repeticionAprobada;
+    },
+
+    async consumirAutorizacionRepeticion(_conexion, autorizacionId, consumidaEn) {
+      const repeticion = datos.repeticionAprobada;
+      if (
+        !repeticion ||
+        Number(repeticion.id) !== Number(autorizacionId) ||
+        repeticion.estado !== 'Aprobada'
+      ) {
+        return false;
+      }
+
+      datos.repeticionAprobada = {
+        ...repeticion,
+        estado: 'Consumida',
+        consumidaEn
+      };
+      return true;
     },
 
     async insertarSesion(_conexion, sesion) {
@@ -287,6 +311,33 @@ describe('Servicio de sesiones', () => {
     );
 
     assert.equal(datos.sesiones.length, 0);
+  });
+
+  test('permite un nuevo intento con autorización de repetición aprobada (RF-25)', async () => {
+    const { servicio, datos } = crearContexto({
+      ultimaSesion: {
+        id: 9,
+        actividad_id: 1,
+        estudiante_id: 20,
+        numeroIntento: 1,
+        estado: ESTADOS_SESION.FINALIZADO,
+        inicio: new Date('2026-11-07T14:00:00.000Z'),
+        fin: new Date('2026-11-07T14:30:00.000Z'),
+        segundosConsumidos: 1800,
+        motivoCierre: MOTIVOS_CIERRE.FINALIZACION
+      },
+      repeticionAprobada: { id: 77, estado: 'Aprobada' }
+    });
+
+    const resultado = await servicio.iniciarSesion({
+      actividadId: 1,
+      estudianteId: 20
+    });
+
+    assert.equal(resultado.numeroIntento, 2);
+    assert.equal(resultado.estado, ESTADOS_SESION.EN_CURSO);
+    assert.equal(datos.repeticionAprobada.estado, 'Consumida');
+    assert.deepEqual(datos.repeticionAprobada.consumidaEn, AHORA);
   });
 
   test('finaliza una sesión con evaluación (mismo camino que finalizarPropia)', async () => {

@@ -22,7 +22,13 @@ function validarUsuario(usuario) {
 export function tieneRol(usuario, ...rolesPermitidos) {
   validarUsuario(usuario);
   const roles = Array.isArray(usuario.roles) ? usuario.roles : [];
-  return rolesPermitidos.some((rol) => roles.includes(rol));
+  const rolesNormalizados = new Set(
+    roles.map((rol) => String(rol).trim().toLowerCase()).filter(Boolean)
+  );
+
+  return rolesPermitidos.some((rol) =>
+    rolesNormalizados.has(String(rol).trim().toLowerCase())
+  );
 }
 
 export function tienePermiso(usuario, permiso) {

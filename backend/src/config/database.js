@@ -1,5 +1,6 @@
 ﻿import 'dotenv/config';
 import mysql from 'mysql2/promise';
+import { configurarZonaHorariaMySql } from './configurarZonaHoraria.js';
 
 const requiredVariables = [
   'DB_HOST',
@@ -25,7 +26,9 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error('DB_PORT debe ser un puerto válido.');
 }
 
-export const pool = mysql.createPool({
+const databaseTimeZone = process.env.DB_TIMEZONE || '-05:00';
+
+export const pool = configurarZonaHorariaMySql(mysql.createPool({
   host: process.env.DB_HOST,
   port,
   database: process.env.DB_NAME,
@@ -36,5 +39,5 @@ export const pool = mysql.createPool({
   queueLimit: 0,
   charset: 'utf8mb4',
   // Alinear Node (America/Bogota) con MySQL para ventanas de actividad/sesión.
-  timezone: process.env.DB_TIMEZONE || '-05:00'
-});
+  timezone: databaseTimeZone
+}), databaseTimeZone);
