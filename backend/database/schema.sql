@@ -564,11 +564,12 @@ CREATE TABLE CodigoLoginEstudiante (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- DISPARADORES (ver backend/database/triggers.sql — 24 triggers)
+-- DISPARADORES (ver backend/database/triggers.sql — 30 triggers)
 -- =====================================================
--- Se aplican con: mysql ... < backend/database/triggers.sql
--- Incluyen auditoría, validaciones de negocio, fechas automáticas
--- y normalización de datos (Usuario, Caso, Sesión, Respuestas, Actividad, etc.).
+-- Se aplican con: npm run db:triggers   (o mysql ... < backend/database/triggers.sql)
+-- Guía para la clase: backend/database/README-disparadores.md
+-- Incluyen auditoría, validaciones de negocio, fechas automáticas,
+-- normalización de datos y reglas del OTP (CodigoLoginEstudiante).
 
 -- =====================================================
 -- REGLAS DE NEGOCIO QUE DEBEN VALIDARSE EN BACKEND
