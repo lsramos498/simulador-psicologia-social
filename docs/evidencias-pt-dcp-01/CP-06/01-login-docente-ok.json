@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlcyI6WyJEb2NlbnRlIl0sInBlcm1pc29zIjpbIkNSRUFSX0NBU09TIl0sImlhdCI6MTc5NTY2NDQzMCwiZXhwIjoxNzk1NjY4MDMwLCJzdWIiOiIzIn0.ZbBz8TdkE1-J5rPTijw49xQpd8R9RGBS9rBqd3bYqU8",
+    "usuario": {
+      "id": 3,
+      "roles": [
+        "Docente"
+      ],
+      "permisos": [
+        "CREAR_CASOS"
+      ],
+      "nombres": "Docente",
+      "apellidos": "Casos",
+      "correo": "docente.casos@unihumboldt.edu.co"
+    }
+  }
+}

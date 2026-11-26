@@ -1,0 +1,3031 @@
+DOCUMENTO PLAN DE PRUEBAS
+LUMINA — Simulador de Psicología Social
+Versión: 2.0
+Integrantes:
+Stefanía Díaz Raigoza
+Sofía Gallego Bedoya
+Laura Sofía Ramos Reyes
+Valeria Tobar Garzón
+Tabla de contenido
+1.  Introducción4
+2.  Alcance5
+3. Definiciones, siglas y abreviaturas6
+4. Responsables e involucrados7
+5. Plan De Pruebas8
+5.1. Módulo de gestión de sesiones y actividades9
+5.2. Módulo de autenticación, roles y permisos9
+5.3. Módulo de gestión de casos, escenas y decisiones10
+5.4. Módulo de participación y respuestas10
+5.5. Módulo de evaluación, retroalimentación y seguimiento11
+5.6. Estrategia y niveles de prueba12
+5.7. Entorno de pruebas13
+5.8. Datos de prueba13
+5.9. Criterios de aceptación y suspensión14
+5.10. Matriz de trazabilidad de requisitos14
+5.11. Resumen de resultados15
+5.12. Defectos y observaciones17
+6. Casos De Prueba18
+6.1 Caso de uso: Creación de una actividad de simulación — Prueba N.º 1 (CP-01)19
+6.2 Caso de uso: Inicio de una sesión de simulación — Prueba N.º 2 (CP-02)23
+6.3 Caso de uso: Finalización de una sesión de simulación — Prueba N.º 3 (CP-03)26
+6.4 Caso de uso: Rechazo de transiciones de estado no permitidas — Prueba N.º 4 (CP-04)28
+6.5 Caso de uso: Restricciones de acceso a una actividad — Prueba N.º 5 (CP-05)31
+6.6 Caso de uso: Inicio de sesión con credenciales válidas — Prueba N.º 6 (CP-06)33
+6.7 Caso de uso: Inicio de sesión con credenciales incorrectas — Prueba N.º 7 (CP-07)35
+6.8 Caso de uso: Control de acceso según roles y permisos — Prueba N.º 8 (CP-08)37
+6.9 Caso de uso: Validación de códigos de autorización — Prueba N.º 9 (CP-09)41
+6.10 Caso de uso: Rechazo de códigos de autorización inválidos — Prueba N.º 10 (CP-10)43
+6.11 Caso de uso: Creación de un caso con información válida — Prueba N.º 11 (CP-11)46
+6.12 Caso de uso: Creación de un caso con información incompleta — Prueba N.º 12 (CP-12)48
+6.13 Caso de uso: Registro de escenas asociadas a un caso — Prueba N.º 13 (CP-13)50
+6.14 Caso de uso: Registro de decisiones y opciones de respuesta — Prueba N.º 14 (CP-14)52
+6.15 Caso de uso: Validación de relaciones entre casos, escenas y decisiones — Prueba N.º 15 (CP-15)56
+6.16 Caso de uso: Registro de una respuesta válida — Prueba N.º 16 (CP-16)60
+6.17 Caso de uso: Almacenamiento y consulta de respuestas en MySQL — Prueba N.º 17 (CP-17)62
+6.18 Caso de uso: Consulta de respuestas de otro estudiante — Prueba N.º 18 (CP-18)64
+6.19 Caso de uso: Registro de respuestas con la sesión finalizada — Prueba N.º 19 (CP-19)66
+6.20 Caso de uso: Rechazo de opciones que no corresponden a la decisión — Prueba N.º 20 (CP-20)68
+6.21 Caso de uso: Prevención de respuestas duplicadas — Prueba N.º 21 (CP-21)71
+6.22 Caso de uso: Modificación de una respuesta — Prueba N.º 22 (CP-22)74
+6.23 Caso de uso: Cálculo del progreso del estudiante — Prueba N.º 23 (CP-23)76
+6.24 Caso de uso: Funcionamiento del patrón Observer en la participación — Prueba N.º 24 (CP-24)78
+6.25 Caso de uso: Registro de la rúbrica, publicación y archivo del caso — Prueba N.º 25 (CP-25)80
+6.26 Caso de uso: Notificación de convocatoria y cambios de estudiantes — Prueba N.º 26 (CP-26)84
+6.27 Caso de uso: Control del tiempo máximo de participación — Prueba N.º 27 (CP-27)86
+6.28 Caso de uso: Restricción de ingreso tardío — Prueba N.º 28 (CP-28)88
+6.29 Caso de uso: Cálculo de la nota con la rúbrica — Prueba N.º 29 (CP-29)90
+6.30 Caso de uso: Evaluación de intentos incompletos y ausencias — Prueba N.º 30 (CP-30)92
+6.31 Caso de uso: Resultado y retroalimentación final — Prueba N.º 31 (CP-31)94
+6.32 Caso de uso: Autorización de repetición excepcional — Prueba N.º 32 (CP-32)96
+6.33 Caso de uso: Consulta de participaciones por el docente — Prueba N.º 33 (CP-33)98
+6.34 Caso de uso: Retroalimentación general del docente — Prueba N.º 34 (CP-34)100
+6.35 Caso de uso: Descarga del reporte de participación — Prueba N.º 35 (CP-35)102
+6.36 Caso de uso: Notificación de calificaciones y retroalimentación — Prueba N.º 36 (CP-36)104
+1.  Introducción
+El presente documento tiene como finalidad establecer el plan de pruebas para el proyecto Lumina, Simulador de Psicología Social, una aplicación desarrollada para apoyar el aprendizaje mediante la presentación de situaciones sociales en las que los estudiantes deben analizar escenarios, tomar decisiones y reflexionar sobre sus respuestas.
+El plan de pruebas busca verificar el correcto funcionamiento de los diferentes módulos del sistema, incluyendo la gestión de usuarios, roles y permisos, la creación de casos y escenarios, la administración de sesiones y el registro de respuestas de los estudiantes.
+Para ello, se definirán casos de prueba que permitan evaluar tanto situaciones correctas como condiciones incorrectas o inesperadas, con el propósito de identificar posibles errores y comprobar que las funcionalidades cumplan con los requisitos establecidos.
+De esta manera, se pretende contribuir a la calidad, confiabilidad y seguridad del software durante su proceso de desarrollo, facilitando la detección oportuna de fallos y la mejora continua del sistema.
+2.  Alcance
+El presente plan de pruebas comprende la evaluación de las principales funcionalidades del proyecto Lumina, Simulador de Psicología Social, con el propósito de verificar que los diferentes módulos del sistema cumplan con los requisitos establecidos y funcionen correctamente.
+Las pruebas estarán enfocadas en la gestión de usuarios, roles y permisos, la creación y administración de casos y escenarios de simulación, el control de las sesiones, el registro y consulta de respuestas de los estudiantes, el seguimiento de su progreso y la generación de notificaciones relacionadas con su participación.
+Se realizarán pruebas funcionales que permitan comprobar el comportamiento del sistema ante situaciones correctas e incorrectas, incluyendo la validación de datos, el control de acceso, las restricciones según el estado de las sesiones y el almacenamiento adecuado de la información en la base de datos.
+El alcance también contempla la verificación de la integración entre los módulos del sistema, a medida que estos sean desarrollados, para identificar posibles errores en la comunicación entre sus componentes.
+Dado que Lumina se encuentra en proceso de desarrollo, las pruebas se planificarán para las funcionalidades previstas y se ejecutarán progresivamente sobre aquellas que estén implementadas y disponibles. Las funcionalidades pendientes de desarrollo o integración se documentarán como pruebas no ejecutadas hasta que puedan ser verificadas.
+De esta manera, el plan permitirá realizar un seguimiento de la calidad del software, identificar fallos y comprobar el cumplimiento de los requisitos durante las diferentes etapas del proyecto.
+3. Definiciones, siglas y abreviaturas
+A continuación, se presentan los principales conceptos, términos y abreviaturas utilizados en el presente plan de pruebas, con el propósito de facilitar su comprensión.
+Plan de pruebas: Documento que establece las actividades, objetivos, estrategias y recursos necesarios para verificar el funcionamiento y la calidad de un sistema de software.
+Caso de prueba: Conjunto de condiciones, datos de entrada y pasos que permiten comprobar si una funcionalidad del sistema produce los resultados esperados.
+Pruebas funcionales: Pruebas que verifican que las funciones del software se comporten de acuerdo con los requisitos establecidos.
+Pruebas unitarias: Pruebas realizadas sobre funciones o componentes individuales del software para comprobar que funcionan correctamente de manera independiente.
+Pruebas de integración: Pruebas que permiten verificar la interacción entre diferentes componentes del sistema, como la comunicación entre el Backend y la base de datos.
+Escenario positivo: Situación de prueba en la que se utilizan datos válidos y se espera que el sistema realice correctamente la operación solicitada.
+Escenario negativo: Situación de prueba en la que se utilizan datos incorrectos o condiciones no permitidas para verificar que el sistema controle adecuadamente los errores.
+Criterio de aceptación: Condición que debe cumplirse para considerar que una funcionalidad o caso de prueba funciona correctamente.
+Backend: Parte del software encargada de procesar las solicitudes, aplicar las reglas del sistema y gestionar la información almacenada en la base de datos.
+Frontend: Parte visual de la aplicación mediante la cual los usuarios interactúan con las funcionalidades del sistema.
+Base de datos: Sistema organizado de almacenamiento que permite guardar, consultar y administrar la información de Lumina, como usuarios, sesiones y respuestas.
+MySQL: Sistema de gestión de bases de datos relacionales utilizado en el proyecto para almacenar la información.
+API REST: Interfaz que permite la comunicación entre diferentes componentes del software mediante solicitudes HTTP.
+Patrón de diseño: Solución reutilizable para organizar el código y resolver problemas frecuentes durante el desarrollo de software.
+Observer (Observador): Patrón de diseño que permite notificar automáticamente a los componentes suscritos cuando ocurre un evento determinado.
+State (Estado): Patrón de diseño que permite modificar el comportamiento de un objeto según su estado, como una sesión sin iniciar, en curso o finalizada.
+Proxy: Patrón de diseño que permite controlar el acceso a determinadas funcionalidades mediante un componente intermediario.
+Sesión de simulación: Participación de un estudiante en una actividad de Lumina, durante la cual puede analizar situaciones y registrar sus decisiones.
+Validación de datos: Proceso mediante el cual se comprueba que la información ingresada cumple con las condiciones establecidas por el sistema.
+Resultado esperado: Comportamiento que debería presentar el software al ejecutar un caso de prueba.
+Resultado obtenido: Comportamiento real observado después de ejecutar una prueba, que se compara con el resultado esperado.
+Git: Herramienta de control de versiones que permite registrar y administrar los cambios realizados en el código fuente.
+GitHub: Plataforma utilizada para almacenar el repositorio del proyecto y facilitar la colaboración entre las integrantes del equipo.
+4. Responsables e involucrados
+Nombre
+Tipo (Responsable/ Involucrado)
+Rol
+Laura Sofía Ramos Reyes
+Responsable
+Líder del proyecto, gestión de sesiones y coordinación de pruebas.
+Sofía Gallego Bedoya
+Responsable
+Autenticación, roles, permisos y códigos de autorización.
+Stefanía Díaz Raigoza
+Responsable
+Gestión de casos, escenas y decisiones de simulación.
+Valeria Tobar Garzón
+Responsable
+Participación, registro de respuestas, progreso y patrón Observer.
+5. Plan De Pruebas
+El Plan de Pruebas del proyecto Lumina, Simulador de Psicología Social tiene como objetivo verificar el correcto funcionamiento de los módulos que conforman el sistema, mediante la ejecución de pruebas que permitan comprobar el cumplimiento de los requisitos funcionales establecidos.
+Se realizarán pruebas con datos válidos e inválidos para evaluar el comportamiento de las funcionalidades, identificar posibles errores y garantizar que el sistema responda adecuadamente ante diferentes situaciones.
+Las pruebas se desarrollarán progresivamente, de acuerdo con el estado de implementación de cada módulo.
+5.1. Módulo de gestión de sesiones y actividades
+Responsable: Laura Sofía Ramos Reyes.
+Descripción del módulo:
+Este módulo permite administrar las actividades de simulación y controlar el ciclo de vida de las sesiones de los estudiantes, teniendo en cuenta los estados Sin iniciar, En curso y Finalizado.
+Objetivo de las pruebas:
+Verificar que las sesiones se creen y administren correctamente, que los cambios de estado cumplan con las reglas establecidas y que el sistema impida operaciones no permitidas.
+5.1.1. Casos de prueba planeados para el módulo
+CP-01: Verificar la creación y programación de una actividad de simulación.
+CP-02: Verificar el inicio correcto de una sesión.
+CP-03: Comprobar que una sesión pueda pasar del estado En curso a Finalizado.
+CP-04: Verificar que el sistema rechace transiciones de estado no permitidas.
+CP-05: Comprobar el comportamiento del sistema cuando se intenta acceder a una actividad fuera de las condiciones establecidas.
+CP-26: Verificar la notificación de convocatoria y de cambios de estudiantes.
+CP-27: Verificar el control del tiempo máximo de participación.
+CP-28: Verificar la restricción de ingreso tardío.
+CP-32: Verificar la autorización de repetición excepcional.
+5.2. Módulo de autenticación, roles y permisos
+Responsable: Sofía Gallego Bedoya.
+Descripción del módulo:
+Este módulo se encarga de gestionar la identificación de los usuarios, controlar sus permisos de acceso y validar los códigos de autorización para participar en las actividades de simulación.
+Objetivo de las pruebas:
+Comprobar que el sistema permita el acceso a los usuarios autorizados y restrinja las operaciones que no correspondan a sus permisos.
+5.2.1. Casos de prueba planeados para el módulo
+CP-06: Verificar el acceso de un usuario con credenciales válidas.
+CP-07: Comprobar el rechazo de credenciales incorrectas.
+CP-08: Verificar que los usuarios solamente puedan acceder a las funcionalidades autorizadas.
+CP-09: Comprobar que un código de autorización válido permita el acceso correspondiente.
+CP-10: Verificar el rechazo de códigos inválidos o no autorizados.
+5.3. Módulo de gestión de casos, escenas y decisiones
+Responsable: Stefanía Díaz Raigoza.
+Descripción del módulo:
+Este módulo permite administrar los casos de psicología social que se presentan a los estudiantes, incluyendo sus escenas, preguntas y opciones de decisión.
+Objetivo de las pruebas:
+Verificar que los casos y sus elementos se registren correctamente, que la información cumpla con las validaciones establecidas y que se mantengan las relaciones correspondientes entre casos, escenas y decisiones.
+5.3.1. Casos de prueba planeados para el módulo
+CP-11: Verificar la creación de un caso con información válida.
+CP-12: Comprobar el rechazo de un caso con información obligatoria incompleta.
+CP-13: Verificar la creación de escenas asociadas a un caso.
+CP-14: Comprobar el registro de decisiones y opciones asociadas a una escena.
+CP-15: Verificar que el sistema rechace relaciones incorrectas entre casos, escenas y decisiones.
+CP-25: Verificar el registro de la rúbrica, la publicación y el archivo del caso.
+5.4. Módulo de participación y respuestas
+Responsable: Valeria Tobar Garzón.
+Descripción del módulo:
+Este módulo permite registrar y consultar las respuestas seleccionadas por los estudiantes durante las simulaciones de psicología social. También contempla las validaciones necesarias para controlar la participación, evitar registros duplicados y gestionar el seguimiento del progreso del estudiante.
+Objetivo de las pruebas:
+Comprobar que las respuestas se registren correctamente en la base de datos, que correspondan al estudiante y a la sesión autorizada y que el sistema rechace operaciones inválidas. Asimismo, verificar las reglas de modificación de respuestas, el cálculo del progreso y el funcionamiento de los eventos de participación.
+5.4.1. Casos de prueba planeados para el módulo
+CP-16: Verificar el registro correcto de una respuesta válida.
+CP-17: Comprobar que las respuestas registradas se almacenen y consulten correctamente en MySQL.
+CP-18: Verificar que un estudiante no pueda consultar respuestas pertenecientes a otro estudiante.
+CP-19: Comprobar que no se puedan registrar respuestas cuando la sesión esté finalizada.
+CP-20: Verificar el rechazo de opciones que no correspondan a la decisión seleccionada.
+CP-21: Comprobar que no se registren respuestas duplicadas para una misma decisión y sesión.
+CP-22: Verificar que una respuesta pueda modificarse únicamente cuando las condiciones de la sesión lo permitan.
+CP-23: Comprobar el cálculo del progreso del estudiante durante la simulación.
+CP-24: Verificar el funcionamiento del patrón Observer ante eventos relacionados con la participación.
+5.5. Módulo de evaluación, retroalimentación y seguimiento
+Responsable: por asignar dentro del equipo.
+Descripción del módulo:
+Agrupa los requisitos que se ejecutan al terminar la participación: cálculo de la nota con la rúbrica, evaluación de intentos incompletos y ausencias, resultado y retroalimentación final, consulta de participaciones por el docente, retroalimentación general, reporte descargable y notificación de calificaciones (RF-13 a RF-16, RF-24, RF-26 y RF-27).
+Objetivo de las pruebas:
+Comprobar que la calificación se calcule con la rúbrica, que los resultados solo se muestren al finalizar y que el docente pueda consultar, retroalimentar y exportar los resultados de sus estudiantes.
+5.5.1. Casos de prueba planeados para el módulo
+CP-29: Verificar el cálculo de la nota con la rúbrica.
+CP-30: Verificar la evaluación de intentos incompletos y ausencias.
+CP-31: Verificar el resultado y la retroalimentación final del estudiante.
+CP-33: Verificar la consulta de participaciones por parte del docente.
+CP-34: Verificar el registro de la retroalimentación general del docente.
+CP-35: Verificar la descarga del reporte de participación.
+CP-36: Verificar la notificación de calificaciones y retroalimentación.
+5.6. Estrategia y niveles de prueba
+El plan cubre todos los requisitos funcionales del proyecto (RF-01 a RF-27), con al menos un escenario positivo y uno negativo por funcionalidad. Los casos CP-01 a CP-26 se ejecutaron; los casos CP-27 a CP-36 corresponden a funcionalidades que aún no están implementadas y quedan planificados.
+Las pruebas se ejecutaron el 03/11/2026 sobre la versión integrada del código (rama develop, idéntica a la rama integracion). Se combinaron tres niveles:
+Pruebas unitarias automatizadas del repositorio con node:test: 303 pruebas, 301 aprobadas y 2 omitidas por diseño (las que requieren MySQL real, que se ejecutaron aparte).
+Pruebas de integración con MySQL real: acceso.mysql.test.js (5 de 5 aprobadas) y participacion.mysql.test.js (4 de 5 subpruebas aprobadas; ver D-03).
+Pruebas funcionales de caja negra sobre la API REST: el servidor real (src/server.js) se levantó contra una base creada con el esquema oficial y se enviaron solicitudes con escenarios positivos y negativos. Cada resultado se comprobó con consultas SQL.
+Técnicas aplicadas: partición de equivalencia (datos válidos e inválidos), valores límite (fechas, tiempos, identificadores), pruebas de transición de estados (patrón State), pruebas de control de acceso (Proxy y middlewares) y verificación de integridad en la base de datos.
+5.7. Entorno de pruebas
+Código: rama develop del repositorio simulador-psicologia-social, backend v1.0.0 (corte del 02/11/2026).
+Ejecución: Node.js 22, Express 5, mysql2 y jsonwebtoken, según backend/package.json.
+Base de datos: esquema backend/database/schema.sql (27 tablas) cargado en MariaDB 10.11, compatible con MySQL. Se recomienda repetir las pruebas de integración en MySQL 8.0.16 o superior antes de la entrega final.
+Datos iniciales: seed del módulo de acceso (npm run db:seed): roles Administrador, Docente y Estudiante, permiso CREAR_CASOS y administrador inicial.
+Herramientas: node --test (pruebas automatizadas), un script de solicitudes HTTP para la API y consultas SQL de verificación. Las capturas de cada caso se tomaron de esa ejecución.
+5.8. Datos de prueba
+Usuarios: administrador del seed (id 1); docentes Diana Prueba (id 2) y Daniel Segundo (id 3), creados por el administrador; estudiantes Ana (id 4), Bruno (id 5) y Carla (id 6).
+Espacio académico: «Psicología Social - Grupo IV» (id 1).
+Casos: «Conformidad grupal en el aula» (id 2), con una escena, una pregunta, dos opciones y rúbrica, publicado; «Caso de verificación de permisos» (id 1) en Borrador.
+Actividades: id 1 para el 05/11/2026 de 08:00 a 10:00 (futura), id 2 vigente el día de la prueba e id 3 del 01/11/2026 (vencida).
+Códigos de autorización: como el correo de convocatoria aún no se envía, a cada estudiante se le asignó en la base de pruebas un código conocido (por ejemplo ANAV2345), guardado con el mismo hash HMAC-SHA256 del sistema.
+Los estudiantes, el espacio académico y las sesiones de simulación se insertaron por SQL porque todavía no existen endpoints para crearlos.
+5.9. Criterios de aceptación y suspensión
+Aprobado: todos los escenarios del caso coinciden con la respuesta esperada.
+Aprobado con observaciones: el comportamiento esperado se cumple, pero hay una limitación que impide probar el flujo completo (funcionalidad sin endpoint, datos preparados por SQL o prueba automatizada desactualizada).
+No aprobado: al menos un escenario no coincide con la respuesta esperada. Se registra un defecto.
+No ejecutado: la funcionalidad aún no está implementada; el caso queda definido y se ejecutará cuando se integre.
+Suspensión: las pruebas se suspenden si el servidor o la base de datos no están disponibles, o si el esquema no corresponde al del repositorio.
+5.10. Matriz de trazabilidad de requisitos
+Cada requisito funcional de la hoja «16 oct» del documento de requisitos centralizados tiene al menos un caso de prueba. El estado indica cómo estaba la funcionalidad en la rama develop el 03/11/2026.
+RF
+Requisito
+Casos de prueba
+Estado
+RF-01
+Autenticar estudiantes
+CP-09, CP-10
+Implementado
+RF-02
+Controlar acceso por rol
+CP-05, CP-06, CP-07, CP-08, CP-18
+Implementado
+RF-03
+Administrar docentes, roles y permisos
+CP-06, CP-07, CP-08
+Implementado
+RF-04
+Asociar espacio académico y estudiantes
+CP-01
+Parcial
+RF-05
+Registrar estructura académica del caso
+CP-11, CP-12
+Implementado
+RF-06
+Registrar contextos y preguntas por escenario
+CP-13, CP-14
+Implementado
+RF-07
+Administrar preguntas y respuestas
+CP-14, CP-15
+Implementado
+RF-08
+Justificar respuestas correctas e incorrectas
+CP-14, CP-15
+Implementado
+RF-09
+Validar estructura y rúbrica del caso
+CP-11, CP-15, CP-25
+Implementado
+RF-10
+Responder y modificar respuestas
+CP-16, CP-19, CP-20, CP-22
+Implementado
+RF-11
+Registrar respuestas y mostrar progreso
+CP-16, CP-17, CP-21, CP-23
+Parcial
+RF-12
+Registrar inicio y fin de la participación
+CP-02, CP-03
+Parcial
+RF-13
+Calcular nota con rúbrica
+CP-29
+Pendiente
+RF-14
+Mostrar resultado y retroalimentación final
+CP-31 (y CP-08, CP-17)
+Pendiente
+RF-15
+Consultar participaciones de estudiantes
+CP-33
+Pendiente
+RF-16
+Descargar reporte de participación
+CP-35
+Pendiente
+RF-17
+Registrar y asociar la rúbrica
+CP-25
+Implementado
+RF-18
+Agendar fecha, horarios y condiciones
+CP-01
+Implementado
+RF-19
+Administrar estados de sesiones
+CP-02, CP-03, CP-04
+Parcial
+RF-20
+Asignar y validar código de autorización
+CP-01, CP-09, CP-10, CP-26
+Implementado
+RF-21
+Notificar convocatoria y cambios
+CP-26
+Parcial
+RF-22
+Restringir ingreso tardío
+CP-05, CP-28
+Pendiente
+RF-23
+Controlar tiempo máximo de participación
+CP-27
+Pendiente
+RF-24
+Evaluar intentos incompletos y ausencias
+CP-30
+Pendiente
+RF-25
+Autorizar repetición excepcional
+CP-32 (y CP-19)
+Pendiente
+RF-26
+Registrar retroalimentación general docente
+CP-34
+Pendiente
+RF-27
+Notificar calificaciones y feedback
+CP-24, CP-36
+Pendiente
+5.11. Resumen de resultados
+La siguiente tabla resume los 36 casos de prueba. El detalle y las evidencias de cada uno están en la sección 6.
+CP
+Caso de uso
+Módulo
+Escenarios que coinciden
+Veredicto
+CP-01
+Creación de una actividad de simulación
+Gestión de sesiones y actividades
+4 de 4
+Aprobado con observaciones
+CP-02
+Inicio de una sesión de simulación
+Gestión de sesiones y actividades
+4 de 4
+Aprobado con observaciones
+CP-03
+Finalización de una sesión de simulación
+Gestión de sesiones y actividades
+3 de 3
+Aprobado con observaciones
+CP-04
+Rechazo de transiciones de estado no permitidas
+Gestión de sesiones y actividades
+5 de 6
+No aprobado (1 de 6 escenarios)
+CP-05
+Restricciones de acceso a una actividad
+Gestión de sesiones y actividades
+3 de 3
+Aprobado
+CP-06
+Inicio de sesión con credenciales válidas
+Autenticación, roles y permisos
+2 de 2
+Aprobado
+CP-07
+Inicio de sesión con credenciales incorrectas
+Autenticación, roles y permisos
+4 de 4
+Aprobado
+CP-08
+Control de acceso según roles y permisos
+Autenticación, roles y permisos
+7 de 7
+Aprobado
+CP-09
+Validación de códigos de autorización
+Autenticación, roles y permisos
+2 de 2
+Aprobado con observaciones
+CP-10
+Rechazo de códigos de autorización inválidos
+Autenticación, roles y permisos
+4 de 4
+Aprobado
+CP-11
+Creación de un caso con información válida
+Gestión de casos, escenas y decisiones
+3 de 3
+Aprobado
+CP-12
+Creación de un caso con información incompleta
+Gestión de casos, escenas y decisiones
+3 de 3
+Aprobado
+CP-13
+Registro de escenas asociadas a un caso
+Gestión de casos, escenas y decisiones
+1 de 1
+Aprobado
+CP-14
+Registro de decisiones y opciones de respuesta
+Gestión de casos, escenas y decisiones
+3 de 3
+Aprobado
+CP-15
+Validación de relaciones entre casos, escenas y decisiones
+Gestión de casos, escenas y decisiones
+4 de 4
+Aprobado
+CP-16
+Registro de una respuesta válida
+Participación y respuestas
+1 de 1
+Aprobado con observaciones
+CP-17
+Almacenamiento y consulta de respuestas en MySQL
+Participación y respuestas
+3 de 3
+Aprobado
+CP-18
+Consulta de respuestas de otro estudiante
+Participación y respuestas
+3 de 3
+Aprobado
+CP-19
+Registro de respuestas con la sesión finalizada
+Participación y respuestas
+2 de 2
+Aprobado
+CP-20
+Rechazo de opciones que no corresponden a la decisión
+Participación y respuestas
+3 de 4
+No aprobado (1 de 4 escenarios)
+CP-21
+Prevención de respuestas duplicadas
+Participación y respuestas
+2 de 2
+Aprobado con observaciones
+CP-22
+Modificación de una respuesta
+Participación y respuestas
+2 de 2
+Aprobado
+CP-23
+Cálculo del progreso del estudiante
+Participación y respuestas
+3 de 3
+Aprobado con observaciones
+CP-24
+Funcionamiento del patrón Observer en la participación
+Participación y respuestas
+3 de 3
+Aprobado con observaciones
+CP-25
+Registro de la rúbrica, publicación y archivo del caso
+Gestión de casos, escenas y decisiones
+6 de 6
+Aprobado
+CP-26
+Notificación de convocatoria y cambios de estudiantes
+Gestión de sesiones y actividades
+4 de 4
+Aprobado con observaciones
+CP-27
+Control del tiempo máximo de participación
+Gestión de sesiones y actividades
+—
+No ejecutado
+CP-28
+Restricción de ingreso tardío
+Gestión de sesiones y actividades
+—
+No ejecutado
+CP-29
+Cálculo de la nota con la rúbrica
+Evaluación, retroalimentación y seguimiento
+—
+No ejecutado
+CP-30
+Evaluación de intentos incompletos y ausencias
+Evaluación, retroalimentación y seguimiento
+—
+No ejecutado
+CP-31
+Resultado y retroalimentación final
+Evaluación, retroalimentación y seguimiento
+—
+No ejecutado
+CP-32
+Autorización de repetición excepcional
+Gestión de sesiones y actividades
+—
+No ejecutado
+CP-33
+Consulta de participaciones por el docente
+Evaluación, retroalimentación y seguimiento
+—
+No ejecutado
+CP-34
+Retroalimentación general del docente
+Evaluación, retroalimentación y seguimiento
+—
+No ejecutado
+CP-35
+Descarga del reporte de participación
+Evaluación, retroalimentación y seguimiento
+—
+No ejecutado
+CP-36
+Notificación de calificaciones y retroalimentación
+Evaluación, retroalimentación y seguimiento
+—
+No ejecutado
+Total: 15 aprobados, 9 aprobados con observaciones y 2 no aprobados de los 26 ejecutados, y 10 casos planificados para funcionalidades pendientes. Se registraron 3 defectos y 6 observaciones.
+5.12. Defectos y observaciones
+ID
+CP
+Descripción
+Severidad
+Responsable
+Estado
+D-01
+CP-20
+Con opcionId no numérico, POST /api/participacion/respuestas responde 500 en lugar de 400.
+Media
+Valeria
+Abierto
+D-02
+CP-04
+Una actividad Programada se puede cerrar sin haberse iniciado (200).
+Baja (confirmar regla)
+Laura
+Abierto
+D-03
+CP-21
+participacion.mysql.test.js falla: espera RESPUESTA_DUPLICADA, pero la regla vigente actualiza la respuesta.
+Baja
+Valeria
+Abierto
+Observaciones generales
+No existe endpoint para crear, iniciar o finalizar la sesión de simulación del estudiante; el patrón State solo se probó como clase (CP-02, CP-03, CP-16).
+El progreso (calcularProgreso) y el Observer (EventosParticipacion) no están conectados a la API (CP-23, CP-24).
+El correo de convocatoria no tiene transporte configurado, así que el estudiante aún no recibe su código (CP-09).
+No hay endpoints para registrar estudiantes ni espacios académicos; para las pruebas se crearon por SQL.
+Se pueden programar actividades con fechas ya vencidas (CP-01).
+Los casos CP-27 a CP-36 cubren requisitos que todavía no están implementados. Quedan planificados con escenarios positivos y negativos y se ejecutarán cuando se integren.
+6. Casos De Prueba
+Cada caso de prueba incluye su objetivo, el criterio de aceptación, los requisitos que verifica, sus precondiciones, los pasos, los datos de entrada con la respuesta esperada y la obtenida, las poscondiciones, el veredicto y las capturas de la ejecución.
+6.1 Caso de uso: Creación de una actividad de simulación — Prueba N.º 1 (CP-01)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-01
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Creación de una actividad de simulación
+MODULO DEL SISTEMA
+Gestión de sesiones y actividades
+Descripción del caso de prueba:
+Verificar que el sistema permita programar una actividad de simulación cuando se envían datos válidos (caso publicado, espacio académico, rúbrica, fechas, tiempo límite e intentos) y que rechace datos que no cumplen las reglas de RF-18.
+Objetivo: Comprobar que la programación de actividades respete las reglas de RF-18 y RF-04.
+Criterio de aceptación: La actividad válida se guarda con estado Programada y estudiantes autorizados con código en hash; cada dato inválido se rechaza con 400/409 sin crear registros.
+Requisitos verificados: RF-04, RF-18, RF-20
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Docente «Diana Prueba» (id 2) creado por el administrador, con el permiso CREAR_CASOS y sesión iniciada (token JWT).
+Caso «Conformidad grupal en el aula» (id 2) en estado Publicado, con una escena, una pregunta, dos opciones y rúbrica (id 1). Tiempo estimado del caso: 900 s.
+Espacio académico «Psicología Social - Grupo IV» (id 1) activo y estudiantes Ana (id 4) y Bruno (id 5) con el rol Estudiante.
+Pasos de la prueba
+Autenticarse como docente con POST /api/acceso/ingreso y conservar el token.
+Enviar POST /api/actividades con el caso, el espacio académico, la rúbrica, las fechas, el tiempo límite, los intentos y los estudiantes.
+Verificar que la respuesta sea 201 y que no exponga los códigos de autorización.
+Consultar ActividadProgramada y EstudianteAutorizado en MySQL para confirmar el registro y que el código quedó guardado como hash.
+Repetir la solicitud con fecha fin anterior al inicio, con tiempo límite mayor al del caso y con un caso en Borrador.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Actividad válida
+Caso 2, espacio 1, rúbrica 1; 05/11/2026 08:00 a 10:00; 600 s; 1 intento; estudiantes 4 y 5
+Positivo
+201 «Actividad programada correctamente», estado Programada y estudiantes autorizados.
+X
+201. Actividad id 1 en estado Programada. En BD: 2 filas en EstudianteAutorizado con hash de 64 caracteres; la respuesta HTTP no incluye los códigos.
+Fecha de finalización
+05/11/2026 07:00 (antes del inicio)
+Negativo
+Rechazo 400 por fechas inválidas.
+X
+400 «La fecha de finalización debe ser posterior a la de inicio.»
+Tiempo límite
+5000 s (el caso estima 900 s)
+Negativo
+Rechazo 400: no puede superar el tiempo estimado del caso.
+X
+400 «El tiempo límite no puede superar el tiempo estimado del caso.»
+Caso
+Caso 1 en estado Borrador
+Negativo
+Rechazo 409: solo se programan casos publicados.
+X
+409 «Solo se pueden programar casos publicados.»
+Post condiciones
+La actividad id 1 quedó registrada en ActividadProgramada con estado Programada y los valores enviados.
+Cada estudiante convocado quedó en EstudianteAutorizado con estado Autorizado y su código guardado como hash HMAC-SHA256.
+Las solicitudes inválidas no crearon registros.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos en los escenarios definidos. Las 42 pruebas automatizadas del módulo de actividades pasaron.
+Aprobado con observaciones
+Observaciones
+Probador
+El sistema permitió programar una actividad con fechas ya vencidas (01/11/2026). RF-18 no lo prohíbe de forma explícita; se recomienda confirmar la regla con la responsable del módulo.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Laura Sofía Ramos Reyes
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-01 (1 de 2): solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+Evidencia CP-01 (2 de 2): continuación.
+6.2 Caso de uso: Inicio de una sesión de simulación — Prueba N.º 2 (CP-02)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-02
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Inicio de una sesión de simulación
+MODULO DEL SISTEMA
+Gestión de sesiones y actividades
+Descripción del caso de prueba:
+Verificar que una sesión pase de «Sin iniciar» a «En curso» (patrón State) y que el docente responsable pueda iniciar la actividad programada.
+Objetivo: Validar la transición de inicio de la sesión y de la actividad.
+Criterio de aceptación: La sesión pasa de Sin iniciar a En curso con fecha de inicio; solo el docente creador puede iniciar la actividad (otro docente recibe 403).
+Requisitos verificados: RF-12, RF-19
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Actividad vigente id 2 (programada para hoy) en estado Programada, creada por el docente id 2.
+Segundo docente (id 3) autenticado, que no es el creador de la actividad.
+Clase SesionSimulacion (src/modules/sesiones/sesion.state.js) disponible para las pruebas unitarias.
+Pasos de la prueba
+Ejecutar node --test tests/sesion.state.test.js para validar las transiciones del patrón State.
+Consultar en MySQL el estado de la actividad 2 antes de iniciarla.
+Enviar POST /api/actividades/2/iniciar con el token del docente creador.
+Consultar de nuevo el estado de la actividad en MySQL.
+Enviar la misma solicitud con el token de otro docente.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Sesión nueva (State)
+new SesionSimulacion({...})
+Positivo
+Estado inicial «Sin iniciar».
+X
+Prueba unitaria aprobada: «Una sesión nueva comienza en Sin iniciar».
+iniciar() desde Sin iniciar
+fechaInicio = ahora
+Positivo
+Estado «En curso» y fecha de inicio registrada.
+X
+Prueba unitaria aprobada: «Una sesión Sin iniciar puede pasar a En curso».
+Docente creador
+POST /api/actividades/2/iniciar
+Positivo
+200 y estado Iniciada en la BD.
+X
+200. En MySQL la actividad 2 pasó de Programada a Iniciada.
+Docente no creador
+POST /api/actividades/2/iniciar (docente id 3)
+Negativo
+403: no puede modificar la actividad.
+X
+403 «No tiene autorización para modificar esta actividad.»
+Post condiciones
+La actividad 2 quedó en estado Iniciada.
+La sesión del modelo State quedó en «En curso» con fecha de inicio.
+El intento del docente no autorizado no modificó la actividad.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos en los escenarios ejecutados.
+Aprobado con observaciones
+Observaciones
+Probador
+Todavía no existe un endpoint ni un repositorio para crear o iniciar la SesionSimulacion del estudiante: el patrón State se verificó a nivel de clase (8/8 pruebas). Debe repetirse cuando el inicio de sesión del estudiante esté expuesto en la API.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Laura Sofía Ramos Reyes
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-02: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.3 Caso de uso: Finalización de una sesión de simulación — Prueba N.º 3 (CP-03)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-03
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Finalización de una sesión de simulación
+MODULO DEL SISTEMA
+Gestión de sesiones y actividades
+Descripción del caso de prueba:
+Verificar que una sesión «En curso» pueda pasar a «Finalizado» registrando fin, segundos consumidos y motivo de cierre, y que el docente pueda cerrar la actividad.
+Objetivo: Validar la transición de finalización de la sesión y el cierre de la actividad.
+Criterio de aceptación: La sesión pasa a Finalizado con fin, segundos y motivo válidos; la actividad queda Cerrada y no acepta nuevas respuestas.
+Requisitos verificados: RF-12, RF-19
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Actividad 2 en estado Iniciada (resultado de CP-02).
+Sesión de simulación en estado «En curso» en el modelo State.
+Pasos de la prueba
+Ejecutar las pruebas unitarias de sesion.state.test.js para la transición En curso → Finalizado.
+Enviar POST /api/actividades/2/cerrar con el token del docente creador.
+Consultar el estado de la actividad en MySQL.
+Verificar (CP-19) que en una sesión Finalizado ya no se puedan registrar respuestas.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+finalizar() desde En curso
+motivo «Finalizacion»
+Positivo
+Estado «Finalizado» con fin, segundos y motivo.
+X
+Prueba unitaria aprobada: «Una sesión En curso puede pasar a Finalizado».
+finalizar() por tiempo
+motivo «TiempoAgotado»
+Positivo
+Se acepta el cierre por tiempo agotado.
+X
+Prueba unitaria aprobada: «Permite finalizar por tiempo agotado».
+Docente creador
+POST /api/actividades/2/cerrar
+Positivo
+200 y estado Cerrada en la BD.
+X
+200. En MySQL la actividad 2 quedó en estado Cerrada.
+Post condiciones
+La actividad 2 quedó en estado Cerrada.
+En el modelo State la sesión quedó en «Finalizado» con su motivo de cierre.
+Las sesiones finalizadas no aceptan nuevas respuestas (verificado en CP-19).
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos en los escenarios ejecutados.
+Aprobado con observaciones
+Observaciones
+Probador
+Igual que en CP-02, la finalización de la sesión del estudiante no está expuesta en la API; se verificó con la clase State y con el cierre de la actividad. El cierre automático un día después del fin (RF-19) no está implementado todavía.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Laura Sofía Ramos Reyes
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-03: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.4 Caso de uso: Rechazo de transiciones de estado no permitidas — Prueba N.º 4 (CP-04)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-04
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Rechazo de transiciones de estado no permitidas
+MODULO DEL SISTEMA
+Gestión de sesiones y actividades
+Descripción del caso de prueba:
+Comprobar que el sistema rechace cambios de estado que no siguen el ciclo Sin iniciar → En curso → Finalizado (sesión) y Programada → Iniciada → Cerrada (actividad).
+Objetivo: Comprobar que el ciclo de estados no se pueda saltar ni revertir.
+Criterio de aceptación: Toda transición fuera del ciclo definido se rechaza con error (409/404 en la API) y no cambia el estado guardado.
+Requisitos verificados: RF-19
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Actividad 2 en estado Cerrada (resultado de CP-03) y actividad 1 en estado Programada.
+Docente creador autenticado.
+Pasos de la prueba
+Ejecutar las pruebas unitarias de transiciones inválidas de sesion.state.test.js.
+Enviar POST /api/actividades/2/iniciar sobre la actividad Cerrada.
+Enviar POST /api/actividades/1/cerrar sobre una actividad que nunca se inició.
+Enviar POST /api/actividades/999999/iniciar sobre una actividad inexistente.
+Consultar los estados finales en MySQL.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+iniciar() en Finalizado
+Sesión Finalizado
+Negativo
+Error: no puede volver a iniciarse.
+X
+Prueba unitaria aprobada: «Una sesión Finalizado no puede volver a iniciarse».
+finalizar() sin iniciar
+Sesión Sin iniciar
+Negativo
+Error: no puede finalizar antes de comenzar.
+X
+Prueba unitaria aprobada.
+Fecha y motivo de cierre
+fin < inicio; motivo no definido
+Negativo
+Error de validación en ambos casos.
+X
+Pruebas unitarias aprobadas.
+Actividad Cerrada
+POST /api/actividades/2/iniciar
+Negativo
+409: una actividad cerrada no se puede iniciar.
+X
+409 «Una actividad cerrada no se puede iniciar.»
+Actividad Programada
+POST /api/actividades/1/cerrar
+Negativo
+Rechazo (409): debe iniciarse antes de cerrarse.
+X
+200. La actividad pasó de Programada a Cerrada sin haberse iniciado.
+Actividad inexistente
+POST /api/actividades/999999/iniciar
+Negativo
+404: la actividad no existe.
+X
+404 «La actividad programada no existe.»
+Post condiciones
+La actividad 2 permaneció en estado Cerrada.
+La actividad 1 quedó Cerrada sin pasar por Iniciada (comportamiento reportado como D-02).
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+D-02: el servicio de actividades permite la transición Programada → Cerrada. La validación de cambiarEstadoActividad() solo bloquea Cerrada → Iniciada. También se acepta iniciar dos veces una actividad Iniciada (responde 200 sin cambios).
+No aprobado (1 de 6 escenarios)
+Observaciones
+Probador
+Confirmar con la responsable si cerrar una actividad no iniciada debe tratarse como cancelación permitida. Si no es así, agregar la validación y una prueba unitaria.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Laura Sofía Ramos Reyes
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-04: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.5 Caso de uso: Restricciones de acceso a una actividad — Prueba N.º 5 (CP-05)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-05
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Restricciones de acceso a una actividad
+MODULO DEL SISTEMA
+Gestión de sesiones y actividades
+Descripción del caso de prueba:
+Verificar que el sistema impida el acceso a una actividad fuera de su ventana de fechas y que un docente no pueda consultar actividades de otro docente.
+Objetivo: Verificar las restricciones de acceso por fechas y por propiedad de la actividad.
+Criterio de aceptación: Fuera de la ventana de fechas no se entrega token (403) y un docente no puede ver actividades ajenas (403).
+Requisitos verificados: RF-22 (parcial), RF-02
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Actividad 1 programada para el 05/11/2026 08:00 (futura) y actividad 3 que terminó el 01/11/2026.
+Estudiante Ana convocada a ambas, con códigos conocidos ANAF2345 y ANAX2345.
+Segundo docente (id 3) autenticado.
+Pasos de la prueba
+Enviar POST /api/acceso/estudiantes/ingreso con el código de la actividad futura.
+Repetir con el código de la actividad vencida.
+Enviar GET /api/actividades/2 con el token de un docente que no la creó.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Actividad futura
+ana.estudiante@… / ANAF2345
+Negativo
+403: la actividad todavía no ha comenzado.
+X
+403 «La actividad todavía no ha comenzado»
+Actividad vencida
+ana.estudiante@… / ANAX2345
+Negativo
+403: la actividad ya terminó.
+X
+403 «La actividad ya terminó»
+Docente ajeno
+GET /api/actividades/2 (docente id 3)
+Negativo
+403: sin autorización para consultarla.
+X
+403 «No tiene autorización para consultar esta actividad.»
+Post condiciones
+No se entregó token a la estudiante fuera de la ventana permitida.
+No se expuso información de la actividad al docente ajeno.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos.
+Aprobado
+Observaciones
+Probador
+La regla de ingreso tardío de RF-22 (mitad del tiempo) aún no está implementada; hoy la ventana es fechaInicio–fechaFin, como indica el README del módulo de acceso.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Laura Sofía Ramos Reyes
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-05: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.6 Caso de uso: Inicio de sesión con credenciales válidas — Prueba N.º 6 (CP-06)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-06
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Inicio de sesión con credenciales válidas
+MODULO DEL SISTEMA
+Autenticación, roles y permisos
+Descripción del caso de prueba:
+Verificar que docentes y administradores ingresen con correo institucional y contraseña válidos y reciban un token JWT con sus roles y permisos.
+Objetivo: Confirmar el ingreso correcto de docentes y administradores.
+Criterio de aceptación: Con credenciales válidas se responde 200 con un token JWT que trae los roles y permisos desde la BD, sin exponer la contraseña.
+Requisitos verificados: RF-02, RF-03
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Administrador creado por el seed (admin@unihumboldt.edu.co).
+Docente docente.prueba@unihumboldt.edu.co creado por el administrador mediante POST /api/acceso/admin/docentes.
+Pasos de la prueba
+Enviar POST /api/acceso/ingreso con el correo y la contraseña del docente.
+Enviar la misma solicitud con los datos del administrador.
+Verificar el código 200, el token y que la respuesta no incluya el hash de la contraseña.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Docente
+docente.prueba@unihumboldt.edu.co / contraseña válida
+Positivo
+200 con token y usuario {id, roles: [Docente], permisos}.
+X
+200. Token JWT; usuario id 2, roles [Docente].
+Administrador
+admin@unihumboldt.edu.co / contraseña del seed
+Positivo
+200 con token y rol Administrador.
+X
+200. Token JWT; usuario id 1, roles [Administrador].
+Post condiciones
+Se emitió un token con duración de 1 hora (JWT_EXPIRACION).
+La respuesta no contiene la contraseña ni su hash.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos. Las 39 pruebas automatizadas del grupo y la prueba con MySQL real (acceso.mysql.test.js, 5/5) pasaron.
+Aprobado
+Observaciones
+Probador
+El cierre de sesión se hace en el cliente eliminando el token; el servidor lo acepta hasta que vence (decisión documentada del equipo).
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Sofía Gallego Bedoya
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-06: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.7 Caso de uso: Inicio de sesión con credenciales incorrectas — Prueba N.º 7 (CP-07)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-07
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Inicio de sesión con credenciales incorrectas
+MODULO DEL SISTEMA
+Autenticación, roles y permisos
+Descripción del caso de prueba:
+Comprobar que el sistema rechace el ingreso con contraseña incorrecta, correo inexistente, datos incompletos o cuenta inactiva, sin revelar qué correos existen.
+Objetivo: Confirmar que el ingreso se niega ante credenciales incorrectas o cuentas inactivas.
+Criterio de aceptación: Se responde 400/401/403 según el caso, sin token y con el mismo mensaje para correo inexistente y contraseña errada.
+Requisitos verificados: RF-02, RF-03
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Docentes docente.prueba@… y docente.dos@… registrados.
+Cuenta docente.dos@… desactivada temporalmente (activo = 0).
+Pasos de la prueba
+Enviar POST /api/acceso/ingreso con una contraseña incorrecta.
+Enviar un correo no registrado.
+Enviar la solicitud sin contraseña.
+Enviar las credenciales correctas de la cuenta desactivada.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Contraseña
+ContrasenaIncorrecta1
+Negativo
+401 con mensaje genérico.
+X
+401 «Correo o contraseña no válidos»
+Correo
+no.existe@unihumboldt.edu.co
+Negativo
+401 con el mismo mensaje genérico.
+X
+401 «Correo o contraseña no válidos»
+Contraseña
+(vacía)
+Negativo
+400: datos obligatorios.
+X
+400 «El correo institucional y la contraseña son obligatorios»
+Cuenta inactiva
+docente.dos@… / contraseña correcta
+Negativo
+403: cuenta inactiva.
+X
+403 «La cuenta está inactiva»
+Post condiciones
+No se emitió ningún token.
+El mensaje para correo inexistente y contraseña incorrecta es idéntico.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos.
+Aprobado
+Observaciones
+Probador
+Sin observaciones.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Sofía Gallego Bedoya
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-07: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.8 Caso de uso: Control de acceso según roles y permisos — Prueba N.º 8 (CP-08)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-08
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Control de acceso según roles y permisos
+MODULO DEL SISTEMA
+Autenticación, roles y permisos
+Descripción del caso de prueba:
+Verificar que cada usuario solo ejecute las funciones de su rol y permisos (RF-02, RF-03): autenticación obligatoria, permiso CREAR_CASOS, rutas de administrador y restricciones para estudiantes (patrón Proxy y middlewares).
+Objetivo: Verificar el control de acceso por rol y permiso (Proxy y middlewares).
+Criterio de aceptación: Sin token → 401; sin rol o permiso → 403 sin ejecutar la operación; con el permiso CREAR_CASOS → 201; el estudiante no ve respuestas correctas.
+Requisitos verificados: RF-02, RF-03
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Administrador, docente sin el permiso CREAR_CASOS y estudiante Ana con token de la actividad 2.
+Permiso CREAR_CASOS existente en el catálogo (seed) pero aún no asignado al rol Docente.
+Pasos de la prueba
+Enviar POST /api/casos sin token y con un token alterado.
+Enviar POST /api/casos con el token del docente sin permiso.
+Enviar GET /api/acceso/admin/roles con el token del docente.
+Como administrador, asignar CREAR_CASOS al rol Docente (POST /api/acceso/admin/roles/Docente/permisos).
+El docente vuelve a ingresar y crea un caso.
+Con el token de la estudiante, intentar crear un caso y programar una actividad, y consultar un caso.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Sin token
+POST /api/casos
+Negativo
+401.
+X
+401 «Debe autenticarse para continuar»
+Token alterado
+Bearer token.alterado.invalido
+Negativo
+401.
+X
+401 «Token de autenticación no válido»
+Docente sin permiso
+POST /api/casos
+Negativo
+403.
+X
+403 «No tiene permiso para realizar esta operación»
+Docente en ruta admin
+GET /api/acceso/admin/roles
+Negativo
+403.
+X
+403 «No tiene el rol requerido para esta operación»
+Docente con permiso
+POST /api/casos (después de la asignación)
+Positivo
+201 caso creado.
+X
+201. Caso id 1 creado; el token nuevo incluye permisos [CREAR_CASOS].
+Estudiante
+POST /api/casos y POST /api/actividades
+Negativo
+403 en ambos.
+X
+403 «No tiene permiso…» y 403 «El usuario no tiene asignado el rol Docente.»
+Estudiante consulta caso
+GET /api/casos/2
+Positivo
+200 sin revelar la opción correcta ni su explicación.
+X
+200. Las opciones se entregan sin esCorrecta ni explicacion.
+Post condiciones
+Solo el docente con permiso pudo crear casos.
+El rol Docente quedó con el permiso CREAR_CASOS en RolPermiso.
+Ninguna operación no autorizada modificó datos.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos. Pruebas automatizadas de autorización, Proxy y rutas de administración: 36/36.
+Aprobado
+Observaciones
+Probador
+Los permisos viajan dentro del token: un cambio de permisos se refleja cuando el usuario vuelve a ingresar (máximo 1 hora). Es coherente con el diseño, pero conviene documentarlo para el docente.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Sofía Gallego Bedoya
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-08 (1 de 2): solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+Evidencia CP-08 (2 de 2): continuación.
+6.9 Caso de uso: Validación de códigos de autorización — Prueba N.º 9 (CP-09)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-09
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Validación de códigos de autorización
+MODULO DEL SISTEMA
+Autenticación, roles y permisos
+Descripción del caso de prueba:
+Comprobar que un estudiante convocado ingrese con su correo institucional y un código de autorización válido dentro de la ventana de la actividad (RF-01, RF-20).
+Objetivo: Verificar el ingreso del estudiante convocado con correo y código.
+Criterio de aceptación: Con código válido, dentro de la ventana y estado Autorizado, se responde 200 con token de rol Estudiante ligado a la actividad.
+Requisitos verificados: RF-01, RF-20
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Actividad 2 vigente (inició hace una hora y termina en tres horas).
+Estudiante Ana (id 4) convocada con estado Autorizado.
+Como el correo de convocatoria aún no tiene transporte configurado, en la BD de pruebas se asignó a Ana el código conocido ANAV2345 usando el mismo hash HMAC-SHA256 del sistema.
+Pasos de la prueba
+Enviar POST /api/acceso/estudiantes/ingreso con el correo y el código.
+Repetir con el correo en mayúsculas y espacios y el código en minúsculas.
+Verificar el token y que incluya el rol Estudiante y la actividad.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Correo y código
+ana.estudiante@unihumboldt.edu.co / ANAV2345
+Positivo
+200 con token, roles [Estudiante] y actividadId 2.
+X
+200. Usuario id 4, roles [Estudiante], actividadId 2.
+Normalización
+«  ANA.Estudiante@… » / anav2345
+Positivo
+200: correo y código se normalizan.
+X
+200 con el mismo usuario y actividad.
+Post condiciones
+La estudiante recibió un token válido por 1 hora asociado a la actividad 2.
+En la BD solo existe el hash del código, nunca el código en claro.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos. Pruebas automatizadas de códigos e ingreso: 32/32; integración con MySQL real: el estudiante convocado ingresa (aprobada).
+Aprobado con observaciones
+Observaciones
+Probador
+El envío del correo con el código (RF-21) aún no tiene transporte configurado, por lo que hoy el estudiante no puede recibir su código. El flujo de validación sí funciona.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Sofía Gallego Bedoya
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-09: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.10 Caso de uso: Rechazo de códigos de autorización inválidos — Prueba N.º 10 (CP-10)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-10
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Rechazo de códigos de autorización inválidos
+MODULO DEL SISTEMA
+Autenticación, roles y permisos
+Descripción del caso de prueba:
+Verificar que el sistema impida el acceso con códigos inexistentes, códigos de otro estudiante, datos incompletos o estudiantes retirados de la convocatoria.
+Objetivo: Verificar el rechazo de códigos inválidos o no autorizados.
+Criterio de aceptación: Códigos inexistentes o ajenos → 401 con mensaje genérico; datos faltantes → 400; estudiante retirado → 403. Nunca se entrega token.
+Requisitos verificados: RF-01, RF-20
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Actividad 2 vigente con Ana, Bruno y Carla convocados.
+Carla cambiada a estado Retirado en EstudianteAutorizado.
+Pasos de la prueba
+Enviar un código inexistente.
+Enviar el correo de Ana con el código de Bruno.
+Enviar la solicitud sin código.
+Enviar las credenciales de Carla (retirada).
+Consultar los estados en EstudianteAutorizado.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Código inexistente
+ZZZZ9999
+Negativo
+401 con mensaje genérico.
+X
+401 «Correo o código de autorización no válidos»
+Código ajeno
+Correo de Ana + código de Bruno
+Negativo
+401 con el mismo mensaje.
+X
+401 «Correo o código de autorización no válidos»
+Sin código
+(vacío)
+Negativo
+400: datos obligatorios.
+X
+400 «El correo institucional y el código de autorización son obligatorios»
+Estudiante retirado
+carla.estudiante@… / CARL2345
+Negativo
+403: no autorizado para la convocatoria.
+X
+403 «El estudiante no está autorizado para esta convocatoria»
+Post condiciones
+No se emitió ningún token.
+Los estados de autorización no cambiaron por los intentos fallidos.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos.
+Aprobado
+Observaciones
+Probador
+Sin observaciones.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Sofía Gallego Bedoya
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-10: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.11 Caso de uso: Creación de un caso con información válida — Prueba N.º 11 (CP-11)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-11
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Creación de un caso con información válida
+MODULO DEL SISTEMA
+Gestión de casos, escenas y decisiones
+Descripción del caso de prueba:
+Verificar que un docente con el permiso CREAR_CASOS registre un caso con todos los datos obligatorios y que quede en estado Borrador (RF-05, RF-09).
+Objetivo: Confirmar el registro de un caso con su estructura académica básica.
+Criterio de aceptación: Se responde 201, el caso queda en Borrador y asociado al docente autenticado.
+Requisitos verificados: RF-05, RF-09
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Docente id 2 con el permiso CREAR_CASOS y token vigente.
+Pasos de la prueba
+Enviar POST /api/casos con título, desarrollo situacional, contexto e historia y tiempo estimado.
+Verificar el código 201 y los datos devueltos.
+Consultar la tabla Caso en MySQL.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Título
+Conformidad grupal en el aula
+Positivo
+Se acepta (máx. 200 caracteres).
+X
+Registrado.
+Desarrollo situacional y contexto
+Textos completos
+Positivo
+Se aceptan.
+X
+Registrados.
+Tiempo estimado
+900 s
+Positivo
+201, caso en Borrador asociado al docente.
+X
+201. Caso id 2, estado Borrador, creador_id 2, tiempo 900 s (verificado en MySQL).
+Post condiciones
+El caso quedó en estado Borrador y asociado al docente autenticado (no al que envíe el cliente).
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos. Pruebas automatizadas del módulo de casos: 42/42.
+Aprobado
+Observaciones
+Probador
+Sin observaciones.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Stefanía Díaz Raigoza
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-11: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.12 Caso de uso: Creación de un caso con información incompleta — Prueba N.º 12 (CP-12)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-12
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Creación de un caso con información incompleta
+MODULO DEL SISTEMA
+Gestión de casos, escenas y decisiones
+Descripción del caso de prueba:
+Comprobar que el sistema rechace casos sin datos obligatorios o con valores inválidos e informe qué falta.
+Objetivo: Confirmar que no se registren casos incompletos o con datos inválidos.
+Criterio de aceptación: Se responde 422 con la lista de errores y no se inserta ningún caso.
+Requisitos verificados: RF-05
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Docente id 2 con el permiso CREAR_CASOS.
+En la tabla Caso existen 2 casos.
+Pasos de la prueba
+Enviar POST /api/casos sin título.
+Enviar un tiempo estimado negativo.
+Enviar un cuerpo vacío.
+Contar los casos en MySQL.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Título
+(ausente)
+Negativo
+422 con la lista de errores.
+X
+422 ESTRUCTURA_INVALIDA: «El título es obligatorio.»
+Tiempo estimado
+-5
+Negativo
+422.
+X
+422: «El tiempo estimado en segundos debe ser un entero entre 1 y 2147483647.»
+Cuerpo
+{}
+Negativo
+422 indicando todos los campos faltantes.
+X
+422 con 4 errores (título, desarrollo, contexto y tiempo).
+Post condiciones
+No se insertaron casos nuevos (siguen 2 en MySQL).
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos.
+Aprobado
+Observaciones
+Probador
+Sin observaciones.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Stefanía Díaz Raigoza
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-12: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.13 Caso de uso: Registro de escenas asociadas a un caso — Prueba N.º 13 (CP-13)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-13
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Registro de escenas asociadas a un caso
+MODULO DEL SISTEMA
+Gestión de casos, escenas y decisiones
+Descripción del caso de prueba:
+Verificar que el docente agregue escenas a un caso en Borrador y que queden relacionadas con ese caso (RF-06).
+Objetivo: Confirmar el registro de escenas dentro de un caso.
+Criterio de aceptación: Se responde 201 y la escena queda con caso_id del caso indicado.
+Requisitos verificados: RF-06
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Caso id 2 en estado Borrador.
+Pasos de la prueba
+Enviar POST /api/casos/2/escenas con nombre, contexto y orden.
+Verificar 201 y la escena dentro del caso devuelto.
+Consultar la tabla Escena en MySQL.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Escena
+Escena 1: la votación; orden 1
+Positivo
+201 y escena asociada al caso 2.
+X
+201. Escena id 1 con caso_id = 2 en MySQL.
+Post condiciones
+La escena quedó registrada con caso_id = 2.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos.
+Aprobado
+Observaciones
+Probador
+Sin observaciones.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Stefanía Díaz Raigoza
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-13: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.14 Caso de uso: Registro de decisiones y opciones de respuesta — Prueba N.º 14 (CP-14)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-14
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Registro de decisiones y opciones de respuesta
+MODULO DEL SISTEMA
+Gestión de casos, escenas y decisiones
+Descripción del caso de prueba:
+Comprobar que el docente registre preguntas (decisiones) en una escena y sus opciones, indicando la correcta y la explicación de cada una (RF-07, RF-08).
+Objetivo: Confirmar el registro de preguntas y opciones con su explicación.
+Criterio de aceptación: Cada pregunta y opción se guarda asociada a su escena/pregunta, con esCorrecta y explicación.
+Requisitos verificados: RF-06, RF-07, RF-08
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Caso id 2 en Borrador con la escena id 1.
+Pasos de la prueba
+Enviar POST /api/casos/2/escenas/1/decisiones con la pregunta, el orden y una ayuda.
+Enviar POST /api/casos/2/decisiones/1/opciones con la opción correcta.
+Agregar la opción incorrecta.
+Consultar OpcionDecision en MySQL.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Pregunta
+¿Qué debería hacer el estudiante?
+Positivo
+201 y decisión asociada a la escena.
+X
+201. Decisión id 1 en la escena 1.
+Opción correcta
+Expresar su desacuerdo… (esCorrecta = true)
+Positivo
+201.
+X
+201. Opción id 1, esCorrecta = 1.
+Opción incorrecta
+Votar con la mayoría… (esCorrecta = false)
+Positivo
+201.
+X
+201. Opción id 2, esCorrecta = 0.
+Post condiciones
+La decisión 1 quedó con dos opciones y sus explicaciones.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos.
+Aprobado
+Observaciones
+Probador
+Sin observaciones.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Stefanía Díaz Raigoza
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-14 (1 de 2): solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+Evidencia CP-14 (2 de 2): continuación.
+6.15 Caso de uso: Validación de relaciones entre casos, escenas y decisiones — Prueba N.º 15 (CP-15)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-15
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Validación de relaciones entre casos, escenas y decisiones
+MODULO DEL SISTEMA
+Gestión de casos, escenas y decisiones
+Descripción del caso de prueba:
+Verificar que el sistema rechace registros con relaciones incorrectas y que no permita publicar un caso incompleto.
+Objetivo: Verificar la integridad de las relaciones del caso y la validación antes de publicar.
+Criterio de aceptación: Relaciones con elementos de otro caso o inexistentes → 404; publicar un caso incompleto → 422 con lo que falta.
+Requisitos verificados: RF-07, RF-08, RF-09
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Caso 2 con escena 1 y decisión 1; caso 1 con su propia escena (id 2) y decisión (id 2).
+Pasos de la prueba
+Agregar una decisión al caso 2 usando la escena del caso 1.
+Agregar una decisión en una escena inexistente.
+Agregar una opción al caso 2 usando la decisión del caso 1.
+Publicar el caso 1, que no tiene rúbrica ni dos opciones.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Escena de otro caso
+POST /api/casos/2/escenas/2/decisiones
+Negativo
+404 ESCENA_NO_EXISTE.
+X
+404 «La escena no pertenece a este caso.»
+Escena inexistente
+POST /api/casos/2/escenas/999999/decisiones
+Negativo
+404.
+X
+404 «La escena no pertenece a este caso.»
+Decisión de otro caso
+POST /api/casos/2/decisiones/2/opciones
+Negativo
+404 DECISION_NO_EXISTE.
+X
+404 «La pregunta no pertenece a este caso.»
+Publicar caso incompleto
+POST /api/casos/1/publicar
+Negativo
+422 con lo que falta.
+X
+422: faltan opciones, opción esperada y rúbrica.
+Post condiciones
+No se creó ninguna relación inválida.
+El caso 1 siguió en Borrador.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos.
+Aprobado
+Observaciones
+Probador
+Sin observaciones.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Stefanía Díaz Raigoza
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-15 (1 de 2): solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+Evidencia CP-15 (2 de 2): continuación.
+6.16 Caso de uso: Registro de una respuesta válida — Prueba N.º 16 (CP-16)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-16
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Registro de una respuesta válida
+MODULO DEL SISTEMA
+Participación y respuestas
+Descripción del caso de prueba:
+Verificar que un estudiante registre la opción elegida en una decisión del caso de su sesión en curso.
+Objetivo: Confirmar el registro de una respuesta válida.
+Criterio de aceptación: Con sesión propia En curso y opción de la decisión, se responde 201 y se guarda una fila.
+Requisitos verificados: RF-10, RF-11
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Ana autenticada con su código (token con id 4).
+Sesión de simulación id 1 de Ana en estado «En curso». Se creó por SQL porque aún no existe el endpoint para iniciar la sesión del estudiante.
+Caso 2 publicado con la decisión 1 y las opciones 1 y 2.
+Pasos de la prueba
+Enviar POST /api/participacion/respuestas con sesionId 1, decisionId 1 y opcionId 2.
+Verificar el código 201 y los datos devueltos.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Respuesta
+sesionId 1, decisionId 1, opcionId 2
+Positivo
+201 con el id de la respuesta.
+X
+201. Respuesta id 1 (sesión 1, decisión 1, opción 2).
+Post condiciones
+La respuesta quedó guardada en RespuestaEstudiante (ver CP-17).
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos. Pruebas automatizadas de participación: 26/26.
+Aprobado con observaciones
+Observaciones
+Probador
+La sesión se preparó por SQL; falta el endpoint de inicio de sesión del estudiante para completar el flujo de punta a punta.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Valeria Tobar Garzón
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-16: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.17 Caso de uso: Almacenamiento y consulta de respuestas en MySQL — Prueba N.º 17 (CP-17)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-17
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Almacenamiento y consulta de respuestas en MySQL
+MODULO DEL SISTEMA
+Participación y respuestas
+Descripción del caso de prueba:
+Comprobar que las respuestas se guarden en MySQL y que el estudiante pueda consultarlas sin que se revele si son correctas.
+Objetivo: Confirmar la persistencia y la consulta de respuestas.
+Criterio de aceptación: Lo guardado en MySQL coincide con lo enviado y la consulta no revela si la respuesta es correcta.
+Requisitos verificados: RF-11, RF-14 (no anticipar)
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Respuesta id 1 registrada en CP-16.
+Pasos de la prueba
+Consultar RespuestaEstudiante en MySQL para la sesión 1.
+Enviar GET /api/participacion/sesiones/1/respuestas con el token de Ana.
+Ejecutar la prueba de integración participacion.mysql.test.js sobre la base proyecto_nuclear_test.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Consulta SQL
+RespuestaEstudiante WHERE sesion_id = 1
+Positivo
+1 fila con fecha de respuesta.
+X
+1 fila: decisión 1, opción 2, fechaRespuesta registrada.
+Consulta por API
+GET /api/participacion/sesiones/1/respuestas
+Positivo
+200 sin el campo esCorrecta.
+X
+200. Lista con la respuesta; no incluye esCorrecta.
+Integración MySQL
+participacion.mysql.test.js
+Positivo
+Inserción confirmada visible desde otra conexión.
+X
+Subpruebas de consulta e inserción confirmada aprobadas.
+Post condiciones
+Los datos consultados coinciden con los almacenados.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos en este caso (ver CP-21 sobre la última subprueba de integración).
+Aprobado
+Observaciones
+Probador
+Sin observaciones.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Valeria Tobar Garzón
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-17: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.18 Caso de uso: Consulta de respuestas de otro estudiante — Prueba N.º 18 (CP-18)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-18
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Consulta de respuestas de otro estudiante
+MODULO DEL SISTEMA
+Participación y respuestas
+Descripción del caso de prueba:
+Verificar que un estudiante no pueda consultar ni registrar respuestas en la sesión de otro estudiante.
+Objetivo: Verificar la confidencialidad de las respuestas entre estudiantes.
+Criterio de aceptación: Consultar o responder en una sesión ajena → 403; sin token → 401.
+Requisitos verificados: RF-02, RF-10
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Sesión 1 de Ana con una respuesta.
+Bruno autenticado con su propio código (sesión 2).
+Pasos de la prueba
+Con el token de Bruno, enviar GET /api/participacion/sesiones/1/respuestas.
+Con el token de Bruno, enviar una respuesta para la sesión 1.
+Enviar la consulta sin token.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Consulta ajena
+Bruno → sesión 1
+Negativo
+403 SESION_AJENA.
+X
+403 «La sesión no pertenece al estudiante indicado.»
+Registro ajeno
+Bruno → sesión 1
+Negativo
+403 SESION_AJENA.
+X
+403 SESION_AJENA
+Sin token
+GET …/sesiones/1/respuestas
+Negativo
+401.
+X
+401 «Debe autenticarse para continuar»
+Post condiciones
+No se expusieron ni modificaron respuestas de Ana.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos.
+Aprobado
+Observaciones
+Probador
+Sin observaciones.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Valeria Tobar Garzón
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-18: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.19 Caso de uso: Registro de respuestas con la sesión finalizada — Prueba N.º 19 (CP-19)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-19
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Registro de respuestas con la sesión finalizada
+MODULO DEL SISTEMA
+Participación y respuestas
+Descripción del caso de prueba:
+Comprobar que no se puedan registrar ni modificar respuestas cuando la sesión está Finalizado, y que el estudiante no pueda volver a ingresar.
+Objetivo: Verificar que una participación finalizada quede cerrada.
+Criterio de aceptación: Responder en sesión Finalizado → 409 sin cambios; el reingreso se niega con 403.
+Requisitos verificados: RF-10, RF-25
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Sesión 1 de Ana cambiada a «Finalizado» con motivo Finalizacion.
+Pasos de la prueba
+Enviar POST /api/participacion/respuestas para la sesión 1.
+Verificar en MySQL que la respuesta no cambió.
+Intentar ingresar de nuevo con el código de Ana.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Respuesta
+sesión 1 (Finalizado)
+Negativo
+409 ESTADO_NO_PERMITIDO.
+X
+409 «Solo se puede responder en una sesión En curso.»
+Reingreso
+ana.estudiante@… / ANAV2345
+Negativo
+403: participación finalizada.
+X
+403 «La participación en esta actividad ya fue finalizada»
+Post condiciones
+La respuesta de Ana conservó la opción 1.
+No se emitió un token nuevo.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos.
+Aprobado
+Observaciones
+Probador
+Sin observaciones.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Valeria Tobar Garzón
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-19: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.20 Caso de uso: Rechazo de opciones que no corresponden a la decisión — Prueba N.º 20 (CP-20)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-20
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Rechazo de opciones que no corresponden a la decisión
+MODULO DEL SISTEMA
+Participación y respuestas
+Descripción del caso de prueba:
+Verificar que el sistema rechace opciones inexistentes, opciones de otra decisión, decisiones de otro caso e identificadores con formato inválido.
+Objetivo: Verificar la validación de la opción elegida.
+Criterio de aceptación: Opciones o decisiones que no corresponden → 422; datos mal formados → 400; nunca se guarda una respuesta inválida.
+Requisitos verificados: RF-10
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Bruno autenticado con su sesión 2 «En curso».
+Decisión 2 y su opción 3 pertenecen a otro caso.
+Pasos de la prueba
+Enviar una opción inexistente.
+Enviar la opción 3 (de otra decisión) para la decisión 1.
+Enviar la decisión 2 (de otro caso).
+Enviar opcionId = "abc".
+Contar las respuestas de la sesión 2 en MySQL.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Opción inexistente
+opcionId 999999
+Negativo
+422 OPCION_INVALIDA.
+X
+422 OPCION_INVALIDA
+Opción de otra decisión
+decisionId 1, opcionId 3
+Negativo
+422 OPCION_INVALIDA.
+X
+422 OPCION_INVALIDA
+Decisión de otro caso
+decisionId 2
+Negativo
+422 OPCION_INVALIDA.
+X
+422 OPCION_INVALIDA
+Formato inválido
+opcionId "abc"
+Negativo
+400: datos de entrada inválidos.
+X
+500 «Ocurrió un error interno al procesar la solicitud.»
+Post condiciones
+No se insertó ninguna respuesta inválida (0 filas para la sesión 2).
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+D-01: un identificador no numérico produce 500 en lugar de 400. Causa: registrarRespuesta.js lanza un Error genérico (no TypeError ni código de negocio) y participacion.routes.js lo traduce como error interno. Los datos no se dañan.
+No aprobado (1 de 4 escenarios)
+Observaciones
+Probador
+Corrección sugerida: lanzar TypeError en registrarRespuesta() o asignar un código (por ejemplo DATOS_INVALIDOS) mapeado a 400, y agregar la prueba de la ruta.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Valeria Tobar Garzón
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-20: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.21 Caso de uso: Prevención de respuestas duplicadas — Prueba N.º 21 (CP-21)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-21
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Prevención de respuestas duplicadas
+MODULO DEL SISTEMA
+Participación y respuestas
+Descripción del caso de prueba:
+Comprobar que no se creen dos registros para la misma decisión y sesión, ni con envíos repetidos ni con envíos simultáneos.
+Objetivo: Verificar que no existan respuestas duplicadas.
+Criterio de aceptación: Para una sesión y decisión existe como máximo una fila, aun con envíos repetidos o simultáneos.
+Requisitos verificados: RF-11
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Bruno autenticado con su sesión 2 «En curso».
+Restricción única uk_respuesta_sesion_decision en RespuestaEstudiante.
+Pasos de la prueba
+Enviar dos veces la misma respuesta.
+Enviar dos solicitudes simultáneas para la misma decisión.
+Contar en MySQL las filas por sesión y decisión.
+Ejecutar participacion.mysql.test.js.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Envío repetido
+sesión 2, decisión 1, opción 1 (×2)
+Negativo
+Una sola fila; el segundo envío no duplica.
+X
+201 en ambos con el mismo id 2.
+Envíos simultáneos
+sesión 2, decisión 1, opción 2 (×2 en paralelo)
+Negativo
+Una sola fila para la decisión.
+X
+201 y 201 con el mismo id; MySQL: 1 fila.
+Post condiciones
+Existe exactamente una fila para la sesión 2 y la decisión 1.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+D-03: la prueba automatizada participacion.mysql.test.js falla en develop (4 de 5 subpruebas). Espera que uno de los envíos simultáneos sea rechazado con RESPUESTA_DUPLICADA, pero desde la integración de la modificación de respuestas (RF-10) el segundo envío actualiza la misma fila. El sistema no duplica datos; la prueba quedó desactualizada.
+Aprobado con observaciones
+Observaciones
+Probador
+Actualizar la prueba de integración a la regla vigente (una fila por decisión y la última opción enviada).
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Valeria Tobar Garzón
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-21: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.22 Caso de uso: Modificación de una respuesta — Prueba N.º 22 (CP-22)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-22
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Modificación de una respuesta
+MODULO DEL SISTEMA
+Participación y respuestas
+Descripción del caso de prueba:
+Verificar que una respuesta se pueda cambiar mientras la sesión está «En curso» y que quede registrada la fecha de modificación (RF-10).
+Objetivo: Verificar el cambio de respuesta durante la participación.
+Criterio de aceptación: En sesión En curso la respuesta se actualiza (mismo id, nueva opción y fecha de modificación); finalizada → 409.
+Requisitos verificados: RF-10
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Sesión 1 de Ana «En curso» con la respuesta id 1 (opción 2).
+Pasos de la prueba
+Enviar POST /api/participacion/respuestas con la misma decisión y la opción 1.
+Consultar la respuesta en MySQL.
+Finalizar la sesión e intentar modificar de nuevo (CP-19).
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Cambio de opción
+sesión 1, decisión 1, opción 2 → 1
+Positivo
+201 con el mismo id y la opción nueva.
+X
+201. Respuesta id 1 con opción 1; fechaModificacion registrada.
+Sesión finalizada
+misma solicitud con estado Finalizado
+Negativo
+409.
+X
+409 ESTADO_NO_PERMITIDO (ver CP-19).
+Post condiciones
+La respuesta conserva su id y guarda la nueva opción y la fecha de modificación.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos.
+Aprobado
+Observaciones
+Probador
+Sin observaciones.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Valeria Tobar Garzón
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-22: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.23 Caso de uso: Cálculo del progreso del estudiante — Prueba N.º 23 (CP-23)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-23
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Cálculo del progreso del estudiante
+MODULO DEL SISTEMA
+Participación y respuestas
+Descripción del caso de prueba:
+Comprobar el cálculo de preguntas respondidas y pendientes (RF-11) y el rechazo de valores inválidos.
+Objetivo: Verificar el cálculo del progreso.
+Criterio de aceptación: Devuelve total, respondidas y pendientes correctos y rechaza valores inválidos.
+Requisitos verificados: RF-11
+CASO DE PRUEBA
+Precondiciones
+Función calcularProgreso() en src/modules/participacion/calcularProgreso.js.
+Pasos de la prueba
+Ejecutar node --test src/modules/participacion/calcularProgreso.test.js.
+Revisar los resultados de cada escenario.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Progreso parcial
+total 5, respondidas 3
+Positivo
+2 pendientes.
+X
+Prueba aprobada: «Calcula las preguntas pendientes».
+Progreso completo
+total = respondidas
+Positivo
+0 pendientes.
+X
+Prueba aprobada.
+Valores inválidos
+respondidas > total, negativos, decimales
+Negativo
+Error de validación.
+X
+3 pruebas de rechazo aprobadas.
+Post condiciones
+La función devuelve total, respondidas y pendientes sin modificar datos.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos en la función (5/5).
+Aprobado con observaciones
+Observaciones
+Probador
+El progreso todavía no se expone en la API ni se calcula con los datos de la sesión. Debe probarse de punta a punta cuando se integre.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Valeria Tobar Garzón
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-23: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.24 Caso de uso: Funcionamiento del patrón Observer en la participación — Prueba N.º 24 (CP-24)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-24
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Funcionamiento del patrón Observer en la participación
+MODULO DEL SISTEMA
+Participación y respuestas
+Descripción del caso de prueba:
+Verificar que los observadores suscritos reciban el evento de participación finalizada y generen la notificación interna.
+Objetivo: Verificar el patrón Observer en los eventos de participación.
+Criterio de aceptación: Solo los observadores suscritos reciben el evento y se genera la notificación interna de participación finalizada.
+Requisitos verificados: RF-27 (base)
+CASO DE PRUEBA
+Precondiciones
+Clases EventosParticipacion y crearNotificacionInterna() en src/modules/participacion.
+Pasos de la prueba
+Ejecutar node --test src/modules/participacion/eventosParticipacion.test.js.
+Revisar suscripción, notificación y desuscripción.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Evento
+participacionFinalizada
+Positivo
+Se crea la notificación interna para el estudiante.
+X
+Prueba aprobada: «Observer crea una notificación al finalizar una participación».
+Otro evento
+tipo distinto
+Negativo
+No se crea notificación.
+X
+Prueba aprobada.
+Observador inválido / desuscrito
+no función; observador retirado
+Negativo
+Rechazo y ninguna notificación.
+X
+2 pruebas aprobadas.
+Post condiciones
+Solo los observadores suscritos reciben el evento.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos (4/4 pruebas del Observer).
+Aprobado con observaciones
+Observaciones
+Probador
+El Observer aún no está conectado al servicio de participación ni a la API; la notificación no se guarda en la tabla Notificacion.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Valeria Tobar Garzón
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-24: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.25 Caso de uso: Registro de la rúbrica, publicación y archivo del caso — Prueba N.º 25 (CP-25)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-25
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Registro de la rúbrica, publicación y archivo del caso
+MODULO DEL SISTEMA
+Gestión de casos, escenas y decisiones
+Descripción del caso de prueba:
+Verificar que el docente registre la rúbrica del caso con criterios cuyas ponderaciones sumen 100, que solo se modifiquen casos en Borrador y que un caso archivado no se pueda volver a programar.
+Objetivo: Validar las reglas de la rúbrica y del ciclo Borrador → Publicado → Archivado.
+Criterio de aceptación: Rúbricas inválidas → 422 con el motivo; rúbrica válida → 200 asociada al caso; cambios a un caso no Borrador → 409; caso Archivado → no se puede programar (409).
+Requisitos verificados: RF-09, RF-17
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Caso 1 en Borrador y caso 2 en Publicado (con actividades ya programadas).
+Docente id 2 con el permiso CREAR_CASOS.
+Pasos de la prueba
+Enviar PUT /api/casos/1/rubrica con ponderaciones que suman 90.
+Enviar una rúbrica sin criterios.
+Enviar una rúbrica válida (60 + 40) y verificarla en MySQL.
+Intentar modificar la rúbrica del caso 2 (Publicado).
+Archivar el caso 2 dos veces.
+Intentar programar una actividad con el caso archivado.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Ponderaciones
+60 + 30 = 90
+Negativo
+422: la suma debe ser 100.
+X
+422 «La suma de las ponderaciones debe ser 100. Ahora suma 90.»
+Criterios
+(lista vacía)
+Negativo
+422: al menos un criterio.
+X
+422 «La rúbrica debe tener al menos un criterio.»
+Rúbrica válida
+Análisis 60 + Argumentación 40
+Positivo
+200 y rúbrica asociada al caso.
+X
+200. En MySQL: rúbrica id 2 del caso 1 con sus 2 criterios.
+Caso Publicado
+PUT /api/casos/2/rubrica
+Negativo
+409: solo se edita en Borrador.
+X
+409 CASO_NO_EDITABLE
+Archivar
+POST /api/casos/2/archivar (×2)
+Positivo / Negativo
+200 la primera vez; 409 la segunda.
+X
+200 (estado Archivado) y 409 CASO_YA_ARCHIVADO
+Programar caso archivado
+POST /api/actividades con caso 2
+Negativo
+409: solo casos publicados.
+X
+409 «Solo se pueden programar casos publicados.»
+Post condiciones
+El caso 1 sigue en Borrador con su rúbrica completa.
+El caso 2 quedó Archivado y no admite nuevas programaciones.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos.
+Aprobado
+Observaciones
+Probador
+Sin observaciones.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Stefanía Díaz Raigoza
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-25 (1 de 2): solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+Evidencia CP-25 (2 de 2): continuación.
+6.26 Caso de uso: Notificación de convocatoria y cambios de estudiantes — Prueba N.º 26 (CP-26)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-26
+VERSIÓN DE EJECUCIÓN
+Rama develop (= integracion), backend v1.0.0 — corte 02/11/2026
+FECHA EJECUCIÓN
+03/11/2026
+CASO DE USO:
+Notificación de convocatoria y cambios de estudiantes
+MODULO DEL SISTEMA
+Gestión de sesiones y actividades
+Descripción del caso de prueba:
+Verificar que al programar una actividad se genere, para cada estudiante, el mensaje de convocatoria con la información del caso, el mensaje personalizado, la URL y el código; y que agregar o retirar estudiantes genere su aviso.
+Objetivo: Validar la construcción de las notificaciones (patrones Factory y Strategy).
+Criterio de aceptación: Cada convocatoria incluye caso, mensaje, URL segura y código; correos, URL o tipos inválidos se rechazan; el contenido se protege contra HTML no confiable.
+Requisitos verificados: RF-21, RF-20
+CASO DE PRUEBA
+Precondiciones
+Servicio de notificaciones (src/modules/notificaciones) con sus pruebas automatizadas.
+El transporte de correo real aún no está configurado: la ruta usa un transporte vacío.
+Pasos de la prueba
+Ejecutar node --test src/modules/notificaciones/*.test.js.
+Ejecutar la prueba del servicio de actividades que convoca a cada estudiante.
+Revisar que el código viaje en el mensaje y que en la BD solo se guarde su hash (CP-01).
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Convocatoria
+caso, mensaje, URL https, código
+Positivo
+Mensaje de convocatoria generado.
+X
+Prueba aprobada: «Genera correctamente un correo de convocatoria».
+Estudiante agregado / retirado
+acción agregar / retirar
+Positivo
+Aviso para el estudiante afectado.
+X
+2 pruebas aprobadas.
+Datos inválidos
+correo inválido, URL http, título vacío, acción no definida
+Negativo
+Rechazo de la notificación.
+X
+4 pruebas de rechazo aprobadas.
+Contenido no confiable
+HTML en los datos del caso
+Negativo
+El contenido se escapa.
+X
+Prueba aprobada: «Protege el contenido HTML de datos no confiables».
+Envío real
+correo al estudiante
+Positivo
+El estudiante recibe el correo.
+No ejecutable: no hay transporte de correo configurado.
+Post condiciones
+Los mensajes se generan sin enviar correos reales.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+No se encontraron defectos en la generación de mensajes (19/19 pruebas).
+Aprobado con observaciones
+Observaciones
+Probador
+Falta configurar el transporte de correo (por ejemplo SMTP) y los endpoints para agregar o retirar estudiantes de una actividad; entonces se ejecutará el escenario de envío real.
+Sofía Gallego Bedoya (ejecución)
+Responsable del módulo: Laura Sofía Ramos Reyes
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Evidencia CP-26: solicitudes a la API, respuestas, consultas SQL y pruebas automatizadas.
+6.27 Caso de uso: Control del tiempo máximo de participación — Prueba N.º 27 (CP-27)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-27
+VERSIÓN DE EJECUCIÓN
+Por definir (funcionalidad pendiente)
+FECHA EJECUCIÓN
+No ejecutado
+CASO DE USO:
+Control del tiempo máximo de participación
+MODULO DEL SISTEMA
+Gestión de sesiones y actividades
+Descripción del caso de prueba:
+Verificar que al iniciar la participación se cuente el tiempo del estudiante y que, al agotarse el tiempo máximo configurado, la sesión se cierre conservando las respuestas.
+Objetivo: Validar el control de tiempo de RF-23.
+Criterio de aceptación: Al llegar al tiempo límite la sesión pasa a Finalizado con motivo TiempoAgotado, se guardan las respuestas dadas y se rechazan respuestas posteriores (409).
+Requisitos verificados: RF-23
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Actividad vigente con tiempo límite de 600 s.
+Sesión del estudiante En curso con algunas respuestas.
+Pasos de la prueba
+Iniciar la participación y registrar la hora de inicio.
+Responder algunas preguntas antes del límite.
+Esperar o simular que se cumplan los 600 s.
+Intentar registrar otra respuesta.
+Consultar la sesión y las respuestas en MySQL.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Respuesta antes del límite
+segundo 300
+Positivo
+201: respuesta registrada.
+Pendiente de ejecución.
+Tiempo agotado
+segundo 600
+Positivo
+Sesión Finalizado, motivo TiempoAgotado, segundosConsumidos = 600.
+Pendiente de ejecución.
+Respuesta después del límite
+segundo 601
+Negativo
+409: la sesión ya terminó.
+Pendiente de ejecución.
+Tiempo configurado mayor al del caso
+tiempoLimite > tiempoEstimado
+Negativo
+Rechazo al programar (verificado en CP-01).
+Pendiente de ejecución.
+Post condiciones
+Las respuestas previas al cierre se conservan para la evaluación.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+Pendiente de ejecución: la funcionalidad no está implementada en la rama develop (revisado el 03/11/2026).
+No ejecutado
+Observaciones
+Probador
+Hoy existe el motivo TiempoAgotado en el modelo State, pero no hay un temporizador ni un proceso que cierre la sesión.
+Por asignar
+Responsable del módulo: Laura Sofía Ramos Reyes
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Pendiente: las capturas se adjuntarán cuando la funcionalidad esté implementada y el caso se ejecute.
+6.28 Caso de uso: Restricción de ingreso tardío — Prueba N.º 28 (CP-28)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-28
+VERSIÓN DE EJECUCIÓN
+Por definir (funcionalidad pendiente)
+FECHA EJECUCIÓN
+No ejecutado
+CASO DE USO:
+Restricción de ingreso tardío
+MODULO DEL SISTEMA
+Gestión de sesiones y actividades
+Descripción del caso de prueba:
+Verificar que el estudiante no pueda iniciar la participación cuando ya pasó la mitad del tiempo del caso desde la hora en que debía iniciar.
+Objetivo: Validar la regla de ingreso tardío de RF-22.
+Criterio de aceptación: Antes del umbral se permite iniciar (200); después del umbral se niega con 403 y un mensaje claro.
+Requisitos verificados: RF-22
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Actividad que inició a las 08:00 con tiempo estimado de 60 min (umbral: 08:30).
+Base de cálculo del umbral confirmada con el responsable académico.
+Pasos de la prueba
+Intentar iniciar a las 08:10.
+Intentar iniciar a las 08:29.
+Intentar iniciar a las 08:31.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Ingreso a tiempo
+08:10
+Positivo
+200: inicia la participación.
+Pendiente de ejecución.
+Valor límite
+08:29
+Positivo
+200: aún dentro del umbral.
+Pendiente de ejecución.
+Ingreso tardío
+08:31
+Negativo
+403: pasó la mitad del tiempo permitido.
+Pendiente de ejecución.
+Post condiciones
+El intento tardío no crea sesión ni consume intento.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+Pendiente de ejecución: la funcionalidad no está implementada en la rama develop (revisado el 03/11/2026).
+No ejecutado
+Observaciones
+Probador
+El requisito indica que la base del cálculo debe precisarse con el responsable académico antes de implementarse.
+Por asignar
+Responsable del módulo: Laura Sofía Ramos Reyes
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Pendiente: las capturas se adjuntarán cuando la funcionalidad esté implementada y el caso se ejecute.
+6.29 Caso de uso: Cálculo de la nota con la rúbrica — Prueba N.º 29 (CP-29)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-29
+VERSIÓN DE EJECUCIÓN
+Por definir (funcionalidad pendiente)
+FECHA EJECUCIÓN
+No ejecutado
+CASO DE USO:
+Cálculo de la nota con la rúbrica
+MODULO DEL SISTEMA
+Evaluación, retroalimentación y seguimiento
+Descripción del caso de prueba:
+Verificar que al cerrar el intento el sistema calcule y guarde la calificación aplicando los criterios y ponderaciones de la rúbrica asociada.
+Objetivo: Validar el cálculo de la nota de RF-13.
+Criterio de aceptación: La nota guardada en Evaluacion y ResultadoCriterio coincide con el cálculo manual según la rúbrica; no se calcula nota de un intento sin cerrar.
+Requisitos verificados: RF-13, RF-17
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Caso con rúbrica (criterios de 60 % y 40 %).
+Sesión finalizada con respuestas correctas e incorrectas conocidas.
+Pasos de la prueba
+Finalizar la sesión del estudiante.
+Consultar la evaluación generada.
+Comparar con el cálculo manual.
+Intentar calcular la nota de una sesión En curso.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Todas correctas
+n de n aciertos
+Positivo
+Nota máxima.
+Pendiente de ejecución.
+Aciertos parciales
+mitad de aciertos
+Positivo
+Nota proporcional según ponderaciones.
+Pendiente de ejecución.
+Sesión En curso
+intento sin cerrar
+Negativo
+No se genera evaluación.
+Pendiente de ejecución.
+Post condiciones
+Existe una sola evaluación por intento.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+Pendiente de ejecución: la funcionalidad no está implementada en la rama develop (revisado el 03/11/2026).
+No ejecutado
+Observaciones
+Probador
+Las tablas Evaluacion y ResultadoCriterio existen en el esquema, pero no hay servicio que las llene.
+Por asignar
+Responsable del módulo: Por asignar (equipo)
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Pendiente: las capturas se adjuntarán cuando la funcionalidad esté implementada y el caso se ejecute.
+6.30 Caso de uso: Evaluación de intentos incompletos y ausencias — Prueba N.º 30 (CP-30)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-30
+VERSIÓN DE EJECUCIÓN
+Por definir (funcionalidad pendiente)
+FECHA EJECUCIÓN
+No ejecutado
+CASO DE USO:
+Evaluación de intentos incompletos y ausencias
+MODULO DEL SISTEMA
+Evaluación, retroalimentación y seguimiento
+Descripción del caso de prueba:
+Verificar que se calcule la nota parcial de quien no termina y que se asigne cero a cada pregunta de quien no participa.
+Objetivo: Validar las reglas de RF-24.
+Criterio de aceptación: Intento incompleto → nota con las respuestas dadas; estudiante convocado sin participación → cero en todas las preguntas y estado Ausente.
+Requisitos verificados: RF-24
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Actividad cerrada con tres estudiantes: uno completo, uno incompleto y uno ausente.
+Pasos de la prueba
+Cerrar la actividad.
+Consultar las evaluaciones de los tres estudiantes.
+Verificar la asistencia registrada.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Intento incompleto
+2 de 5 respondidas
+Positivo
+Nota parcial con 2 respuestas.
+Pendiente de ejecución.
+Ausencia
+sin sesión
+Positivo
+Cero por pregunta; asistencia Ausente.
+Pendiente de ejecución.
+Estudiante retirado
+estado Retirado
+Negativo
+No se le asigna nota de ausencia.
+Pendiente de ejecución.
+Post condiciones
+Todos los convocados quedan con un resultado.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+Pendiente de ejecución: la funcionalidad no está implementada en la rama develop (revisado el 03/11/2026).
+No ejecutado
+Observaciones
+Probador
+Depende de CP-29 y del cierre de actividades.
+Por asignar
+Responsable del módulo: Por asignar (equipo)
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Pendiente: las capturas se adjuntarán cuando la funcionalidad esté implementada y el caso se ejecute.
+6.31 Caso de uso: Resultado y retroalimentación final — Prueba N.º 31 (CP-31)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-31
+VERSIÓN DE EJECUCIÓN
+Por definir (funcionalidad pendiente)
+FECHA EJECUCIÓN
+No ejecutado
+CASO DE USO:
+Resultado y retroalimentación final
+MODULO DEL SISTEMA
+Evaluación, retroalimentación y seguimiento
+Descripción del caso de prueba:
+Verificar que al finalizar el intento el estudiante vea aciertos, errores, explicaciones y nota final, y que nada de eso se muestre durante la resolución.
+Objetivo: Validar la presentación de resultados de RF-14.
+Criterio de aceptación: Con la sesión finalizada se muestran aciertos, errores, explicaciones y nota; con la sesión En curso no se revela la corrección (ya verificado parcialmente en CP-08 y CP-17).
+Requisitos verificados: RF-14
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Sesión finalizada con evaluación calculada (CP-29).
+Pasos de la prueba
+Consultar el resultado con la sesión En curso.
+Finalizar la sesión.
+Consultar el resultado final.
+Consultar el resultado de otro estudiante.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Sesión En curso
+consulta de resultado
+Negativo
+No se muestran correcciones ni explicaciones.
+Pendiente de ejecución.
+Sesión finalizada
+consulta de resultado
+Positivo
+Aciertos, errores, explicaciones y nota final.
+Pendiente de ejecución.
+Resultado ajeno
+otro estudiante
+Negativo
+403.
+Pendiente de ejecución.
+Post condiciones
+El resultado mostrado coincide con la evaluación guardada.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+Pendiente de ejecución: la funcionalidad no está implementada en la rama develop (revisado el 03/11/2026).
+No ejecutado
+Observaciones
+Probador
+Hoy la API ya oculta esCorrecta y explicación al estudiante (CP-08, CP-17); falta el endpoint de resultado final.
+Por asignar
+Responsable del módulo: Por asignar (equipo)
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Pendiente: las capturas se adjuntarán cuando la funcionalidad esté implementada y el caso se ejecute.
+6.32 Caso de uso: Autorización de repetición excepcional — Prueba N.º 32 (CP-32)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-32
+VERSIÓN DE EJECUCIÓN
+Por definir (funcionalidad pendiente)
+FECHA EJECUCIÓN
+No ejecutado
+CASO DE USO:
+Autorización de repetición excepcional
+MODULO DEL SISTEMA
+Gestión de sesiones y actividades
+Descripción del caso de prueba:
+Verificar que el estudiante no pueda repetir una participación registrada salvo autorización del docente creador del caso.
+Objetivo: Validar la regla de RF-25.
+Criterio de aceptación: Sin autorización el reingreso se niega (403); con autorización del docente creador se crea un nuevo intento con numeroIntento + 1; otro docente no puede autorizar (403).
+Requisitos verificados: RF-25
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Sesión del estudiante finalizada (intento 1).
+Docente creador y otro docente autenticados.
+Pasos de la prueba
+Intentar reingresar sin autorización.
+Autorizar como otro docente.
+Autorizar como docente creador.
+Reingresar y verificar el nuevo intento.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Sin autorización
+intento 2
+Negativo
+403 (ya verificado en CP-19).
+Pendiente de ejecución.
+Docente no creador
+autorización
+Negativo
+403.
+Pendiente de ejecución.
+Docente creador
+autorización
+Positivo
+Se registra en AutorizacionRepeticion.
+Pendiente de ejecución.
+Nuevo intento
+reingreso
+Positivo
+Sesión con numeroIntento = 2 guardada por separado.
+Pendiente de ejecución.
+Post condiciones
+El intento anterior se conserva sin cambios.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+Pendiente de ejecución: la funcionalidad no está implementada en la rama develop (revisado el 03/11/2026).
+No ejecutado
+Observaciones
+Probador
+El bloqueo del reingreso ya funciona (CP-19); falta el flujo de autorización.
+Por asignar
+Responsable del módulo: Laura Sofía Ramos Reyes
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Pendiente: las capturas se adjuntarán cuando la funcionalidad esté implementada y el caso se ejecute.
+6.33 Caso de uso: Consulta de participaciones por el docente — Prueba N.º 33 (CP-33)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-33
+VERSIÓN DE EJECUCIÓN
+Por definir (funcionalidad pendiente)
+FECHA EJECUCIÓN
+No ejecutado
+CASO DE USO:
+Consulta de participaciones por el docente
+MODULO DEL SISTEMA
+Evaluación, retroalimentación y seguimiento
+Descripción del caso de prueba:
+Verificar que el docente navegue los casos realizados y consulte, por estudiante, sus respuestas y retroalimentaciones.
+Objetivo: Validar la consulta de RF-15.
+Criterio de aceptación: El docente creador ve las participaciones de sus actividades; otro docente o un estudiante reciben 403.
+Requisitos verificados: RF-15
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Actividad cerrada con participaciones registradas.
+Pasos de la prueba
+Consultar como docente creador.
+Consultar como otro docente.
+Consultar como estudiante.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Docente creador
+actividad propia
+Positivo
+200 con respuestas y retroalimentación por estudiante.
+Pendiente de ejecución.
+Otro docente
+actividad ajena
+Negativo
+403.
+Pendiente de ejecución.
+Estudiante
+cualquier actividad
+Negativo
+403.
+Pendiente de ejecución.
+Post condiciones
+La consulta no modifica datos.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+Pendiente de ejecución: la funcionalidad no está implementada en la rama develop (revisado el 03/11/2026).
+No ejecutado
+Observaciones
+Probador
+Pendiente de implementación.
+Por asignar
+Responsable del módulo: Por asignar (equipo)
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Pendiente: las capturas se adjuntarán cuando la funcionalidad esté implementada y el caso se ejecute.
+6.34 Caso de uso: Retroalimentación general del docente — Prueba N.º 34 (CP-34)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-34
+VERSIÓN DE EJECUCIÓN
+Por definir (funcionalidad pendiente)
+FECHA EJECUCIÓN
+No ejecutado
+CASO DE USO:
+Retroalimentación general del docente
+MODULO DEL SISTEMA
+Evaluación, retroalimentación y seguimiento
+Descripción del caso de prueba:
+Verificar que el docente agregue una valoración general a la participación individual de un estudiante.
+Objetivo: Validar el registro de RF-26.
+Criterio de aceptación: El docente creador guarda el texto (201) y queda asociado a la participación; texto vacío → 400; docente ajeno → 403.
+Requisitos verificados: RF-26
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Participación finalizada de un estudiante.
+Pasos de la prueba
+Registrar la retroalimentación como docente creador.
+Enviar texto vacío.
+Registrar como otro docente.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Texto válido
+valoración general
+Positivo
+201 y retroalimentación asociada.
+Pendiente de ejecución.
+Texto vacío
+""
+Negativo
+400.
+Pendiente de ejecución.
+Docente ajeno
+otra actividad
+Negativo
+403.
+Pendiente de ejecución.
+Post condiciones
+La retroalimentación queda disponible para el estudiante (CP-36).
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+Pendiente de ejecución: la funcionalidad no está implementada en la rama develop (revisado el 03/11/2026).
+No ejecutado
+Observaciones
+Probador
+Pendiente de implementación.
+Por asignar
+Responsable del módulo: Por asignar (equipo)
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Pendiente: las capturas se adjuntarán cuando la funcionalidad esté implementada y el caso se ejecute.
+6.35 Caso de uso: Descarga del reporte de participación — Prueba N.º 35 (CP-35)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-35
+VERSIÓN DE EJECUCIÓN
+Por definir (funcionalidad pendiente)
+FECHA EJECUCIÓN
+No ejecutado
+CASO DE USO:
+Descarga del reporte de participación
+MODULO DEL SISTEMA
+Evaluación, retroalimentación y seguimiento
+Descripción del caso de prueba:
+Verificar que el docente descargue el reporte con resultados, avances parciales y ausencias para registrar las notas.
+Objetivo: Validar el reporte de RF-16.
+Criterio de aceptación: El archivo incluye a todos los convocados con su nota, avance o ausencia, y coincide con la BD; solo lo descarga el docente creador.
+Requisitos verificados: RF-16
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Actividad cerrada con estudiantes completos, incompletos y ausentes.
+Pasos de la prueba
+Descargar el reporte como docente creador.
+Comparar el contenido con la BD.
+Intentar descargarlo como otro usuario.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Docente creador
+actividad cerrada
+Positivo
+Archivo con todos los convocados.
+Pendiente de ejecución.
+Avances y ausencias
+estudiantes incompletos y ausentes
+Positivo
+Nota parcial y cero según RF-24.
+Pendiente de ejecución.
+Usuario no autorizado
+otro docente / estudiante
+Negativo
+403.
+Pendiente de ejecución.
+Post condiciones
+La descarga no altera los datos.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+Pendiente de ejecución: la funcionalidad no está implementada en la rama develop (revisado el 03/11/2026).
+No ejecutado
+Observaciones
+Probador
+Pendiente de implementación; depende de CP-29 y CP-30.
+Por asignar
+Responsable del módulo: Por asignar (equipo)
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Pendiente: las capturas se adjuntarán cuando la funcionalidad esté implementada y el caso se ejecute.
+6.36 Caso de uso: Notificación de calificaciones y retroalimentación — Prueba N.º 36 (CP-36)
+INFORMACIÓN GLOBAL DEL CASO DE PRUEBA
+CASO DE PRUEBA No.
+CP-36
+VERSIÓN DE EJECUCIÓN
+Por definir (funcionalidad pendiente)
+FECHA EJECUCIÓN
+No ejecutado
+CASO DE USO:
+Notificación de calificaciones y retroalimentación
+MODULO DEL SISTEMA
+Evaluación, retroalimentación y seguimiento
+Descripción del caso de prueba:
+Verificar que el estudiante sea notificado de su nota y avisado en el sistema cuando el docente agregue retroalimentación.
+Objetivo: Validar las notificaciones de RF-27 (patrón Observer).
+Criterio de aceptación: Al calcularse la nota y al registrarse retroalimentación se crea una notificación para el estudiante correcto; no se notifica a otros.
+Requisitos verificados: RF-27
+CASO DE PRUEBA
+Precondiciones
+Servidor de la API de Lumina en ejecución (src/server.js) y base de datos creada con backend/database/schema.sql, con el seed inicial aplicado (npm run db:seed).
+Observer de participación conectado al servicio de evaluación.
+Pasos de la prueba
+Calcular la nota de un intento.
+Registrar retroalimentación del docente.
+Consultar las notificaciones del estudiante y de otro estudiante.
+DATOS DE ENTRADA
+RESPUESTA ESPERADA DE LA APLICACIÓN
+COINCIDE
+RESPUESTA DEL SISTEMA
+CAMPO
+VALOR
+TIPO ESCENARIO
+SI
+NO
+Nota calculada
+evento de evaluación
+Positivo
+Notificación con la nota.
+Pendiente de ejecución.
+Retroalimentación
+evento de retroalimentación
+Positivo
+Aviso en el sistema.
+Pendiente de ejecución.
+Otro estudiante
+consulta de notificaciones
+Negativo
+No recibe avisos ajenos.
+Pendiente de ejecución.
+Post condiciones
+Las notificaciones quedan en la tabla Notificacion como no leídas.
+RESULTADOS DE LA PRUEBA
+Defectos y desviaciones
+Veredicto
+Pendiente de ejecución: la funcionalidad no está implementada en la rama develop (revisado el 03/11/2026).
+No ejecutado
+Observaciones
+Probador
+La base del Observer ya existe (CP-24) pero no está conectada.
+Por asignar
+Responsable del módulo: Por asignar (equipo)
+EVIDENCIAS DE EJECUCIÓN (capturas del sistema)
+Pendiente: las capturas se adjuntarán cuando la funcionalidad esté implementada y el caso se ejecute.

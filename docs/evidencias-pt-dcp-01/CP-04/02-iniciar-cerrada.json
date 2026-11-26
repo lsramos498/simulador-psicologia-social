@@ -1,0 +1,6 @@
+{
+  "status": 409,
+  "data": {
+    "error": "No se puede cambiar una actividad de Cerrada a Iniciada."
+  }
+}

@@ -1,0 +1,154 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"/><style>
+  body{margin:0;background:#0f172a;color:#e2e8f0;font-family:Consolas,'Courier New',monospace;font-size:12px}
+  .wrap{padding:18px 20px 24px}
+  h1{margin:0 0 6px;font-size:16px;color:#fff;font-family:Calibri,Arial,sans-serif}
+  .meta{color:#94a3b8;margin-bottom:14px;font-size:11px;font-family:Calibri,Arial,sans-serif}
+  .block{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 12px;margin:0 0 12px}
+  .label{color:#38bdf8;font-weight:700;margin-bottom:6px;font-family:Calibri,Arial,sans-serif;font-size:12px}
+  .req{color:#cbd5e1;white-space:pre-wrap;margin:0 0 8px;line-height:1.35}
+  .status{display:inline-block;padding:2px 8px;border-radius:4px;margin-bottom:8px;font-weight:700}
+  .ok{background:#14532d;color:#86efac}.bad{background:#7f1d1d;color:#fecaca}.neu{background:#334155;color:#e2e8f0}
+  .res{background:#020617;border:1px solid #1e293b;padding:8px;border-radius:6px;white-space:pre-wrap;margin:0;max-height:280px;overflow:hidden;line-height:1.3}
+  </style></head><body><div class="wrap">
+  <h1>Evidencia CP-01 — Lumina API</h1>
+  <div class="meta">Ejecución 25/11/2026 · develop · Node · MySQL · ACCESO_CODIGO_EN_PANTALLA=true · Veredicto: Aprobado</div>
+  <section class="block">
+      <div class="label">espacios</div>
+      <pre class="req">Evidencia archivo: 00-espacios.json</pre>
+      <div class="status ok">HTTP 200</div>
+      <pre class="res">{
+  "data": [
+    {
+      "id": 2,
+      "nombre": "Psicología social 1794276576",
+      "codigo": "PS-1794276576",
+      "activo": true
+    },
+    {
+      "id": 3,
+      "nombre": "Psicología social 1794276720",
+      "codigo": "PS-1794276720",
+      "activo": true
+    },
+    {
+      "id": 4,
+      "nombre": "Psicología social 1794276798",
+      "codigo": "PS-1794276798",
+      "activo": true
+    },
+    {
+      "id": 5,
+      "nombre": "Psicología social 1794276984",
+      "codigo": "PS-1794276984",
+      "activo": true
+    }
+  ]
+}</pre>
+    </section>
+<section class="block">
+      <div class="label">estudiantes</div>
+      <pre class="req">Evidencia archivo: 00-estudiantes.json</pre>
+      <div class="status ok">HTTP 200</div>
+      <pre class="res">{
+  "status": 200,
+  "sample": [
+    {
+      "id": 22,
+      "nombres": "Stefania",
+      "apellidos": "Diaz",
+      "correo": "sdiaz_549@unihumboldt.edu.co",
+      "activo": 1
+    },
+    {
+      "id": 4,
+      "nombres": "Estudiante",
+      "apellidos": "Flujo",
+      "correo": "luminasistema9@gmail.com",
+      "activo": 1
+    },
+    {
+      "id": 24,
+      "nombres": "Maria",
+      "apellidos": "Lopez",
+      "correo": "maria.lopez.demo@unihumboldt.edu.co",
+      "activo": 1
+    },
+    {
+      "id": 25,
+      "nombres": "Carlos",
+      "apellidos": "Ruiz",
+      "correo": "carlos.ruiz.demo@unihumboldt.edu.co",
+      "activo": 1
+    },
+    {
+      "id": 26,
+      "nombres": "Valeria",
+      "apellidos": "Tovar",
+      "correo": "vtobar_469@unihumboldt.edu.co",
+      "activo": 1
+    }
+  ]
+}</pre>
+    </section>
+<section class="block">
+      <div class="label">crear actividad ok</div>
+      <pre class="req">Evidencia archivo: 01-crear-actividad-ok.json</pre>
+      <div class="status ok">HTTP 201</div>
+      <pre class="res">{
+  "mensaje": "Actividad programada correctamente.",
+  "data": {
+    "id": 47,
+    "casoId": 46,
+    "espacioAcademicoId": 2,
+    "docenteId": 3,
+    "rubricaId": 35,
+    "fechaInicio": "2026-11-25 22:00:00",
+    "fechaFin": "2026-11-25 23:55:00",
+    "tiempoLimiteSegundos": 780,
+    "lugar": "Campus virtual PT-DCP",
+    "mensajePersonalizado": "Convocatoria PT-DCP-01",
+    "intentosPermitidos": 1,
+    "estudiantesIds": [
+      22,
+      4
+    ],
+    "estado": "Programada",
+    "fechaCreacion": "2026-11-25 22:40:34",
+    "notificaciones": [
+      {
+        "estudianteId": 22,
+        "destinatario": "sdiaz_549@unihumboldt.edu.co",
+        "estado": "Enviada",
+        "canal": "Correo",
+        "previewUrl": null
+      },
+      {
+        "estudianteId": 4,
+        "destinatario": "luminasistema9@gmail.com",
+        "estado": "Enviada",
+        "canal": "Correo",
+        "previewUrl": null
+      }
+    ],
+    "codigosDeAcceso": [
+      {
+        "estudianteId": 22,
+        "codigo": "VATCED8U"
+      },
+      {
+        "estudianteId": 4,
+        "codigo": "GY8EM2QJ"
+      }
+    ]
+  }
+}</pre>
+    </section>
+<section class="block">
+      <div class="label">fechas invalidas</div>
+      <pre class="req">Evidencia archivo: 02-fechas-invalidas.json</pre>
+      <div class="status bad">HTTP 400</div>
+      <pre class="res">{
+  "error": "La fecha de finalización debe ser posterior a la de inicio."
+}</pre>
+    </section>
+  </div></body></html>

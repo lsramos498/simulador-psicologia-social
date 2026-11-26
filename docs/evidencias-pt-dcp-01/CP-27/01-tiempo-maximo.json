@@ -1,0 +1,65 @@
+{
+  "actividad": {
+    "status": 201,
+    "data": {
+      "mensaje": "Actividad programada correctamente.",
+      "data": {
+        "id": 49,
+        "casoId": 46,
+        "espacioAcademicoId": 2,
+        "docenteId": 3,
+        "rubricaId": 35,
+        "fechaInicio": "2026-11-25 22:40:21",
+        "fechaFin": "2026-11-25 23:40:51",
+        "tiempoLimiteSegundos": 1,
+        "lugar": "CP-27",
+        "mensajePersonalizado": "tiempo corto",
+        "intentosPermitidos": 1,
+        "estudiantesIds": [
+          22
+        ],
+        "estado": "Programada",
+        "fechaCreacion": "2026-11-25 22:40:51",
+        "notificaciones": [
+          {
+            "estudianteId": 22,
+            "destinatario": "sdiaz_549@unihumboldt.edu.co",
+            "estado": "Enviada",
+            "canal": "Correo",
+            "previewUrl": null
+          }
+        ],
+        "codigosDeAcceso": [
+          {
+            "estudianteId": 22,
+            "codigo": "2S469862"
+          }
+        ]
+      }
+    }
+  },
+  "sesion": {
+    "status": 200,
+    "data": {
+      "data": {
+        "id": 68,
+        "actividadId": 49,
+        "estudianteId": 22,
+        "numeroIntento": 1,
+        "estado": "En curso",
+        "inicio": "2026-11-26T03:40:59.198Z",
+        "fin": null,
+        "segundosConsumidos": 0,
+        "motivoCierre": null,
+        "casoId": 46
+      }
+    }
+  },
+  "cerrarVencidas": {
+    "status": 200,
+    "data": {
+      "total": 0,
+      "data": []
+    }
+  }
+}

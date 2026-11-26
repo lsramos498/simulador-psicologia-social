@@ -1,0 +1,19 @@
+{
+  "status": 200,
+  "evaluacion": {
+    "id": 21,
+    "resultado": 2.5,
+    "retroalimentacionGeneral": "1 aciertos de 2 preguntas. Nota: 2.5 / 5.",
+    "correctas": 1,
+    "total": 2,
+    "respondidas": 2,
+    "criterios": [
+      {
+        "criterioId": 10,
+        "rubricaId": 35,
+        "puntuacion": 2.5,
+        "observacion": "Aciertos: 1 de 2. Nota sobre 5. Las preguntas sin respuesta cuentan como cero."
+      }
+    ]
+  }
+}

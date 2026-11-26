@@ -1,0 +1,25 @@
+{
+  "status": 200,
+  "data": {
+    "data": [
+      {
+        "decisionId": 49,
+        "opcionId": 102,
+        "opcionTexto": "Presionar al agente para que actúe sin registrar la denuncia formal",
+        "esCorrecta": 0,
+        "pregunta": "¿Qué conviene hacer primero en la recepción de la comisaría?",
+        "explicacion": "Saltar el procedimiento genera riesgo jurídico y de revictimización.",
+        "fundamentoTeorico": null
+      },
+      {
+        "decisionId": 50,
+        "opcionId": 103,
+        "opcionTexto": "Integrar lo nuevo con lo anterior y proponer un siguiente paso ético",
+        "esCorrecta": 1,
+        "pregunta": "¿Qué conviene hacer después de contrastar esta nueva versión?",
+        "explicacion": "Contrastar e integrar evita decisiones parciales.",
+        "fundamentoTeorico": null
+      }
+    ]
+  }
+}

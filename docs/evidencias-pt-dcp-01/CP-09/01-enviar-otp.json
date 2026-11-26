@@ -1,0 +1,8 @@
+{
+  "status": 200,
+  "data": {
+    "mensaje": "Si tu correo está registrado como estudiante, te enviamos un código de inicio de sesión. Revisa tu bandeja.",
+    "codigoAutorizacion": "WR3QJ3W6",
+    "demoLocal": true
+  }
+}

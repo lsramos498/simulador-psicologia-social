@@ -1,0 +1,56 @@
+{
+  "nombre": "Rubrica de prueba - intervencion etica",
+  "descripcion": "Documento de prueba para cargar en Lumina al crear o editar un caso.",
+  "criterios": [
+    {
+      "nombre": "Escucha y contraste de versiones",
+      "ponderacion": 40,
+      "puntajeMaximo": 4,
+      "niveles": [
+        {
+          "nombre": "Basico",
+          "descripcion": "Escucha una sola version del conflicto.",
+          "puntaje": 1,
+          "orden": 1
+        },
+        {
+          "nombre": "Medio",
+          "descripcion": "Contrasta al menos dos relatos con respeto.",
+          "puntaje": 2,
+          "orden": 2
+        },
+        {
+          "nombre": "Avanzado",
+          "descripcion": "Integra versiones y propone una ruta etica clara.",
+          "puntaje": 4,
+          "orden": 3
+        }
+      ]
+    },
+    {
+      "nombre": "Intervencion etica y limites de rol",
+      "ponderacion": 60,
+      "puntajeMaximo": 4,
+      "niveles": [
+        {
+          "nombre": "Basico",
+          "descripcion": "Identifica el conflicto sin proponer cierre.",
+          "puntaje": 1,
+          "orden": 1
+        },
+        {
+          "nombre": "Medio",
+          "descripcion": "Propone una accion respetuosa y proporcional.",
+          "puntaje": 2,
+          "orden": 2
+        },
+        {
+          "nombre": "Avanzado",
+          "descripcion": "Media, protege privacidad y acuerda seguimiento.",
+          "puntaje": 4,
+          "orden": 3
+        }
+      ]
+    }
+  ]
+}

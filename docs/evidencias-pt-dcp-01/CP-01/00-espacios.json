@@ -1,0 +1,31 @@
+{
+  "status": 200,
+  "data": {
+    "data": [
+      {
+        "id": 2,
+        "nombre": "Psicología social 1794276576",
+        "codigo": "PS-1794276576",
+        "activo": true
+      },
+      {
+        "id": 3,
+        "nombre": "Psicología social 1794276720",
+        "codigo": "PS-1794276720",
+        "activo": true
+      },
+      {
+        "id": 4,
+        "nombre": "Psicología social 1794276798",
+        "codigo": "PS-1794276798",
+        "activo": true
+      },
+      {
+        "id": 5,
+        "nombre": "Psicología social 1794276984",
+        "codigo": "PS-1794276984",
+        "activo": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "status": 201,
+  "data": {
+    "data": {
+      "id": 20,
+      "sesionId": 66,
+      "decisionId": 49,
+      "opcionId": 101
+    }
+  }
+}

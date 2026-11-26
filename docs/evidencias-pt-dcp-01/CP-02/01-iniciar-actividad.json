@@ -1,0 +1,25 @@
+{
+  "status": 200,
+  "data": {
+    "data": {
+      "id": 47,
+      "casoId": 46,
+      "espacioAcademicoId": 2,
+      "docenteId": 3,
+      "rubricaId": 35,
+      "fechaInicio": "2026-11-26T03:00:00.000Z",
+      "fechaFin": "2026-11-26T04:55:00.000Z",
+      "tiempoLimiteSegundos": 780,
+      "lugar": "Campus virtual PT-DCP",
+      "mensajePersonalizado": "Convocatoria PT-DCP-01",
+      "intentosPermitidos": 1,
+      "fechaCreacion": "2026-11-26T03:40:34.000Z",
+      "estado": "Iniciada",
+      "casoTitulo": "Denuncia de violencia intrafamiliar en la comisaría",
+      "espacioAcademicoNombre": "Psicología social 1794276576",
+      "rubricaNombre": "Evaluación · Denuncia de violencia intrafamiliar en la comisaría",
+      "docenteNombres": "Docente",
+      "docenteApellidos": "Casos"
+    }
+  }
+}

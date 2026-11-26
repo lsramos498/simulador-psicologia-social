@@ -1,0 +1,280 @@
+/**
+ * Repositorio MySQL del módulo de acceso (Sofía Gallego — acceso y permisos).
+ * Solo lee datos; las reglas de negocio están en codigos.js, autorizacion.js
+ * y contrasenas.js.
+ *
+ * El pool se recibe desde config/database.js (mismo patrón que el módulo de
+ * participación): este archivo no crea conexiones propias, y así se puede
+ * probar con un pool falso sin necesidad de MySQL.
+ *
+ * Los nombres de tablas se escriben igual que en schema.sql (Usuario, Rol...)
+ * para que funcionen en Windows, macOS y Linux.
+ */
+
+const HASH_CODIGO_VALIDO = /^[0-9a-f]{64}$/;
+
+function validarId(id) {
+  if (!Number.isInteger(id) || id < 1) {
+    throw new TypeError('Se requiere un id de usuario válido');
+  }
+}
+
+export function crearRepositorioAcceso(pool) {
+  if (!pool || typeof pool.execute !== 'function') {
+    throw new TypeError('Se requiere un pool de MySQL');
+  }
+
+  return {
+    /**
+     * RF-01 / RF-20: busca la convocatoria por el hash del código.
+     * Devuelve el "registro" que espera validarAccesoEstudiante().
+     */
+    async buscarAccesoPorCodigoHash(codigoHash) {
+      const vacio = { autorizacion: null, estudiante: null, actividad: null, sesion: null };
+
+      if (typeof codigoHash !== 'string' || !HASH_CODIGO_VALIDO.test(codigoHash)) {
+        return vacio;
+      }
+
+      const [filas] = await pool.execute(`
+        SELECT ea.actividad_id, ea.estudiante_id, ea.codigoAutorizacion, ea.estado,
+               u.id AS usuarioId, u.correoInstitucional, u.activo,
+               ap.id AS actividadId, ap.fechaInicio, ap.fechaFin
+        FROM EstudianteAutorizado ea
+        JOIN Usuario u ON u.id = ea.estudiante_id
+        JOIN ActividadProgramada ap ON ap.id = ea.actividad_id
+        WHERE ea.codigoAutorizacion = ?
+        LIMIT 1
+      `, [codigoHash]);
+
+      const fila = filas[0];
+      if (!fila) {
+        return vacio;
+      }
+
+      // Último intento del estudiante en esa actividad (si ya empezó alguno).
+      const [sesiones] = await pool.execute(`
+        SELECT estado, numeroIntento
+        FROM SesionSimulacion
+        WHERE actividad_id = ? AND estudiante_id = ?
+        ORDER BY numeroIntento DESC
+        LIMIT 1
+      `, [fila.actividad_id, fila.estudiante_id]);
+
+      return {
+        autorizacion: {
+          actividad_id: fila.actividad_id,
+          estudiante_id: fila.estudiante_id,
+          codigoAutorizacion: fila.codigoAutorizacion,
+          estado: fila.estado
+        },
+        estudiante: {
+          id: fila.usuarioId,
+          correoInstitucional: fila.correoInstitucional,
+          activo: Boolean(fila.activo)
+        },
+        actividad: {
+          id: fila.actividadId,
+          fechaInicio: fila.fechaInicio,
+          fechaFin: fila.fechaFin
+        },
+        sesion: sesiones[0] ?? null
+      };
+    },
+
+    /**
+     * RF-02: roles del usuario (UsuarioRol) y permisos de esos roles (RolPermiso).
+     * Esta es la "fuente confiable del servidor"; nunca lo que envíe el cliente.
+     */
+    async obtenerRolesYPermisos(usuarioId) {
+      validarId(usuarioId);
+
+      const [roles] = await pool.execute(`
+        SELECT r.nombre
+        FROM UsuarioRol ur
+        JOIN Rol r ON r.id = ur.rol_id
+        WHERE ur.usuario_id = ?
+        ORDER BY r.nombre
+      `, [usuarioId]);
+
+      const [permisos] = await pool.execute(`
+        SELECT DISTINCT p.nombre
+        FROM UsuarioRol ur
+        JOIN RolPermiso rp ON rp.rol_id = ur.rol_id
+        JOIN Permiso p ON p.id = rp.permiso_id
+        WHERE ur.usuario_id = ?
+        ORDER BY p.nombre
+      `, [usuarioId]);
+
+      return {
+        roles: roles.map((fila) => fila.nombre),
+        permisos: permisos.map((fila) => fila.nombre)
+      };
+    },
+
+    /**
+     * Ingreso de docentes y administradores: datos mínimos para verificar
+     * la contraseña. Devuelve null si el correo no existe.
+     */
+    async buscarUsuarioPorCorreo(correo) {
+      const normalizado = typeof correo === 'string' ? correo.trim().toLowerCase() : '';
+      if (!normalizado) {
+        return null;
+      }
+
+      const [filas] = await pool.execute(`
+        SELECT id, nombres, apellidos, correoInstitucional, contrasenaHash, activo
+        FROM Usuario
+        WHERE correoInstitucional = ?
+        LIMIT 1
+      `, [normalizado]);
+
+      const fila = filas[0];
+      if (!fila) {
+        return null;
+      }
+
+      return {
+        id: fila.id,
+        nombres: fila.nombres,
+        apellidos: fila.apellidos,
+        correoInstitucional: fila.correoInstitucional,
+        contrasenaHash: fila.contrasenaHash,
+        activo: Boolean(fila.activo)
+      };
+    },
+
+    /**
+     * Convoca activa del estudiante: Autorizado, ventana vigente y actividad
+     * Programada o Iniciada. La más reciente si hay varias.
+     */
+    async buscarConvocatoriaActivaPorCorreo(correo, ahora = new Date()) {
+      const normalizado = typeof correo === 'string' ? correo.trim().toLowerCase() : '';
+      if (!normalizado) {
+        return null;
+      }
+
+      const [filas] = await pool.execute(`
+        SELECT
+          ea.actividad_id AS actividadId,
+          ea.estudiante_id AS estudianteId,
+          ea.estado AS estadoAutorizacion,
+          u.correoInstitucional AS correo,
+          u.activo AS usuarioActivo,
+          u.nombres,
+          u.apellidos,
+          ap.fechaInicio,
+          ap.fechaFin,
+          ap.estado AS estadoActividad,
+          ap.mensajePersonalizado,
+          c.titulo AS casoTitulo,
+          c.desarrolloSituacional,
+          c.contextoHistoria
+        FROM EstudianteAutorizado ea
+        JOIN Usuario u ON u.id = ea.estudiante_id
+        JOIN ActividadProgramada ap ON ap.id = ea.actividad_id
+        JOIN Caso c ON c.id = ap.caso_id
+        WHERE u.correoInstitucional = ?
+          AND ea.estado = 'Autorizado'
+          AND ap.estado IN ('Programada', 'Iniciada')
+          AND ap.fechaInicio <= ?
+          AND ap.fechaFin >= ?
+        ORDER BY ap.fechaInicio DESC, ea.id DESC
+        LIMIT 1
+      `, [normalizado, ahora, ahora]);
+
+      return filas[0] ?? null;
+    },
+
+    async actualizarCodigoAutorizacion(actividadId, estudianteId, codigoHash, fechaAutorizacion = new Date()) {
+      const [resultado] = await pool.execute(`
+        UPDATE EstudianteAutorizado
+        SET codigoAutorizacion = ?,
+            fechaAutorizacion = ?,
+            estado = 'Autorizado'
+        WHERE actividad_id = ? AND estudiante_id = ?
+      `, [codigoHash, fechaAutorizacion, actividadId, estudianteId]);
+
+      return resultado.affectedRows;
+    },
+
+
+    async guardarCodigoLogin(usuarioId, codigoHash, expiraEn, fechaCreacion = new Date()) {
+      await pool.execute(
+        `UPDATE CodigoLoginEstudiante SET usado = TRUE WHERE usuario_id = ? AND usado = FALSE`,
+        [usuarioId]
+      );
+      const [resultado] = await pool.execute(
+        `INSERT INTO CodigoLoginEstudiante (usuario_id, codigoHash, expiraEn, usado, fechaCreacion)
+         VALUES (?, ?, ?, FALSE, ?)`,
+        [usuarioId, codigoHash, expiraEn, fechaCreacion]
+      );
+      return resultado.insertId;
+    },
+
+    async consumirCodigoLogin(codigoHash, ahora = new Date()) {
+      if (typeof codigoHash !== 'string' || !HASH_CODIGO_VALIDO.test(codigoHash)) {
+        return null;
+      }
+      const [filas] = await pool.execute(
+        `SELECT id, usuario_id AS usuarioId, expiraEn, usado
+         FROM CodigoLoginEstudiante
+         WHERE codigoHash = ?
+         ORDER BY id DESC
+         LIMIT 1`,
+        [codigoHash]
+      );
+      const fila = filas[0];
+      if (!fila || fila.usado) return null;
+      if (new Date(fila.expiraEn).getTime() < ahora.getTime()) return null;
+      await pool.execute(`UPDATE CodigoLoginEstudiante SET usado = TRUE WHERE id = ?`, [fila.id]);
+      return { usuarioId: Number(fila.usuarioId) };
+    },
+
+    /** Actividades a las que el estudiante está convocado (vista segura, sin contenido del caso). */
+    async listarActividadesDelEstudiante(estudianteId) {
+      validarId(estudianteId);
+      const [filas] = await pool.execute(
+        `SELECT
+           ap.id AS actividadId,
+           ap.estado AS estadoActividad,
+           ap.fechaInicio,
+           ap.fechaFin,
+           ap.lugar,
+           c.id AS casoId,
+           c.titulo AS casoTitulo,
+           ea.estado AS estadoAutorizacion,
+           s.id AS sesionId,
+           s.estado AS estadoSesion
+         FROM EstudianteAutorizado ea
+         JOIN ActividadProgramada ap ON ap.id = ea.actividad_id
+         JOIN Caso c ON c.id = ap.caso_id
+         LEFT JOIN SesionSimulacion s
+           ON s.actividad_id = ap.id
+          AND s.estudiante_id = ea.estudiante_id
+          AND s.numeroIntento = (
+            SELECT MAX(s2.numeroIntento)
+            FROM SesionSimulacion s2
+            WHERE s2.actividad_id = ap.id AND s2.estudiante_id = ea.estudiante_id
+          )
+         WHERE ea.estudiante_id = ?
+           AND ea.estado = 'Autorizado'
+         ORDER BY ap.fechaInicio DESC, ap.id DESC`,
+        [estudianteId]
+      );
+      return filas.map((f) => ({
+        id: Number(f.actividadId),
+        estado: f.estadoActividad,
+        fechaInicio: f.fechaInicio,
+        fechaFin: f.fechaFin,
+        lugar: f.lugar || null,
+        casoId: Number(f.casoId),
+        casoTitulo: f.casoTitulo,
+        sesionId: f.sesionId != null ? Number(f.sesionId) : null,
+        estadoSesion: f.estadoSesion || null,
+        puedeJugar: f.estadoActividad === 'Iniciada' && f.estadoSesion !== 'Finalizado',
+        soloVistaPrevia: f.estadoActividad === 'Programada'
+      }));
+    }
+  };
+}

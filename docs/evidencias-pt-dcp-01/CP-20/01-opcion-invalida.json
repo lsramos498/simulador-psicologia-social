@@ -1,0 +1,7 @@
+{
+  "status": 422,
+  "data": {
+    "error": "La decisión debe pertenecer al caso y la opción a la decisión.",
+    "codigo": "OPCION_INVALIDA"
+  }
+}

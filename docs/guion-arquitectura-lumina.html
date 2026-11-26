@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guion — Arquitectura Lumina</title>
+  <style>
+    :root { --ink: #1c1915; --muted: #5e584e; --line: #e4dccf; --paper: #fbf8f2; --accent: #1e4650; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0 auto;
+      max-width: 820px;
+      padding: 40px 28px 80px;
+      background: var(--paper);
+      color: var(--ink);
+      font: 17px/1.5 "Segoe UI", Calibri, sans-serif;
+    }
+    h1 { font-family: Georgia, serif; font-weight: 500; font-size: 36px; line-height: 1.15; margin: 0 0 8px; }
+    h2 { font-family: Georgia, serif; font-weight: 500; font-size: 26px; margin: 36px 0 8px; }
+    p { margin: 8px 0; }
+    .muted { color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 8px; font-size: 15px; }
+    th, td { text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); padding: 8px 8px 8px 0; }
+    th { color: var(--accent); font-weight: 650; }
+    .block { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 28px; }
+    .say {
+      background: #fff;
+      border-left: 3px solid var(--accent);
+      padding: 10px 14px;
+      margin: 10px 0;
+    }
+    .ask { background: #f6f1e8; padding: 10px 14px; margin: 10px 0; }
+    .tag { color: var(--accent); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+    ul { margin: 8px 0; padding-left: 20px; }
+    li + li { margin-top: 4px; }
+    @media print {
+      body { max-width: none; padding: 0; background: #fff; }
+      .block { break-inside: avoid; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <p class="tag">Sustentación · 15 minutos · 4 personas</p>
+  <h1>Guion de la arquitectura de Lumina</h1>
+  <p class="muted">Documento base: definición de arquitectura del 9 de noviembre de 2026. Cada bloque es para decirlo, no para leerlo como lista. Lo que está en “Si preguntan” no se dice en la exposición.</p>
+
+  <h2>Reparto</h2>
+  <table>
+    <thead>
+      <tr><th>Quién</th><th>Minuto</th><th>De qué habla</th><th>De qué responde después</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Laura Ramos</td><td>0:00–4:00</td><td>Problema, decisión de monolito, despliegue, actividades, sesiones y notificaciones</td><td>Actividades, sesiones y notificaciones</td></tr>
+      <tr><td>Sofía Gallego</td><td>4:00–8:00</td><td>Objetivos, recorrido de una petición, acceso, JWT, códigos y permisos</td><td>Acceso y permisos</td></tr>
+      <tr><td>Stefanía Díaz</td><td>8:00–11:30</td><td>Capas, casos, Builder, transacciones y contratos entre módulos</td><td>Casos académicos</td></tr>
+      <tr><td>Valeria Tobar</td><td>11:30–15:00</td><td>Flujo completo, participación, Observer, pruebas y límites</td><td>Participación</td></tr>
+    </tbody>
+  </table>
+  <p>No afirmen que el Observer ya avisa al registrar una respuesta, ni que el correo de cambio de estudiantes ya se envía. Las dos cosas están construidas y todavía no están conectadas a una ruta. Tampoco digan que la interfaz ya consume la API.</p>
+
+  <h2>Laura Ramos</h2>
+
+  <article class="block">
+    <p class="tag">Apertura · 25 segundos</p>
+    <div class="say">
+      <p>Buenos días. Somos Laura Ramos, Stefanía Díaz, Valeria Tobar y Sofía Gallego. Vamos a sustentar la arquitectura del backend de Lumina, el simulador de psicología social del Proyecto Nuclear II. El corte del documento es el 9 de noviembre de 2026.</p>
+      <p>Yo abro con el problema y con la decisión de arquitectura. Sofía explica cómo se protege cada petición. Stefanía muestra las capas y la construcción de un caso. Valeria cierra con el flujo completo, la evidencia y los límites.</p>
+    </div>
+  </article>
+
+  <article class="block">
+    <p class="tag">Actores · 50 segundos</p>
+    <div class="say">
+      <p>Lumina forma estudiantes con situaciones de psicología social. El docente construye un caso: personajes, escenas, preguntas, opciones con su explicación y una rúbrica. Lo publica y programa una actividad. El estudiante convocado recibe por correo un código, ingresa, abre su sesión individual y responde. El administrador gestiona docentes, roles y permisos.</p>
+      <p>La regla que la arquitectura tiene que cuidar es de momento y de rol. El docente crea y programa. El estudiante entra solo a la actividad de su código, dentro de las fechas, y solo responde si su sesión está en curso. Esos datos quedan en MySQL y el aviso sale por correo, sin exponer contraseñas, códigos ni errores internos.</p>
+      <p>La interfaz web está en construcción. En esta entrega la API se usa y se prueba con Postman y con pruebas automatizadas.</p>
+    </div>
+  </article>
+
+  <article class="block">
+    <p class="tag">Decisión · 70 segundos</p>
+    <div class="say">
+      <p>Elegimos un monolito modular en capas, con estilo cliente-servidor y API REST. Es un solo proceso Node.js, con Express 5 y MySQL 8.0. Por dentro hay seis módulos: acceso, casos, actividades, sesiones, participación y notificaciones.</p>
+      <p>La primera razón es la transacción. Al programar una actividad se guardan, juntas, la actividad, los estudiantes autorizados y el hash de cada código. Con una sola base eso es una transacción. Con microservicios sería un acuerdo entre servicios.</p>
+      <p>La segunda es el costo de las llamadas. Actividades usa crearCodigoAutorizacion de acceso. Sesiones usan los middlewares de acceso. Participación consulta el estado de la sesión. Hoy eso es una llamada directa. En microservicios sería red.</p>
+      <p>La tercera es el equipo. Somos cuatro, cada una en su rama, integrando por pull request hacia develop. El proyecto es académico y se levanta en un computador con Node.js y MySQL.</p>
+      <p>Descartamos eventos para todo el sistema porque el flujo principal es petición y respuesta. El evento queda para un caso puntual: el Observer de participación, que Valeria precisa al final.</p>
+    </div>
+    <div class="ask">
+      <p><strong>Si preguntan por qué no microservicios.</strong> Porque perderíamos la transacción entre tablas de distintos módulos y convertiríamos llamadas internas en red, para un alcance de aula y un equipo de cuatro.</p>
+    </div>
+  </article>
+
+  <article class="block">
+    <p class="tag">Dónde corre · 50 segundos</p>
+    <div class="say">
+      <p>Hoy el cliente es Postman. Envía JSON y el token en la cabecera Authorization Bearer. La API escucha en el puerto 3000. server.js arranca el proceso y app.js monta acceso, casos, actividades, sesiones, participación y health. Son 34 endpoints.</p>
+      <p>La base se llama proyecto_nuclear, tiene 27 tablas y la API se conecta con el usuario lumina_app, que solo tiene SELECT, INSERT, UPDATE y DELETE. El correo sale por un SMTP externo, con Nodemailer. Los secretos están en .env y no se suben a Git; en el repositorio solo está .env.example.</p>
+      <p>Al arrancar, el servidor deja una tarea que cada 60 segundos cierra las actividades vencidas.</p>
+    </div>
+  </article>
+
+  <article class="block">
+    <p class="tag">Actividades, sesiones y notificaciones · 60 segundos</p>
+    <div class="say">
+      <p>Mi parte pone el caso en el tiempo. Son los requisitos RF-04, RF-18, RF-19 y RF-21.</p>
+      <p>En actividades, el docente programa sobre un caso publicado, con estudiantes y fechas. Ahí se genera el código de cada convocado. La actividad se inicia, se cierra, y también se cierra sola cuando vence.</p>
+      <p>En sesiones el patrón es State. Los estados legales son Sin iniciar, En curso y Finalizado. El módulo controla intentos y horario, y no deja saltos.</p>
+      <p>En notificaciones, Factory Method crea el tipo de mensaje y Strategy cambia el contenido. La ruta que sí envía correo es la convocatoria. El mensaje de cambio de estudiantes está preparado y todavía ninguna ruta lo dispara. Lo dejamos dicho porque es el estado del 9 de noviembre.</p>
+      <p>Sofía sigue con el recorrido de una petición y con el acceso.</p>
+    </div>
+    <div class="ask">
+      <p><strong>Si preguntan por el cierre automático.</strong> Es una tarea del propio proceso, cada 60 segundos, no un servicio aparte.</p>
+      <p><strong>Si preguntan si ya se envía el cambio de estudiantes.</strong> No. La estrategia existe. Ninguna ruta la dispara.</p>
+    </div>
+  </article>
+
+  <h2>Sofía Gallego</h2>
+
+  <article class="block">
+    <p class="tag">Objetivo · 40 segundos</p>
+    <div class="say">
+      <p>El objetivo principal es una sola API REST. Cada una desarrolla su módulo, y todas compartimos la base de datos, el JWT y las capas. Así el requerimiento queda implementado, integrado y se puede probar.</p>
+      <p>Los objetivos secundarios son mantenibilidad, seguridad, integridad de las operaciones compuestas, facilidad de prueba y un rendimiento suficiente para el aula. Los módulos ya están separados por carpeta y por contrato, así que más adelante se podrían partir si la carga lo exigiera. Yo me detengo en la seguridad, porque la usan los cuatro módulos.</p>
+    </div>
+  </article>
+
+  <article class="block">
+    <p class="tag">Recorrido de una petición · 50 segundos</p>
+    <div class="say">
+      <p>Toda petición hace el mismo camino. Llega a la ruta, pasa por los middlewares y, si está autorizada, el controlador llama al servicio. El servicio aplica la regla. El repositorio ejecuta SQL con parámetros. MySQL devuelve el dato y el controlador responde JSON.</p>
+      <p>Si falta el token, el rol o el permiso, la respuesta es 401 o 403 y la petición no llega al controlador. La identidad siempre sale del token, en req.usuario. No aceptamos que el cuerpo de la petición diga quién es el usuario.</p>
+    </div>
+  </article>
+
+  <article class="block">
+    <p class="tag">Acceso · 55 segundos</p>
+    <div class="say">
+      <p>Acceso cubre RF-01, RF-02, RF-03 y RF-20. El estudiante entra con correo institucional y código de autorización. El docente y el administrador entran con correo y contraseña. Desde administración se crean docentes y se asignan roles y permisos.</p>
+      <p>Los middlewares autenticar, requiereRol, requierePermiso y requiereActividadAutorizada son una cadena de responsabilidad: cada uno deja seguir o corta. El Proxy cubre la creación de casos. POST /api/casos autentica, y el Proxy revisa el permiso CREAR_CASOS antes de llamar a crear. Dentro del módulo también están Repository y Factory, y un límite de intentos de ingreso.</p>
+    </div>
+    <div class="ask">
+      <p><strong>Si preguntan por el Proxy.</strong> Evita duplicar la revisión del permiso dentro del servicio de casos. La protección queda delante de crear.</p>
+      <p><strong>Si preguntan por las otras escrituras del caso.</strong> Construir, editar, publicar y archivar usan requierePermiso de CREAR_CASOS. Listar y ver un caso solo exigen autenticación.</p>
+    </div>
+  </article>
+
+  <article class="block">
+    <p class="tag">Lo que comparten los cuatro módulos · 50 segundos</p>
+    <div class="say">
+      <p>El JWT expira en una hora. Las contraseñas se guardan con scrypt. El código de autorización no se guarda en claro: en la base queda su HMAC-SHA256. Los secretos están en .env. Un error 500 no devuelve el detalle interno del servidor. El SQL va siempre con parámetros.</p>
+      <p>El contrato con el resto es concreto. Actividades nos pide crear el código y nosotros guardamos solo el hash. Sesiones aplican autenticar, rol Estudiante y la actividad autorizada, para que el estudiante abra sesión únicamente en la actividad de su código.</p>
+      <p>Stefanía sigue con la estructura interna y con los casos.</p>
+    </div>
+    <div class="ask">
+      <p><strong>Si preguntan si se puede cerrar una sesión antes de la hora.</strong> No. El JWT no se revoca antes de vencer. El límite de intentos, además, vive en la memoria del proceso. Es un límite que reconocemos en el cierre.</p>
+    </div>
+  </article>
+
+  <h2>Stefanía Díaz</h2>
+
+  <article class="block">
+    <p class="tag">Capas · 45 segundos</p>
+    <div class="say">
+      <p>Por dentro no hay seis servidores. Hay un proceso y tres capas. La presentación recibe el HTTP: rutas, middleware y controladores. El negocio está en los servicios de los seis módulos. La capa de datos es la única que escribe SQL, y el pool de conexiones está en config/database.js, hacia las 27 tablas de proyecto_nuclear.</p>
+      <p>Esa separación es la que permite probar. Los servicios reciben dependencias y se prueban sin base. El HTTP se prueba con supertest. Las pruebas contra MySQL real existen y se activan aparte.</p>
+    </div>
+  </article>
+
+  <article class="block">
+    <p class="tag">Casos · 60 segundos</p>
+    <div class="say">
+      <p>Casos cubre del RF-05 al RF-09 y la parte de rúbrica del RF-17. Un caso no es un registro único. Incluye personajes, escenas, decisiones, opciones con su explicación y la rúbrica.</p>
+      <p>Por eso el patrón es Builder. CasoBuilder arma el caso por pasos y lo valida antes de guardarlo. La creación completa va en una transacción: queda consistente o no queda. Publicar y archivar son el ciclo de vida posterior. Esa transacción es una de las razones del monolito: el caso completo toca varias tablas y no queremos partirlo en llamadas de red.</p>
+    </div>
+    <div class="ask">
+      <p><strong>Si preguntan qué tiene que cumplirse para publicar.</strong> Esto es detalle del módulo: escenas, preguntas, al menos dos opciones, opción esperada, explicaciones y rúbrica. Solo se edita en borrador. El estudiante no ve claves ni explicaciones. Gestionar el caso le corresponde a quien lo creó o al administrador, con el permiso CREAR_CASOS.</p>
+    </div>
+  </article>
+
+  <article class="block">
+    <p class="tag">Contratos entre módulos · 45 segundos</p>
+    <div class="say">
+      <p>El acoplamiento que sí tenemos es de contrato. Al programar, actividades pide el código a acceso y el correo a notificaciones. Sesiones no reescriben la seguridad: usan los middlewares, incluido el que amarra al estudiante con la actividad de su código. Participación no inventa otra regla: acepta respuestas solo en una sesión propia y en estado En curso.</p>
+      <p>En casos, el POST de crear pasa por el Proxy. Las demás escrituras exigen el permiso CREAR_CASOS. Consultar solo pide estar autenticado.</p>
+      <p>Valeria recorre ese encadenamiento de punta a punta y cierra con la evidencia.</p>
+    </div>
+  </article>
+
+  <h2>Valeria Tobar</h2>
+
+  <article class="block">
+    <p class="tag">Flujo completo · 45 segundos</p>
+    <div class="say">
+      <p>El backend ya permite este recorrido. Sofía autentica al docente o al administrador. Stefanía deja publicado el caso con su rúbrica. Laura programa la actividad: en una transacción quedan la actividad, los autorizados y los hashes, y sale el correo de convocatoria. El estudiante entra con el código y el token queda amarrado a esa actividad. Solo ahí inicia su sesión. Y solo con la sesión en curso registra y consulta respuestas.</p>
+    </div>
+  </article>
+
+  <article class="block">
+    <p class="tag">Participación · 50 segundos</p>
+    <div class="say">
+      <p>Participación cubre RF-10 y RF-11: registrar la respuesta y consultarla. La regla es estrecha. La sesión tiene que ser del estudiante y tiene que estar En curso. Si no, no se registra.</p>
+      <p>El patrón Observer está en EventosParticipacion. Ya se puede suscribir, desuscribir y notificar, y eso está probado. Lo que falta es conectarlo al registro de respuestas. No está disparando todavía una notificación interna cuando el estudiante responde.</p>
+    </div>
+    <div class="ask">
+      <p><strong>Si preguntan por qué hay un Observer si el flujo no lo usa.</strong> Porque el documento separa el flujo principal, que es petición y respuesta, de los eventos puntuales. El componente está implementado y probado. La conexión al registro quedó pendiente a este corte. No lo presentamos como cerrado.</p>
+    </div>
+  </article>
+
+  <article class="block">
+    <p class="tag">Evidencia · 35 segundos</p>
+    <div class="say">
+      <p>En develop, con la corrida del 9 de noviembre, hay 392 pruebas automatizadas. Pasan 390, no falla ninguna y 2 se omiten. Esas dos son las pruebas contra MySQL real: se activan aparte, no son fallos escondidos. Mientras la interfaz se construye, el otro cliente de prueba es Postman.</p>
+    </div>
+  </article>
+
+  <article class="block">
+    <p class="tag">Cierre · 45 segundos</p>
+    <div class="say">
+      <p>La arquitectura nos da un solo despliegue, transacciones entre módulos, la seguridad escrita una vez y patrones aplicados en funciones reales: Proxy en acceso, Builder en casos, State en sesiones, Factory y Strategy en notificaciones, y Observer en participación.</p>
+      <p>El costo también es explícito. El monolito escala como un todo: no podemos crecer un módulo por separado, y si el proceso de Node falla se detienen los seis. El JWT no se revoca antes de una hora. El límite de intentos vive en memoria. El correo depende del SMTP. Quedan abiertos, con la docente, el umbral de ingreso tardío del RF-22 y el catálogo completo de permisos.</p>
+      <p>Con eso cerramos. En las preguntas responde Sofía por acceso, Stefanía por casos, Laura por actividades, sesiones y notificaciones, y yo por participación.</p>
+    </div>
+  </article>
+
+  <h2>Preguntas que pueden cruzar módulos</h2>
+  <ul>
+    <li><strong>¿Cuántos endpoints y cuántas tablas?</strong> 34 endpoints y 27 tablas. Laura.</li>
+    <li><strong>¿Dónde están los secretos?</strong> En .env, fuera de Git. Hay .env.example. Sofía.</li>
+    <li><strong>¿Por qué el usuario de la base no puede crear tablas?</strong> Mínimo privilegio: solo SELECT, INSERT, UPDATE y DELETE. Sofía o Laura.</li>
+    <li><strong>¿La interfaz ya está?</strong> No. Está en construcción. La evidencia de esta entrega es Postman más las 392 pruebas. Valeria.</li>
+    <li><strong>¿Se puede separar un módulo después?</strong> Sí, por carpeta y por contrato, si la carga lo exigiera. Hoy no conviene, por las transacciones. Stefanía.</li>
+    <li><strong>Referencias si las piden.</strong> Gamma, Helm, Johnson y Vlissides, 1994. Fowler, 2002. Richards, 2015. RFC 7519 para JWT. Hojas de OWASP de autenticación y de almacenamiento de contraseñas. Documentación de Node.js, Express 5, mysql2, Nodemailer y MySQL 8.0.</li>
+  </ul>
+  <p class="muted">Repositorio citado en el documento: github.com/lsramos498/simulador-psicologia-social, rama develop. No hace falta decir la URL en voz alta.</p>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "name": "simulador-psicologia-social-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test",
+    "test:unit": "node --test tests/casos.unitarias.test.js tests/caso.builder.test.js tests/caso.validacion.test.js tests/casos.service.test.js tests/casos.test.js tests/casos.repository.test.js",
+    "test:casos": "node --test tests/casos.unitarias.test.js tests/caso.builder.test.js tests/caso.validacion.test.js tests/casos.service.test.js tests/casos.test.js tests/casos.repository.test.js tests/casos.routes.test.js tests/caso.edicion.validacion.test.js tests/casos.edicion.service.test.js tests/casos.edicion.routes.test.js tests/casos.proxy.test.js tests/casos.sustentacion.unitarias.test.js",
+    "test:casos:mysql": "node --test tests/casos.mysql.test.js",
+    "test:mysql": "node --test tests/acceso.mysql.test.js tests/casos.mysql.test.js src/modules/participacion/participacion.mysql.test.js",
+    "test:postman": "node scripts/run-postman.mjs",
+    "db:check": "node scripts/check-db-connection.js",
+    "db:seed": "node scripts/seed-inicial.js",
+    "test:e2e:acceso": "node scripts/e2e-acceso.mjs"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.24.6",
+    "nodemailer": "^10.6.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "supertest": "^7.3.1"
+  }
+}

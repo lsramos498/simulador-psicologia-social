@@ -1,0 +1,15 @@
+{
+  "status": 200,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlcyI6WyJFc3R1ZGlhbnRlIl0sInBlcm1pc29zIjpbXSwiaWF0IjoxNzk1NjY0NDQ3LCJleHAiOjE3OTU2NjgwNDcsInN1YiI6IjIyIn0.I2-_hud23iXCRZ67oftxgrCRhN1-TAoJ4khtfOWylEc",
+    "usuario": {
+      "id": 22,
+      "roles": [
+        "Estudiante"
+      ],
+      "nombres": "Stefania",
+      "apellidos": "Diaz",
+      "correo": "sdiaz_549@unihumboldt.edu.co"
+    }
+  }
+}

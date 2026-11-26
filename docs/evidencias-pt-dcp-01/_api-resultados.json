@@ -1,0 +1,395 @@
+[
+  {
+    "cp": "CP-06",
+    "escenario": "Login docente válido",
+    "esperado": "200 + token JWT",
+    "obtenido": "200 token=true",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-06/01-login-docente-ok.json"
+    ]
+  },
+  {
+    "cp": "CP-07",
+    "escenario": "Login docente inválido",
+    "esperado": "401",
+    "obtenido": "401",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-07/01-login-docente-fail.json"
+    ]
+  },
+  {
+    "cp": "CP-08",
+    "escenario": "Estudiante no entra por contraseña de docente",
+    "esperado": "401/403",
+    "obtenido": "401",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-08/01-estudiante-no-usa-password.json"
+    ]
+  },
+  {
+    "cp": "CP-09",
+    "escenario": "Enviar OTP de sesión (adaptado RF-01)",
+    "esperado": "200 sin revelar código",
+    "obtenido": "200 revelaCodigo=false",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-09/01-enviar-otp.json"
+    ]
+  },
+  {
+    "cp": "CP-10",
+    "escenario": "OTP inválido rechazado",
+    "esperado": "401",
+    "obtenido": "401",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-10/01-otp-invalido.json"
+    ]
+  },
+  {
+    "cp": "CP-01",
+    "escenario": "Programar actividad válida",
+    "esperado": "201 Programada",
+    "obtenido": "201 id=47 exponeCodigos=false",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-01/01-crear-actividad-ok.json"
+    ]
+  },
+  {
+    "cp": "CP-01",
+    "escenario": "Rechazo fecha fin < inicio",
+    "esperado": "400",
+    "obtenido": "400",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-01/02-fechas-invalidas.json"
+    ]
+  },
+  {
+    "cp": "CP-01",
+    "escenario": "Rechazo tiempo límite > estimado",
+    "esperado": "400",
+    "obtenido": "400",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-01/03-tiempo-excede.json"
+    ]
+  },
+  {
+    "cp": "CP-01",
+    "escenario": "Rechazo caso Borrador",
+    "esperado": "409",
+    "obtenido": "409",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-01/04-caso-borrador.json"
+    ]
+  },
+  {
+    "cp": "CP-02",
+    "escenario": "Docente inicia actividad",
+    "esperado": "200 Iniciada",
+    "obtenido": "200 Iniciada",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-02/01-iniciar-actividad.json"
+    ]
+  },
+  {
+    "cp": "CP-04",
+    "escenario": "No reiniciar actividad cerrada",
+    "esperado": "409/400",
+    "obtenido": "409",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-04/01-cerrar-actividad.json",
+      "CP-04/02-iniciar-cerrada.json"
+    ]
+  },
+  {
+    "cp": "CP-05",
+    "escenario": "Consulta sesión sin token",
+    "esperado": "401",
+    "obtenido": "401",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-05/01-sin-token.json"
+    ]
+  },
+  {
+    "cp": "CP-11",
+    "escenario": "Crear caso con datos válidos",
+    "esperado": "201",
+    "obtenido": "201",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-11/02-crear-caso.json"
+    ]
+  },
+  {
+    "cp": "CP-12",
+    "escenario": "Rechazo caso incompleto",
+    "esperado": "422",
+    "obtenido": "422",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-12/01-caso-incompleto.json"
+    ]
+  },
+  {
+    "cp": "CP-15",
+    "escenario": "Rechazo relación/opción inválida en caso",
+    "esperado": "400/422",
+    "obtenido": "422",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-15/01-relacion-invalida.json"
+    ]
+  },
+  {
+    "cp": "CP-09",
+    "escenario": "OTP demo en pantalla (ACCESO_CODIGO_EN_PANTALLA)",
+    "esperado": "200 + codigo si flag local",
+    "obtenido": "200 codigo=true",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-09/03-otp-flujo-completo.json"
+    ]
+  },
+  {
+    "cp": "CP-02",
+    "escenario": "Login estudiante OTP válido",
+    "esperado": "200 + token",
+    "obtenido": "200 token=true",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-02/03-login-estudiante-ok.json"
+    ]
+  },
+  {
+    "cp": "CP-16",
+    "escenario": "Iniciar sesión estudiante + base para respuesta",
+    "esperado": "200",
+    "obtenido": "200",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-16/01-iniciar-sesion.json"
+    ]
+  },
+  {
+    "cp": "CP-16",
+    "escenario": "Registro respuesta válida",
+    "esperado": "200/201",
+    "obtenido": "201",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-16/02-respuesta-valida.json"
+    ]
+  },
+  {
+    "cp": "CP-17",
+    "escenario": "Consulta respuestas propias",
+    "esperado": "200",
+    "obtenido": "200",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-17/01-consultar-respuestas.json"
+    ]
+  },
+  {
+    "cp": "CP-18",
+    "escenario": "Consulta respuestas con actor no dueño",
+    "esperado": "403/401 (o 200 si docente autorizado a monitorear)",
+    "obtenido": "200",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-18/01-consulta-ajena.json"
+    ]
+  },
+  {
+    "cp": "CP-20",
+    "escenario": "Rechazo opción de otra decisión",
+    "esperado": "400/409/422",
+    "obtenido": "422",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-20/01-opcion-invalida.json"
+    ]
+  },
+  {
+    "cp": "CP-21",
+    "escenario": "Segunda respuesta misma decisión (dup o update)",
+    "esperado": "200/201/409",
+    "obtenido": "201",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-21/01-respuesta-duplicada-o-cambio.json"
+    ]
+  },
+  {
+    "cp": "CP-22",
+    "escenario": "Modificación de respuesta en sesión abierta",
+    "esperado": "200/201 (si update) o 409 (si bloquea)",
+    "obtenido": "201",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-21/01-respuesta-duplicada-o-cambio.json"
+    ]
+  },
+  {
+    "cp": "CP-23",
+    "escenario": "Cálculo de progreso",
+    "esperado": "200",
+    "obtenido": "200",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-23/01-progreso.json"
+    ]
+  },
+  {
+    "cp": "CP-03",
+    "escenario": "Finalizar sesión estudiante",
+    "esperado": "200 Finalizado",
+    "obtenido": "200",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-03/02-finalizar-sesion.json"
+    ]
+  },
+  {
+    "cp": "CP-19",
+    "escenario": "Rechazo respuesta con sesión finalizada",
+    "esperado": "409/400",
+    "obtenido": "409",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-19/01-respuesta-sesion-finalizada.json"
+    ]
+  },
+  {
+    "cp": "CP-31",
+    "escenario": "Resultado/retroalimentación estudiante",
+    "esperado": "200",
+    "obtenido": "200",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-31/02-retroalimentacion-estudiante.json"
+    ]
+  },
+  {
+    "cp": "CP-29",
+    "escenario": "Cálculo de nota con rúbrica al finalizar",
+    "esperado": "evaluación presente",
+    "obtenido": "nota=2.5",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-29/01-evaluacion.json",
+      "CP-03/02-finalizar-sesion.json"
+    ]
+  },
+  {
+    "cp": "CP-30",
+    "escenario": "Evaluación de intento (completo/incompleto)",
+    "esperado": "evaluación al cierre",
+    "obtenido": "cerró con evaluación",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-29/01-evaluacion.json"
+    ]
+  },
+  {
+    "cp": "CP-24",
+    "escenario": "Observer / notificaciones al finalizar participación",
+    "esperado": "cierre 200 (notif Calificacion/Retro en DB)",
+    "obtenido": "200",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-03/02-finalizar-sesion.json"
+    ]
+  },
+  {
+    "cp": "CP-34",
+    "escenario": "Retroalimentación general del docente",
+    "esperado": "200/201",
+    "obtenido": "201",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-34/02-comentario-docente.json"
+    ]
+  },
+  {
+    "cp": "CP-33",
+    "escenario": "Consulta participaciones docente (API)",
+    "esperado": "200",
+    "obtenido": "200",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-33/02-monitor-api.json"
+    ]
+  },
+  {
+    "cp": "CP-35",
+    "escenario": "Descarga reporte participación CSV",
+    "esperado": "200",
+    "obtenido": "200",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-35/01-reporte.csv.json"
+    ]
+  },
+  {
+    "cp": "CP-36",
+    "escenario": "Notificación de calificación/retro",
+    "esperado": "200 con items",
+    "obtenido": "200",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-36/01-notificaciones-estudiante.json"
+    ]
+  },
+  {
+    "cp": "CP-32",
+    "escenario": "Rechazo nuevo intento sin autorización",
+    "esperado": "409",
+    "obtenido": "409",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-32/01-sin-autorizacion.json"
+    ]
+  },
+  {
+    "cp": "CP-32",
+    "escenario": "Autorización de repetición excepcional",
+    "esperado": "201 auth + 200 iniciar",
+    "obtenido": "auth=201 ini=200",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-32/02-autorizar-repeticion.json",
+      "CP-32/03-iniciar-con-autorizacion.json"
+    ]
+  },
+  {
+    "cp": "CP-27",
+    "escenario": "Control tiempo máximo / cerrar vencidas",
+    "esperado": "actividad corta + cerrar-vencidas 200",
+    "obtenido": "act=201 cerrar=200",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-27/01-tiempo-maximo.json"
+    ]
+  },
+  {
+    "cp": "CP-28",
+    "escenario": "Restricción ingreso tardío / fuera de ventana",
+    "esperado": "403/400/409 al entrar fuera de horario",
+    "obtenido": "403",
+    "veredicto": "Aprobado",
+    "archivos": [
+      "CP-28/01-ingreso-tardio.json"
+    ]
+  }
+]

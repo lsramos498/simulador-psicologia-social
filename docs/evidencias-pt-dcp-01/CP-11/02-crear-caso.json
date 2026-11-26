@@ -1,0 +1,19 @@
+{
+  "status": 201,
+  "data": {
+    "data": {
+      "id": 52,
+      "creadorId": 3,
+      "titulo": "PT-DCP caso válido 1795664441010",
+      "desarrolloSituacional": "Situación de prueba para CP-11.",
+      "contextoHistoria": "Contexto de prueba CP-11.",
+      "tiempoEstimadoSegundos": 600,
+      "estado": "Borrador",
+      "fechaCreacion": "2026-11-26T03:40:41.000Z",
+      "fechaActualizacion": null,
+      "personajes": [],
+      "escenas": [],
+      "rubrica": null
+    }
+  }
+}

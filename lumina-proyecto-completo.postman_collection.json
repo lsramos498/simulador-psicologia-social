@@ -1,0 +1,2949 @@
+{
+  "info": {
+    "name": "Lumina - Proyecto completo",
+    "description": "Colección de integración de Lumina: salud, acceso, casos, actividades, sesión del estudiante, respuesta, progreso, calificación y participación.\n\nLogin estudiante = OTP de sesión (POST /api/acceso/estudiantes/enviar-codigo + ingreso). Para demos/E2E usa ACCESO_CODIGO_EN_PANTALLA=true.\n\nImportar y ejecutar TODA la colección en orden con el Collection Runner o newman.\nEl token no se escribe a mano: lo guardan las peticiones de ingreso y dura 1 hora.\n\nAntes de ejecutar, en la carpeta backend:\n1. MySQL encendido y npm run db:seed, con el mismo administrador de las variables.\n2. npm run dev (http://localhost:3000) con ACCESO_CODIGO_EN_PANTALLA=true.\n\nUsuarios:\n- Administrador: admin@unihumboldt.edu.co (ADMIN_CONTRASENA del .env)\n- Docente: docente.casos@unihumboldt.edu.co / Docente1234 (la colección lo crea).\n- Estudiante: estudiante.flujo@unihumboldt.edu.co (OTP de sesión).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "adminCorreo",
+      "value": "admin@unihumboldt.edu.co"
+    },
+    {
+      "key": "adminContrasena",
+      "value": "replace_with_strong_password"
+    },
+    {
+      "key": "docenteCorreo",
+      "value": "docente.casos@unihumboldt.edu.co"
+    },
+    {
+      "key": "docenteContrasena",
+      "value": "Docente1234"
+    },
+    {
+      "key": "tokenAdmin",
+      "value": ""
+    },
+    {
+      "key": "tokenDocente",
+      "value": ""
+    },
+    {
+      "key": "casoId",
+      "value": ""
+    },
+    {
+      "key": "casoConstruidoId",
+      "value": ""
+    },
+    {
+      "key": "rubricaId",
+      "value": "1"
+    },
+    {
+      "key": "escenaId",
+      "value": ""
+    },
+    {
+      "key": "decisionId",
+      "value": ""
+    },
+    {
+      "key": "opcionId",
+      "value": ""
+    },
+    {
+      "key": "personajeId",
+      "value": ""
+    },
+    {
+      "key": "espacioAcademicoId",
+      "value": "1"
+    },
+    {
+      "key": "estudianteId",
+      "value": "1"
+    },
+    {
+      "key": "estudianteCorreo",
+      "value": "estudiante.flujo@unihumboldt.edu.co"
+    },
+    {
+      "key": "codigoEstudiante",
+      "value": ""
+    },
+    {
+      "key": "sesionId",
+      "value": ""
+    },
+    {
+      "key": "actividadId",
+      "value": "999999"
+    },
+    {
+      "key": "actividadCreada",
+      "value": "no"
+    },
+    {
+      "key": "tokenEstudiante",
+      "value": ""
+    },
+    {
+      "key": "decisionPublicadaId",
+      "value": ""
+    },
+    {
+      "key": "opcionCorrectaId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Salud de la API",
+      "item": [
+        {
+          "name": "Raíz de la API",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('es Lumina', () => pm.expect(pm.response.json().name).to.eql('Lumina API'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/health",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('status ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Acceso y permisos",
+      "item": [
+        {
+          "name": "Ingreso sin datos (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/ingreso",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Contraseña incorrecta (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/ingreso",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"{{adminCorreo}}\",\n  \"contrasena\": \"contrasena-incorrecta\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingreso del administrador (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/ingreso",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"{{adminCorreo}}\",\n  \"contrasena\": \"{{adminContrasena}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const datos = pm.response.json();",
+                  "pm.test('trae el rol Administrador', () => pm.expect(datos.usuario.roles).to.include('Administrador'));",
+                  "pm.collectionVariables.set('tokenAdmin', datos.token);",
+                  "console.log('TOKEN ADMIN:', datos.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar roles sin token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/acceso/admin/roles",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar roles (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/acceso/admin/roles",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('incluye Docente', () => pm.expect(JSON.stringify(pm.response.json())).to.include('Docente'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar permisos (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/acceso/admin/permisos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('incluye CREAR_CASOS', () => pm.expect(JSON.stringify(pm.response.json())).to.include('CREAR_CASOS'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear docente (201 o ya existía)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/admin/docentes",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Docente\",\n  \"apellidos\": \"Casos\",\n  \"correo\": \"{{docenteCorreo}}\",\n  \"contrasena\": \"{{docenteContrasena}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('crea el docente o ya existía', () => pm.expect([201, 409]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear el mismo docente otra vez (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/admin/docentes",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Docente\",\n  \"apellidos\": \"Casos\",\n  \"correo\": \"{{docenteCorreo}}\",\n  \"contrasena\": \"{{docenteContrasena}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear docente incompleto (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/admin/docentes",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Solo nombre\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dar CREAR_CASOS al rol Docente (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/admin/roles/Docente/permisos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permiso\": \"CREAR_CASOS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Permiso inexistente (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/admin/roles/Docente/permisos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permiso\": \"PERMISO_INVENTADO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingreso del docente (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/ingreso",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"{{docenteCorreo}}\",\n  \"contrasena\": \"{{docenteContrasena}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const datos = pm.response.json();",
+                  "pm.test('tiene CREAR_CASOS', () => pm.expect(datos.usuario.permisos).to.include('CREAR_CASOS'));",
+                  "pm.collectionVariables.set('tokenDocente', datos.token);",
+                  "console.log('TOKEN DOCENTE:', datos.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El docente no puede crear otro docente (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/admin/docentes",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Otro\",\n  \"apellidos\": \"Docente\",\n  \"correo\": \"otro.docente@unihumboldt.edu.co\",\n  \"contrasena\": \"Docente1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El docente no puede darse el rol Administrador (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/admin/usuarios/1/roles",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rol\": \"Administrador\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Estudiante sin código (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/estudiantes/ingreso",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"estudiante@unihumboldt.edu.co\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Código de estudiante que no existe (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/estudiantes/ingreso",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"estudiante@unihumboldt.edu.co\",\n  \"codigo\": \"ABCD2345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Un estudiante no entra con contraseña (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/ingreso",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"estudiante@unihumboldt.edu.co\",\n  \"contrasena\": \"cualquiera\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Si ese correo no existe, la API también responde 401 y no revela si la cuenta está registrada."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear estudiante (201 o ya existía)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/admin/estudiantes",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Estudiante\",\n  \"apellidos\": \"Flujo\",\n  \"correo\": \"{{estudianteCorreo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "El estudiante no recibe contraseña. Entra después con correo y código de la actividad."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('crea el estudiante o ya existía', () => pm.expect([201, 409]).to.include(pm.response.code));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('estudianteId', String(pm.response.json().data.id));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar estudiantes (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/acceso/admin/estudiantes",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const lista = pm.response.json().data || [];",
+                  "const estudiante = lista.find((item) => item.correo === pm.collectionVariables.get('estudianteCorreo'));",
+                  "if (estudiante) pm.collectionVariables.set('estudianteId', String(estudiante.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear espacio académico (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/espacios",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Psicología social {{$timestamp}}\",\n  \"codigo\": \"PS-{{$timestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('espacioAcademicoId', String(pm.response.json().data.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar espacios académicos (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/espacios",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Casos",
+      "item": [
+        {
+          "name": "Crear caso sin token (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Conflicto en el aula\",\n  \"desarrolloSituacional\": \"Dos grupos discuten una norma del curso.\",\n  \"contextoHistoria\": \"Primer semestre, psicología social.\",\n  \"tiempoEstimadoSegundos\": 900\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear caso sin permiso CREAR_CASOS (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenSinCrearCasos}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Conflicto en el aula\",\n  \"desarrolloSituacional\": \"Dos grupos discuten una norma del curso.\",\n  \"contextoHistoria\": \"Primer semestre, psicología social.\",\n  \"tiempoEstimadoSegundos\": 900\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.collectionVariables.get('baseUrl') || pm.environment.get('baseUrl') || 'http://127.0.0.1:3000';",
+                  "const correo = pm.collectionVariables.get('estudianteCorreo') || 'estudiante.flujo@unihumboldt.edu.co';",
+                  "return new Promise((resolve, reject) => {",
+                  "  pm.sendRequest({",
+                  "    url: base + '/api/acceso/estudiantes/enviar-codigo',",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json' },",
+                  "    body: { mode: 'raw', raw: JSON.stringify({ correo }) }",
+                  "  }, (errEnviar, enviar) => {",
+                  "    if (errEnviar) { return reject(errEnviar); }",
+                  "    const otpBody = enviar.json() || {};",
+                  "    const codigo = otpBody.codigoAutorizacion;",
+                  "    if (!codigo) { return reject(new Error('Sin OTP: activa ACCESO_CODIGO_EN_PANTALLA=true')); }",
+                  "    pm.sendRequest({",
+                  "      url: base + '/api/acceso/estudiantes/ingreso',",
+                  "      method: 'POST',",
+                  "      header: { 'Content-Type': 'application/json' },",
+                  "      body: { mode: 'raw', raw: JSON.stringify({ correo, codigo }) }",
+                  "    }, (errIngreso, ingreso) => {",
+                  "      if (errIngreso) { return reject(errIngreso); }",
+                  "      const token = (ingreso.json() || {}).token;",
+                  "      if (!token) { return reject(new Error('No se obtuvo token de estudiante')); }",
+                  "      pm.collectionVariables.set('tokenSinCrearCasos', token);",
+                  "      resolve();",
+                  "    });",
+                  "  });",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear caso incompleto (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Solo el título\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 422', () => pm.response.to.have.status(422));",
+                  "pm.test('codigo de estructura', () => pm.expect(pm.response.json().codigo).to.eql('ESTRUCTURA_INVALIDA'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear borrador (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Conflicto en el aula\",\n  \"desarrolloSituacional\": \"Dos grupos discuten una norma del curso.\",\n  \"contextoHistoria\": \"Primer semestre, psicología social.\",\n  \"tiempoEstimadoSegundos\": 900\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                  "const caso = pm.response.json().data;",
+                  "pm.test('queda en Borrador', () => pm.expect(caso.estado).to.eql('Borrador'));",
+                  "pm.collectionVariables.set('casoId', String(caso.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Construir caso completo (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos/construir",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Conflicto en el pasillo\",\n  \"desarrolloSituacional\": \"Ana encuentra a dos compañeras discutiendo una norma.\",\n  \"contextoHistoria\": \"Primer semestre, después de clase.\",\n  \"tiempoEstimadoSegundos\": 900,\n  \"personajes\": [\n    { \"nombre\": \"Ana\", \"rolSocial\": \"Estudiante\" }\n  ],\n  \"escenas\": [\n    {\n      \"nombre\": \"El pasillo\",\n      \"contexto\": \"Ana espera a su grupo.\",\n      \"orden\": 1,\n      \"esFinal\": false,\n      \"personajes\": [\"Ana\"],\n      \"decisiones\": [\n        {\n          \"pregunta\": \"¿Qué hace Ana?\",\n          \"orden\": 1,\n          \"opciones\": [\n            {\n              \"texto\": \"Pide escuchar a las dos partes.\",\n              \"esCorrecta\": true,\n              \"orden\": 1,\n              \"explicacion\": \"Reconoce el conflicto antes de tomar partido.\"\n            },\n            {\n              \"texto\": \"Ignora la discusión.\",\n              \"esCorrecta\": false,\n              \"orden\": 2,\n              \"explicacion\": \"No interviene y el conflicto sigue.\"\n            }\n          ]\n        }\n      ]\n    }\n  ],\n  \"rubrica\": {\n    \"nombre\": \"Participación en el conflicto\",\n    \"descripcion\": \"Observa la lectura del contexto.\",\n    \"criterios\": [\n      {\n        \"nombre\": \"Lectura del contexto\",\n        \"descripcion\": \"Identifica actores y tensiones.\",\n        \"ponderacion\": 100,\n        \"puntajeMaximo\": 5,\n        \"niveles\": [\n          { \"nombre\": \"Inicial\", \"descripcion\": \"Describe los hechos.\", \"puntaje\": 2, \"orden\": 1 },\n          { \"nombre\": \"Avanzado\", \"descripcion\": \"Relaciona hechos con teoría.\", \"puntaje\": 5, \"orden\": 2 }\n        ]\n      }\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                  "const caso = pm.response.json().data;",
+                  "pm.collectionVariables.set('casoConstruidoId', String(caso.id));",
+                  "pm.collectionVariables.set('rubricaId', String(caso.rubrica.id));",
+                  "const decision = caso.escenas[0].decisiones[0];",
+                  "const correcta = decision.opciones.find((opcion) => opcion.esCorrecta) || decision.opciones[0];",
+                  "pm.collectionVariables.set('decisionPublicadaId', String(decision.id));",
+                  "pm.collectionVariables.set('opcionCorrectaId', String(correcta.id));",
+                  "pm.test('trae escena y rúbrica', () => {",
+                  "  pm.expect(caso.escenas.length).to.be.at.least(1);",
+                  "  pm.expect(caso.rubrica).to.be.an('object');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar casos (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/casos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('incluye casos', () => pm.expect(pm.response.json().total).to.be.at.least(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar borrador (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar caso inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/casos/999999",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('codigo', () => pm.expect(pm.response.json().codigo).to.eql('CASO_NO_EXISTE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar datos básicos (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Conflicto en el aula, versión 2\",\n  \"desarrolloSituacional\": \"Dos grupos discuten una norma del curso y piden mediación.\",\n  \"contextoHistoria\": \"Primer semestre, psicología social.\",\n  \"tiempoEstimadoSegundos\": 1200\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('actualiza el título', () => pm.expect(pm.response.json().data.titulo).to.eql('Conflicto en el aula, versión 2'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Agregar escena (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/escenas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"El aula\",\n  \"contexto\": \"El grupo espera la indicación de la docente.\",\n  \"orden\": 1,\n  \"esFinal\": false,\n  \"personajes\": [],\n  \"decisiones\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                  "const escenas = pm.response.json().data.escenas;",
+                  "pm.collectionVariables.set('escenaId', String(escenas[escenas.length - 1].id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar escena (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/escenas/{{escenaId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"El aula principal\",\n  \"contexto\": \"El grupo espera la indicación y ya hay tensión.\",\n  \"orden\": 1,\n  \"esFinal\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Agregar pregunta (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/escenas/{{escenaId}}/decisiones",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Cómo interviene la docente?\",\n  \"orden\": 1,\n  \"ayuda\": \"Observa a los dos grupos antes de hablar.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                  "const escenas = pm.response.json().data.escenas;",
+                  "const escena = escenas.find((item) => String(item.id) === pm.collectionVariables.get('escenaId'));",
+                  "pm.collectionVariables.set('decisionId', String(escena.decisiones[escena.decisiones.length - 1].id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar pregunta (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/decisiones/{{decisionId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Qué hace primero la docente?\",\n  \"orden\": 1,\n  \"ayuda\": \"Escucha a los dos grupos.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Agregar opción esperada (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/decisiones/{{decisionId}}/opciones",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Pide escuchar a las dos partes.\",\n  \"esCorrecta\": true,\n  \"orden\": 1,\n  \"explicacion\": \"Contiene el conflicto antes de decidir.\",\n  \"fundamentoTeorico\": \"Mediación y escucha activa.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Agregar segunda opción (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/decisiones/{{decisionId}}/opciones",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Elige un grupo sin escuchar.\",\n  \"esCorrecta\": false,\n  \"orden\": 2,\n  \"explicacion\": \"Toma partido sin leer el contexto.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                  "const caso = pm.response.json().data;",
+                  "const escena = caso.escenas.find((item) => String(item.id) === pm.collectionVariables.get('escenaId'));",
+                  "const decision = escena.decisiones.find((item) => String(item.id) === pm.collectionVariables.get('decisionId'));",
+                  "pm.collectionVariables.set('opcionId', String(decision.opciones[decision.opciones.length - 1].id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar opción (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/opciones/{{opcionId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Ignora la discusión y sigue la clase.\",\n  \"esCorrecta\": false,\n  \"orden\": 2,\n  \"explicacion\": \"Evita la situación y el conflicto permanece.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Agregar personaje (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/personajes",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"rolSocial\": \"Estudiante\",\n  \"perfil\": \"Participa en el grupo que discute la norma.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                  "const personajes = pm.response.json().data.personajes;",
+                  "pm.collectionVariables.set('personajeId', String(personajes[personajes.length - 1].id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Asociar personaje a la escena (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/escenas/{{escenaId}}/personajes",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"personajeId\": {{personajeId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Publicar sin rúbrica (422)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/publicar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 422', () => pm.response.to.have.status(422));",
+                  "pm.test('explica qué falta', () => pm.expect(pm.response.json().errores.length).to.be.at.least(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Guardar rúbrica (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/rubrica",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Participación en el conflicto\",\n  \"descripcion\": \"Observa la lectura del contexto.\",\n  \"criterios\": [\n    {\n      \"nombre\": \"Lectura del contexto\",\n      \"descripcion\": \"Identifica actores y tensiones.\",\n      \"ponderacion\": 100,\n      \"puntajeMaximo\": 5,\n      \"niveles\": [\n        { \"nombre\": \"Inicial\", \"descripcion\": \"Describe los hechos.\", \"puntaje\": 2, \"orden\": 1 },\n        { \"nombre\": \"Avanzado\", \"descripcion\": \"Relaciona hechos con teoría.\", \"puntaje\": 5, \"orden\": 2 }\n      ]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Publicar borrador completo (200)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/publicar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('queda Publicado', () => pm.expect(pm.response.json().data.estado).to.eql('Publicado'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar un caso publicado (409)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Conflicto en el aula\",\n  \"desarrolloSituacional\": \"Dos grupos discuten una norma del curso.\",\n  \"contextoHistoria\": \"Primer semestre, psicología social.\",\n  \"tiempoEstimadoSegundos\": 900\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('codigo no editable', () => pm.expect(pm.response.json().codigo).to.eql('CASO_NO_EDITABLE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Publicar el caso construido (200)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/casos/{{casoConstruidoId}}/publicar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('queda Publicado', () => pm.expect(pm.response.json().data.estado).to.eql('Publicado'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Archivar el caso publicado (200)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/casos/{{casoId}}/archivar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('queda Archivado', () => pm.expect(pm.response.json().data.estado).to.eql('Archivado'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Actividades",
+      "item": [
+        {
+          "name": "Programar actividad sin token (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/actividades",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"casoId\": {{casoConstruidoId}},\n  \"espacioAcademicoId\": {{espacioAcademicoId}},\n  \"rubricaId\": {{rubricaId}},\n  \"fechaInicio\": \"2026-11-16T08:00\",\n  \"fechaFin\": \"2026-11-16T10:00\",\n  \"tiempoLimiteSegundos\": 600,\n  \"intentosPermitidos\": 1,\n  \"lugar\": \"Aula 201\",\n  \"mensajePersonalizado\": \"Revisa el caso antes de entrar.\",\n  \"estudiantesIds\": [{{estudianteId}}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Programar actividad incompleta (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/actividades",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"casoId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Programar sobre un caso archivado (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/actividades",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"casoId\": {{casoId}},\n  \"espacioAcademicoId\": {{espacioAcademicoId}},\n  \"rubricaId\": {{rubricaId}},\n  \"fechaInicio\": \"2026-11-16T08:00\",\n  \"fechaFin\": \"2026-11-16T10:00\",\n  \"tiempoLimiteSegundos\": 600,\n  \"intentosPermitidos\": 1,\n  \"lugar\": \"Aula 201\",\n  \"mensajePersonalizado\": \"Revisa el caso antes de entrar.\",\n  \"estudiantesIds\": [{{estudianteId}}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Usa el caso que la carpeta 3 acaba de archivar. La API lo rechaza porque solo se programan casos publicados."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar actividad inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/actividades/999999",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iniciar actividad inexistente (404)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/actividades/999999/iniciar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cerrar actividad inexistente (404)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/actividades/999999/cerrar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Programar actividad sobre el caso publicado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/actividades",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"casoId\": {{casoConstruidoId}},\n  \"espacioAcademicoId\": {{espacioAcademicoId}},\n  \"rubricaId\": {{rubricaId}},\n  \"fechaInicio\": \"{{fechaInicioActividad}}\",\n  \"fechaFin\": \"{{fechaFinActividad}}\",\n  \"tiempoLimiteSegundos\": 600,\n  \"intentosPermitidos\": 1,\n  \"lugar\": \"Aula 201\",\n  \"mensajePersonalizado\": \"Revisa el caso antes de entrar.\",\n  \"estudiantesIds\": [{{estudianteId}}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Usa el espacio y el estudiante creados antes. Si responde 201, data.codigosDeAcceso trae el código con el que entra el estudiante. El correo queda guardado como Fallida porque no hay servidor SMTP."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const pad = (n) => String(n).padStart(2, '0');",
+                  "const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;",
+                  "const inicio = new Date(Date.now() - 5 * 60 * 1000);",
+                  "const fin = new Date(Date.now() + 2 * 60 * 60 * 1000);",
+                  "pm.collectionVariables.set('fechaInicioActividad', fmt(inicio));",
+                  "pm.collectionVariables.set('fechaFinActividad', fmt(fin));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const codigo = pm.response.code;",
+                  "pm.test('la API acepta la actividad o explica que falta el espacio o el estudiante', () => {",
+                  "  pm.expect([201, 403, 404, 409, 422]).to.include(codigo);",
+                  "});",
+                  "if (codigo === 201) {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.collectionVariables.set('actividadCreada', 'si');",
+                  "  pm.collectionVariables.set('actividadId', String(data.id));",
+                  "  const acceso = (data.codigosDeAcceso || [])[0];",
+                  "  if (acceso) pm.collectionVariables.set('codigoEstudiante', acceso.codigo);",
+                  "} else {",
+                  "  pm.collectionVariables.set('actividadCreada', 'no');",
+                  "  console.log('No se programó la actividad:', pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar actividades del docente (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/actividades",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar la actividad programada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/actividades/{{actividadId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('actividadCreada') === 'si') {",
+                  "  pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "} else {",
+                  "  pm.test('no hay actividad creada en esta corrida', () => pm.response.to.have.status(404));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iniciar la actividad",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/actividades/{{actividadId}}/iniciar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('actividadCreada') === 'si') {",
+                  "  pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('queda Iniciada', () => pm.expect(pm.response.json().data.estado).to.eql('Iniciada'));",
+                  "} else {",
+                  "  pm.test('no hay actividad creada en esta corrida', () => pm.response.to.have.status(404));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Enviar OTP de sesión al estudiante (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/estudiantes/enviar-codigo",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"{{estudianteCorreo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Flujo actual: OTP de sesión. Con ACCESO_CODIGO_EN_PANTALLA=true el código viene en la respuesta para demos/E2E."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const datos = pm.response.json();",
+                  "if (datos.codigoAutorizacion) {",
+                  "  pm.collectionVariables.set('codigoEstudiante', datos.codigoAutorizacion);",
+                  "  pm.test('demo local entregó OTP', () => pm.expect(datos.codigoAutorizacion).to.be.a('string').and.not.empty);",
+                  "} else if (pm.collectionVariables.get('codigoEstudiante')) {",
+                  "  pm.test('hay código previo de convocatoria (legado)', () => pm.expect(pm.collectionVariables.get('codigoEstudiante')).to.be.ok);",
+                  "} else {",
+                  "  pm.test('sin OTP en respuesta: activa ACCESO_CODIGO_EN_PANTALLA=true', () => pm.expect.fail('Falta codigoAutorizacion'));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingreso del estudiante con OTP de sesión (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/acceso/estudiantes/ingreso",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"{{estudianteCorreo}}\",\n  \"codigo\": \"{{codigoEstudiante}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "OTP de sesión (enviar-codigo). El token no fija actividadId; el estudiante elige misión en el panel."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const datos = pm.response.json();",
+                  "pm.test('entrega token de estudiante', () => {",
+                  "  pm.expect(datos.token).to.be.a('string').and.not.empty;",
+                  "  pm.expect(datos.usuario.roles).to.include('Estudiante');",
+                  "});",
+                  "pm.collectionVariables.set('tokenEstudiante', datos.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iniciar sesión sin token (401)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/sesiones/actividades/{{actividadId}}/iniciar",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El estudiante no inicia la sesión de otra actividad (403)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/sesiones/actividades/999999/iniciar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenEstudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El estudiante inicia su sesión (200)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/sesiones/actividades/{{actividadId}}/iniciar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenEstudiante}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "La actividad ya fue iniciada por el docente y la fecha está dentro de la ventana."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const sesion = pm.response.json().data;",
+                  "pm.test('pasa a En curso', () => pm.expect(sesion.estado).to.eql('En curso'));",
+                  "pm.collectionVariables.set('sesionId', String(sesion.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registra la respuesta esperada (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/participacion/respuestas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenEstudiante}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sesionId\": {{sesionId}},\n  \"decisionId\": {{decisionPublicadaId}},\n  \"opcionId\": {{opcionCorrectaId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('guarda la opción', () => {",
+                  "  pm.expect(pm.response.json().data.opcionId).to.eql(Number(pm.collectionVariables.get('opcionCorrectaId')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consulta el progreso (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/participacion/sesiones/{{sesionId}}/progreso",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenEstudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const progreso = pm.response.json().data;",
+                  "pm.test('queda una pregunta respondida y ninguna pendiente', () => {",
+                  "  pm.expect(progreso.totalPreguntas).to.eql(1);",
+                  "  pm.expect(progreso.preguntasRespondidas).to.eql(1);",
+                  "  pm.expect(progreso.preguntasPendientes).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "La retroalimentación sigue oculta en curso (409)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/participacion/sesiones/{{sesionId}}/retroalimentacion",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenEstudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('codigo', () => pm.expect(pm.response.json().codigo).to.eql('ESTADO_NO_PERMITIDO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El estudiante finaliza la sesión y recibe la nota (200)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/sesiones/{{sesionId}}/finalizar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenEstudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const cierre = pm.response.json().data;",
+                  "pm.test('queda Finalizado con la nota de la rúbrica', () => {",
+                  "  pm.expect(cierre.sesion.estado).to.eql('Finalizado');",
+                  "  pm.expect(cierre.sesion.motivoCierre).to.eql('Finalizacion');",
+                  "  pm.expect(cierre.evaluacion.correctas).to.eql(1);",
+                  "  pm.expect(cierre.evaluacion.total).to.eql(1);",
+                  "  pm.expect(cierre.evaluacion.resultado).to.eql(5);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "La retroalimentación queda disponible al finalizar (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/participacion/sesiones/{{sesionId}}/retroalimentacion",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenEstudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const filas = pm.response.json().data;",
+                  "pm.test('incluye la explicación de la opción', () => {",
+                  "  pm.expect(filas.length).to.be.at.least(1);",
+                  "  pm.expect(filas[0].explicacion).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cerrar la actividad",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/actividades/{{actividadId}}/cerrar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('actividadCreada') === 'si') {",
+                  "  pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('queda Cerrada', () => pm.expect(pm.response.json().data.estado).to.eql('Cerrada'));",
+                  "} else {",
+                  "  pm.test('no hay actividad creada en esta corrida', () => pm.response.to.have.status(404));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Participación",
+      "item": [
+        {
+          "name": "Registrar respuesta sin token (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/participacion/respuestas",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sesionId\": 1,\n  \"decisionId\": 1,\n  \"opcionId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar respuesta con datos inválidos (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/participacion/respuestas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sesionId\": -1,\n  \"decisionId\": 1,\n  \"opcionId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar respuesta de una sesión que no existe (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/participacion/respuestas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sesionId\": 999999,\n  \"decisionId\": 1,\n  \"opcionId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "El estudiante abre su sesión con POST /api/sesiones/actividades/:actividadId/iniciar y la cierra con POST /api/sesiones/:id/finalizar. Registrar una respuesta exige que esa sesión esté En curso."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('codigo', () => pm.expect(pm.response.json().codigo).to.eql('SESION_NO_EXISTE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar respuestas de una sesión que no existe (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/participacion/sesiones/999999/respuestas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('codigo', () => pm.expect(pm.response.json().codigo).to.eql('SESION_NO_EXISTE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Progreso de una sesión que no existe (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/participacion/sesiones/999999/progreso",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Retroalimentación de una sesión que no existe (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/participacion/sesiones/999999/retroalimentacion",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDocente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Si la sesión existe y sigue en curso, esta ruta responde 409. La explicación solo se entrega con la sesión finalizada."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

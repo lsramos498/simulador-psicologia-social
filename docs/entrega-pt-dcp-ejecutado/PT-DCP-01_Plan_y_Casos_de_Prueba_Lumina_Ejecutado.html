@@ -1,0 +1,1609 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/><title>PT-DCP-01 Ejecutado</title>
+  <style>
+  @page{size:A4;margin:14mm}
+  body{font-family:Calibri,Arial,sans-serif;font-size:10.5pt;color:#111}
+  h1{color:#1F4E79;font-size:16pt} h2{color:#1F4E79;font-size:12pt;page-break-before:always}
+  h3{font-size:11pt;margin:10px 0 6px}
+  table{width:100%;border-collapse:collapse;margin:6px 0 12px;font-size:9pt}
+  th,td{border:1px solid #666;padding:4px 6px;vertical-align:top}
+  th,.meta th{background:#D6E3F0;text-align:left}
+  .meta th{width:30%} .si,.ok{color:#1F7A4C;font-weight:700;text-align:center}
+  figure{margin:8px 0 14px;page-break-inside:avoid}
+  img{max-width:100%;border:1px solid #ccc}
+  figcaption{font-size:8.5pt;font-style:italic;margin-bottom:4px}
+  .portada{text-align:center;margin:48px 0}
+  </style></head><body>
+  <div class="portada">
+    <h1>DOCUMENTO PLAN DE PRUEBAS</h1>
+    <p><strong>LUMINA — Simulador de Psicología Social</strong></p>
+    <p>PT-DCP-01 — Plan y Casos de Prueba (ejecutado)</p>
+    <p>25/11/2026 · Veredicto global: <span class="ok">APROBADO</span></p>
+  </div>
+  <h1>5.11. Resumen de resultados</h1>
+  <p>CP-01 a CP-36: Aprobado. Capturas API + UI por caso.</p>
+  <h1>6. Casos De Prueba</h1>
+  <section>
+      <h2>6.1 Caso de uso: Creación de una actividad de simulación — Prueba N.º 1 (CP-01)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-01</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Creación de una actividad de simulación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Programar actividad válida</td><td>201 Programada</td><td class="si">SI</td><td>201 id=47 exponeCodigos=false</td></tr><tr><td>Rechazo fecha fin &lt; inicio</td><td>400</td><td class="si">SI</td><td>400</td></tr><tr><td>Rechazo tiempo límite &gt; estimado</td><td>400</td><td class="si">SI</td><td>400</td></tr><tr><td>Rechazo caso Borrador</td><td>409</td><td class="si">SI</td><td>409</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-01: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-01-api.png"/></figure>
+<figure><figcaption>Evidencia CP-01 (continuación): solicitudes a la API y respuestas</figcaption><img src="capturas/CP-01-api-b.png"/></figure>
+<figure><figcaption>Evidencia CP-01 (UI): 05-ui-actividades.png</figcaption><img src="../evidencias-pt-dcp-01/CP-01/05-ui-actividades.png"/></figure>
+<figure><figcaption>Evidencia CP-01 (UI): 06-ui-actividades-form-fresh.png</figcaption><img src="../evidencias-pt-dcp-01/CP-01/06-ui-actividades-form-fresh.png"/></figure>
+    </section>
+<section>
+      <h2>6.2 Caso de uso: Inicio de una sesión de simulación — Prueba N.º 2 (CP-02)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-02</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Inicio de una sesión de simulación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Docente inicia actividad</td><td>200 Iniciada</td><td class="si">SI</td><td>200 Iniciada</td></tr><tr><td>Login estudiante OTP válido</td><td>200 + token</td><td class="si">SI</td><td>200 token=true</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-02: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-02-api.png"/></figure>
+<figure><figcaption>Evidencia CP-02 (continuación): solicitudes a la API y respuestas</figcaption><img src="capturas/CP-02-api-b.png"/></figure>
+<figure><figcaption>Evidencia CP-02 (UI): 02-ui-actividad-iniciada.png</figcaption><img src="../evidencias-pt-dcp-01/CP-02/02-ui-actividad-iniciada.png"/></figure>
+<figure><figcaption>Evidencia CP-02 (UI): 03-ui-login-estudiante.png</figcaption><img src="../evidencias-pt-dcp-01/CP-02/03-ui-login-estudiante.png"/></figure>
+<figure><figcaption>Evidencia CP-02 (UI): 04-ui-hub-estudiante.png</figcaption><img src="../evidencias-pt-dcp-01/CP-02/04-ui-hub-estudiante.png"/></figure>
+    </section>
+<section>
+      <h2>6.3 Caso de uso: Finalización de una sesión de simulación — Prueba N.º 3 (CP-03)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-03</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Finalización de una sesión de simulación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Finalizar sesión estudiante</td><td>200 Finalizado</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-03: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-03-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.4 Caso de uso: Rechazo de transiciones de estado no permitidas — Prueba N.º 4 (CP-04)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-04</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Rechazo de transiciones de estado no permitidas</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>No reiniciar actividad cerrada</td><td>409/400</td><td class="si">SI</td><td>409</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-04: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-04-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.5 Caso de uso: Restricciones de acceso a una actividad — Prueba N.º 5 (CP-05)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-05</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Restricciones de acceso a una actividad</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Consulta sesión sin token</td><td>401</td><td class="si">SI</td><td>401</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-05: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-05-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.6 Caso de uso: Inicio de sesión con credenciales válidas — Prueba N.º 6 (CP-06)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-06</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Inicio de sesión con credenciales válidas</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Login docente válido</td><td>200 + token JWT</td><td class="si">SI</td><td>200 token=true</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-06: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-06-api.png"/></figure>
+<figure><figcaption>Evidencia CP-06 (UI): 02-ui-login-docente-form.png</figcaption><img src="../evidencias-pt-dcp-01/CP-06/02-ui-login-docente-form.png"/></figure>
+<figure><figcaption>Evidencia CP-06 (UI): 02-ui-login-form.png</figcaption><img src="../evidencias-pt-dcp-01/CP-06/02-ui-login-form.png"/></figure>
+<figure><figcaption>Evidencia CP-06 (UI): 03-ui-login-home-fresh.png</figcaption><img src="../evidencias-pt-dcp-01/CP-06/03-ui-login-home-fresh.png"/></figure>
+<figure><figcaption>Evidencia CP-06 (UI): 03-ui-panel-docente.png</figcaption><img src="../evidencias-pt-dcp-01/CP-06/03-ui-panel-docente.png"/></figure>
+    </section>
+<section>
+      <h2>6.7 Caso de uso: Inicio de sesión con credenciales incorrectas — Prueba N.º 7 (CP-07)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-07</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Inicio de sesión con credenciales incorrectas</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Login docente inválido</td><td>401</td><td class="si">SI</td><td>401</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-07: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-07-api.png"/></figure>
+<figure><figcaption>Evidencia CP-07 (UI): 02-ui-login-fallido.png</figcaption><img src="../evidencias-pt-dcp-01/CP-07/02-ui-login-fallido.png"/></figure>
+    </section>
+<section>
+      <h2>6.8 Caso de uso: Control de acceso según roles y permisos — Prueba N.º 8 (CP-08)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-08</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Control de acceso según roles y permisos</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Estudiante no entra por contraseña de docente</td><td>401/403</td><td class="si">SI</td><td>401</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-08: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-08-api.png"/></figure>
+<figure><figcaption>Evidencia CP-08 (UI): 02-ui-tabs-roles.png</figcaption><img src="../evidencias-pt-dcp-01/CP-08/02-ui-tabs-roles.png"/></figure>
+<figure><figcaption>Evidencia CP-08 (UI): 03-ui-login-estudiante-otp.png</figcaption><img src="../evidencias-pt-dcp-01/CP-08/03-ui-login-estudiante-otp.png"/></figure>
+    </section>
+<section>
+      <h2>6.9 Caso de uso: Validación de códigos de autorización — Prueba N.º 9 (CP-09)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-09</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Validación de códigos de autorización</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Enviar OTP de sesión (adaptado RF-01)</td><td>200 sin revelar código</td><td class="si">SI</td><td>200 revelaCodigo=false</td></tr><tr><td>OTP demo en pantalla (ACCESO_CODIGO_EN_PANTALLA)</td><td>200 + codigo si flag local</td><td class="si">SI</td><td>200 codigo=true</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-09: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-09-api.png"/></figure>
+<figure><figcaption>Evidencia CP-09 (UI): 02-ui-enviar-otp.png</figcaption><img src="../evidencias-pt-dcp-01/CP-09/02-ui-enviar-otp.png"/></figure>
+<figure><figcaption>Evidencia CP-09 (UI): 03-ui-otp-form-fresh.png</figcaption><img src="../evidencias-pt-dcp-01/CP-09/03-ui-otp-form-fresh.png"/></figure>
+    </section>
+<section>
+      <h2>6.10 Caso de uso: Rechazo de códigos de autorización inválidos — Prueba N.º 10 (CP-10)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-10</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Rechazo de códigos de autorización inválidos</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>OTP inválido rechazado</td><td>401</td><td class="si">SI</td><td>401</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-10: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-10-api.png"/></figure>
+<figure><figcaption>Evidencia CP-10 (UI): 02-ui-otp-invalido.png</figcaption><img src="../evidencias-pt-dcp-01/CP-10/02-ui-otp-invalido.png"/></figure>
+    </section>
+<section>
+      <h2>6.11 Caso de uso: Creación de un caso con información válida — Prueba N.º 11 (CP-11)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-11</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Creación de un caso con información válida</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Crear caso con datos válidos</td><td>201</td><td class="si">SI</td><td>201</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-11: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-11-api.png"/></figure>
+<figure><figcaption>Evidencia CP-11 (UI): 03-ui-lista-casos.png</figcaption><img src="../evidencias-pt-dcp-01/CP-11/03-ui-lista-casos.png"/></figure>
+<figure><figcaption>Evidencia CP-11 (UI): 04-ui-crear-caso.png</figcaption><img src="../evidencias-pt-dcp-01/CP-11/04-ui-crear-caso.png"/></figure>
+<figure><figcaption>Evidencia CP-11 (UI): 05-ui-panel-casos-fresh.png</figcaption><img src="../evidencias-pt-dcp-01/CP-11/05-ui-panel-casos-fresh.png"/></figure>
+    </section>
+<section>
+      <h2>6.12 Caso de uso: Creación de un caso con información incompleta — Prueba N.º 12 (CP-12)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-12</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Creación de un caso con información incompleta</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Rechazo caso incompleto</td><td>422</td><td class="si">SI</td><td>422</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-12: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-12-api.png"/></figure>
+<figure><figcaption>Evidencia CP-12 (UI): 02-ui-validacion-incompleto.png</figcaption><img src="../evidencias-pt-dcp-01/CP-12/02-ui-validacion-incompleto.png"/></figure>
+    </section>
+<section>
+      <h2>6.13 Caso de uso: Registro de escenas asociadas a un caso — Prueba N.º 13 (CP-13)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-13</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Registro de escenas asociadas a un caso</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Principal</td><td>Conforme</td><td class="si">SI</td><td>Aprobado</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-13: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-13-api.png"/></figure>
+<figure><figcaption>Evidencia CP-13 (UI): 01-ui-escenas-form.png</figcaption><img src="../evidencias-pt-dcp-01/CP-13/01-ui-escenas-form.png"/></figure>
+<figure><figcaption>Evidencia CP-13 (UI): 02-ui-caso-escenas.png</figcaption><img src="../evidencias-pt-dcp-01/CP-13/02-ui-caso-escenas.png"/></figure>
+    </section>
+<section>
+      <h2>6.14 Caso de uso: Registro de decisiones y opciones de respuesta — Prueba N.º 14 (CP-14)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-14</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Registro de decisiones y opciones de respuesta</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Principal</td><td>Conforme</td><td class="si">SI</td><td>Aprobado</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-14: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-14-api.png"/></figure>
+<figure><figcaption>Evidencia CP-14 (UI): 01-ui-decisiones-form.png</figcaption><img src="../evidencias-pt-dcp-01/CP-14/01-ui-decisiones-form.png"/></figure>
+<figure><figcaption>Evidencia CP-14 (UI): 02-ui-caso-decisiones.png</figcaption><img src="../evidencias-pt-dcp-01/CP-14/02-ui-caso-decisiones.png"/></figure>
+    </section>
+<section>
+      <h2>6.15 Caso de uso: Validación de relaciones entre casos, escenas y decisiones — Prueba N.º 15 (CP-15)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-15</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Validación de relaciones entre casos, escenas y decisiones</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Rechazo relación/opción inválida en caso</td><td>400/422</td><td class="si">SI</td><td>422</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-15: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-15-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.16 Caso de uso: Registro de una respuesta válida — Prueba N.º 16 (CP-16)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-16</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Registro de una respuesta válida</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Iniciar sesión estudiante + base para respuesta</td><td>200</td><td class="si">SI</td><td>200</td></tr><tr><td>Registro respuesta válida</td><td>200/201</td><td class="si">SI</td><td>201</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-16: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-16-api.png"/></figure>
+<figure><figcaption>Evidencia CP-16 (continuación): solicitudes a la API y respuestas</figcaption><img src="capturas/CP-16-api-b.png"/></figure>
+    </section>
+<section>
+      <h2>6.17 Caso de uso: Almacenamiento y consulta de respuestas en MySQL — Prueba N.º 17 (CP-17)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-17</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Almacenamiento y consulta de respuestas en MySQL</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Consulta respuestas propias</td><td>200</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-17: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-17-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.18 Caso de uso: Consulta de respuestas de otro estudiante — Prueba N.º 18 (CP-18)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-18</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Consulta de respuestas de otro estudiante</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Consulta respuestas con actor no dueño</td><td>403/401 (o 200 si docente autorizado a monitorear)</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-18: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-18-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.19 Caso de uso: Registro de respuestas con la sesión finalizada — Prueba N.º 19 (CP-19)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-19</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Registro de respuestas con la sesión finalizada</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Rechazo respuesta con sesión finalizada</td><td>409/400</td><td class="si">SI</td><td>409</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-19: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-19-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.20 Caso de uso: Rechazo de opciones que no corresponden a la decisión — Prueba N.º 20 (CP-20)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-20</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Rechazo de opciones que no corresponden a la decisión</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Rechazo opción de otra decisión</td><td>400/409/422</td><td class="si">SI</td><td>422</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-20: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-20-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.21 Caso de uso: Prevención de respuestas duplicadas — Prueba N.º 21 (CP-21)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-21</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Prevención de respuestas duplicadas</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Segunda respuesta misma decisión (dup o update)</td><td>200/201/409</td><td class="si">SI</td><td>201</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-21: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-21-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.22 Caso de uso: Modificación de una respuesta — Prueba N.º 22 (CP-22)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-22</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Modificación de una respuesta</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Modificación de respuesta en sesión abierta</td><td>200/201 (si update) o 409 (si bloquea)</td><td class="si">SI</td><td>201</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-22: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-22-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.23 Caso de uso: Cálculo del progreso del estudiante — Prueba N.º 23 (CP-23)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-23</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Cálculo del progreso del estudiante</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Cálculo de progreso</td><td>200</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-23: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-23-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.24 Caso de uso: Funcionamiento del patrón Observer en la participación — Prueba N.º 24 (CP-24)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-24</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Funcionamiento del patrón Observer en la participación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Observer / notificaciones al finalizar participación</td><td>cierre 200 (notif Calificacion/Retro en DB)</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-24: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-24-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.25 Caso de uso: Registro de la rúbrica, publicación y archivo del caso — Prueba N.º 25 (CP-25)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-25</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Registro de la rúbrica, publicación y archivo del caso</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Principal</td><td>Conforme</td><td class="si">SI</td><td>Aprobado</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-25: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-25-api.png"/></figure>
+<figure><figcaption>Evidencia CP-25 (UI): 01-ui-rubrica-crear.png</figcaption><img src="../evidencias-pt-dcp-01/CP-25/01-ui-rubrica-crear.png"/></figure>
+<figure><figcaption>Evidencia CP-25 (UI): 02-ui-caso-publicado-rubrica.png</figcaption><img src="../evidencias-pt-dcp-01/CP-25/02-ui-caso-publicado-rubrica.png"/></figure>
+    </section>
+<section>
+      <h2>6.26 Caso de uso: Notificación de convocatoria y cambios de estudiantes — Prueba N.º 26 (CP-26)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-26</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Notificación de convocatoria y cambios de estudiantes</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Principal</td><td>Conforme</td><td class="si">SI</td><td>Aprobado</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-26: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-26-api.png"/></figure>
+<figure><figcaption>Evidencia CP-26 (UI): 01-ui-notificaciones-convocatoria.png</figcaption><img src="../evidencias-pt-dcp-01/CP-26/01-ui-notificaciones-convocatoria.png"/></figure>
+    </section>
+<section>
+      <h2>6.27 Caso de uso: Control del tiempo máximo de participación — Prueba N.º 27 (CP-27)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-27</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Control del tiempo máximo de participación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Control tiempo máximo / cerrar vencidas</td><td>actividad corta + cerrar-vencidas 200</td><td class="si">SI</td><td>act=201 cerrar=200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-27: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-27-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.28 Caso de uso: Restricción de ingreso tardío — Prueba N.º 28 (CP-28)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-28</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Restricción de ingreso tardío</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Restricción ingreso tardío / fuera de ventana</td><td>403/400/409 al entrar fuera de horario</td><td class="si">SI</td><td>403</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-28: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-28-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.29 Caso de uso: Cálculo de la nota con la rúbrica — Prueba N.º 29 (CP-29)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-29</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Cálculo de la nota con la rúbrica</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Cálculo de nota con rúbrica al finalizar</td><td>evaluación presente</td><td class="si">SI</td><td>nota=2.5</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-29: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-29-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.30 Caso de uso: Evaluación de intentos incompletos y ausencias — Prueba N.º 30 (CP-30)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-30</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Evaluación de intentos incompletos y ausencias</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Evaluación de intento (completo/incompleto)</td><td>evaluación al cierre</td><td class="si">SI</td><td>cerró con evaluación</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-30: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-30-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.31 Caso de uso: Resultado y retroalimentación final — Prueba N.º 31 (CP-31)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-31</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Resultado y retroalimentación final</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Resultado/retroalimentación estudiante</td><td>200</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-31: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-31-api.png"/></figure>
+<figure><figcaption>Evidencia CP-31 (UI): 01-ui-seguimiento-resultados.png</figcaption><img src="../evidencias-pt-dcp-01/CP-31/01-ui-seguimiento-resultados.png"/></figure>
+<figure><figcaption>Evidencia CP-31 (UI): 03-ui-hub-misiones.png</figcaption><img src="../evidencias-pt-dcp-01/CP-31/03-ui-hub-misiones.png"/></figure>
+<figure><figcaption>Evidencia CP-31 (UI): 04-ui-resultados-estudiante.png</figcaption><img src="../evidencias-pt-dcp-01/CP-31/04-ui-resultados-estudiante.png"/></figure>
+    </section>
+<section>
+      <h2>6.32 Caso de uso: Autorización de repetición excepcional — Prueba N.º 32 (CP-32)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-32</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Autorización de repetición excepcional</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Rechazo nuevo intento sin autorización</td><td>409</td><td class="si">SI</td><td>409</td></tr><tr><td>Autorización de repetición excepcional</td><td>201 auth + 200 iniciar</td><td class="si">SI</td><td>auth=201 ini=200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-32: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-32-api.png"/></figure>
+<figure><figcaption>Evidencia CP-32 (continuación): solicitudes a la API y respuestas</figcaption><img src="capturas/CP-32-api-b.png"/></figure>
+    </section>
+<section>
+      <h2>6.33 Caso de uso: Consulta de participaciones por el docente — Prueba N.º 33 (CP-33)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-33</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Consulta de participaciones por el docente</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Consulta participaciones docente (API)</td><td>200</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-33: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-33-api.png"/></figure>
+<figure><figcaption>Evidencia CP-33 (UI): 01-ui-seguimiento-sesiones.png</figcaption><img src="../evidencias-pt-dcp-01/CP-33/01-ui-seguimiento-sesiones.png"/></figure>
+<figure><figcaption>Evidencia CP-33 (UI): 03-ui-seguimiento-fresh.png</figcaption><img src="../evidencias-pt-dcp-01/CP-33/03-ui-seguimiento-fresh.png"/></figure>
+    </section>
+<section>
+      <h2>6.34 Caso de uso: Retroalimentación general del docente — Prueba N.º 34 (CP-34)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-34</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Retroalimentación general del docente</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Retroalimentación general del docente</td><td>200/201</td><td class="si">SI</td><td>201</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-34: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-34-api.png"/></figure>
+<figure><figcaption>Evidencia CP-34 (UI): 01-ui-seguimiento-retro.png</figcaption><img src="../evidencias-pt-dcp-01/CP-34/01-ui-seguimiento-retro.png"/></figure>
+    </section>
+<section>
+      <h2>6.35 Caso de uso: Descarga del reporte de participación — Prueba N.º 35 (CP-35)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-35</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Descarga del reporte de participación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Descarga reporte participación CSV</td><td>200</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-35: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-35-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.36 Caso de uso: Notificación de calificaciones y retroalimentación — Prueba N.º 36 (CP-36)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-36</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Notificación de calificaciones y retroalimentación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td></td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Notificación de calificación/retro</td><td>200 con items</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-36: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-36-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.37 Caso de uso: Creación de una actividad de simulación — Prueba N.º 37 (CP-01)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-01</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Creación de una actividad de simulación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Programar actividad válida</td><td>201 Programada</td><td class="si">SI</td><td>201 id=47 exponeCodigos=false</td></tr><tr><td>Rechazo fecha fin &lt; inicio</td><td>400</td><td class="si">SI</td><td>400</td></tr><tr><td>Rechazo tiempo límite &gt; estimado</td><td>400</td><td class="si">SI</td><td>400</td></tr><tr><td>Rechazo caso Borrador</td><td>409</td><td class="si">SI</td><td>409</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-01: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-01-api.png"/></figure>
+<figure><figcaption>Evidencia CP-01 (continuación): solicitudes a la API y respuestas</figcaption><img src="capturas/CP-01-api-b.png"/></figure>
+<figure><figcaption>Evidencia CP-01 (UI): 05-ui-actividades.png</figcaption><img src="../evidencias-pt-dcp-01/CP-01/05-ui-actividades.png"/></figure>
+<figure><figcaption>Evidencia CP-01 (UI): 06-ui-actividades-form-fresh.png</figcaption><img src="../evidencias-pt-dcp-01/CP-01/06-ui-actividades-form-fresh.png"/></figure>
+    </section>
+<section>
+      <h2>6.38 Caso de uso: Inicio de una sesión de simulación — Prueba N.º 38 (CP-02)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-02</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Inicio de una sesión de simulación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Docente inicia actividad</td><td>200 Iniciada</td><td class="si">SI</td><td>200 Iniciada</td></tr><tr><td>Login estudiante OTP válido</td><td>200 + token</td><td class="si">SI</td><td>200 token=true</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-02: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-02-api.png"/></figure>
+<figure><figcaption>Evidencia CP-02 (continuación): solicitudes a la API y respuestas</figcaption><img src="capturas/CP-02-api-b.png"/></figure>
+<figure><figcaption>Evidencia CP-02 (UI): 02-ui-actividad-iniciada.png</figcaption><img src="../evidencias-pt-dcp-01/CP-02/02-ui-actividad-iniciada.png"/></figure>
+<figure><figcaption>Evidencia CP-02 (UI): 03-ui-login-estudiante.png</figcaption><img src="../evidencias-pt-dcp-01/CP-02/03-ui-login-estudiante.png"/></figure>
+<figure><figcaption>Evidencia CP-02 (UI): 04-ui-hub-estudiante.png</figcaption><img src="../evidencias-pt-dcp-01/CP-02/04-ui-hub-estudiante.png"/></figure>
+    </section>
+<section>
+      <h2>6.39 Caso de uso: Finalización de una sesión de simulación — Prueba N.º 39 (CP-03)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-03</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Finalización de una sesión de simulación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Finalizar sesión estudiante</td><td>200 Finalizado</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-03: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-03-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.40 Caso de uso: Rechazo de transiciones de estado no permitidas — Prueba N.º 40 (CP-04)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-04</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Rechazo de transiciones de estado no permitidas</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>No reiniciar actividad cerrada</td><td>409/400</td><td class="si">SI</td><td>409</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-04: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-04-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.41 Caso de uso: Restricciones de acceso a una actividad — Prueba N.º 41 (CP-05)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-05</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Restricciones de acceso a una actividad</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Consulta sesión sin token</td><td>401</td><td class="si">SI</td><td>401</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-05: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-05-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.42 Caso de uso: Inicio de sesión con credenciales válidas — Prueba N.º 42 (CP-06)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-06</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Inicio de sesión con credenciales válidas</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Autenticación, roles y permisos</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Login docente válido</td><td>200 + token JWT</td><td class="si">SI</td><td>200 token=true</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-06: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-06-api.png"/></figure>
+<figure><figcaption>Evidencia CP-06 (UI): 02-ui-login-docente-form.png</figcaption><img src="../evidencias-pt-dcp-01/CP-06/02-ui-login-docente-form.png"/></figure>
+<figure><figcaption>Evidencia CP-06 (UI): 02-ui-login-form.png</figcaption><img src="../evidencias-pt-dcp-01/CP-06/02-ui-login-form.png"/></figure>
+<figure><figcaption>Evidencia CP-06 (UI): 03-ui-login-home-fresh.png</figcaption><img src="../evidencias-pt-dcp-01/CP-06/03-ui-login-home-fresh.png"/></figure>
+<figure><figcaption>Evidencia CP-06 (UI): 03-ui-panel-docente.png</figcaption><img src="../evidencias-pt-dcp-01/CP-06/03-ui-panel-docente.png"/></figure>
+    </section>
+<section>
+      <h2>6.43 Caso de uso: Inicio de sesión con credenciales incorrectas — Prueba N.º 43 (CP-07)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-07</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Inicio de sesión con credenciales incorrectas</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Autenticación, roles y permisos</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Login docente inválido</td><td>401</td><td class="si">SI</td><td>401</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-07: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-07-api.png"/></figure>
+<figure><figcaption>Evidencia CP-07 (UI): 02-ui-login-fallido.png</figcaption><img src="../evidencias-pt-dcp-01/CP-07/02-ui-login-fallido.png"/></figure>
+    </section>
+<section>
+      <h2>6.44 Caso de uso: Control de acceso según roles y permisos — Prueba N.º 44 (CP-08)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-08</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Control de acceso según roles y permisos</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Autenticación, roles y permisos</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Estudiante no entra por contraseña de docente</td><td>401/403</td><td class="si">SI</td><td>401</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-08: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-08-api.png"/></figure>
+<figure><figcaption>Evidencia CP-08 (UI): 02-ui-tabs-roles.png</figcaption><img src="../evidencias-pt-dcp-01/CP-08/02-ui-tabs-roles.png"/></figure>
+<figure><figcaption>Evidencia CP-08 (UI): 03-ui-login-estudiante-otp.png</figcaption><img src="../evidencias-pt-dcp-01/CP-08/03-ui-login-estudiante-otp.png"/></figure>
+    </section>
+<section>
+      <h2>6.45 Caso de uso: Validación de códigos de autorización — Prueba N.º 45 (CP-09)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-09</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Validación de códigos de autorización</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Autenticación, roles y permisos</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Enviar OTP de sesión (adaptado RF-01)</td><td>200 sin revelar código</td><td class="si">SI</td><td>200 revelaCodigo=false</td></tr><tr><td>OTP demo en pantalla (ACCESO_CODIGO_EN_PANTALLA)</td><td>200 + codigo si flag local</td><td class="si">SI</td><td>200 codigo=true</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-09: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-09-api.png"/></figure>
+<figure><figcaption>Evidencia CP-09 (UI): 02-ui-enviar-otp.png</figcaption><img src="../evidencias-pt-dcp-01/CP-09/02-ui-enviar-otp.png"/></figure>
+<figure><figcaption>Evidencia CP-09 (UI): 03-ui-otp-form-fresh.png</figcaption><img src="../evidencias-pt-dcp-01/CP-09/03-ui-otp-form-fresh.png"/></figure>
+    </section>
+<section>
+      <h2>6.46 Caso de uso: Rechazo de códigos de autorización inválidos — Prueba N.º 46 (CP-10)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-10</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Rechazo de códigos de autorización inválidos</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Autenticación, roles y permisos</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>OTP inválido rechazado</td><td>401</td><td class="si">SI</td><td>401</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-10: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-10-api.png"/></figure>
+<figure><figcaption>Evidencia CP-10 (UI): 02-ui-otp-invalido.png</figcaption><img src="../evidencias-pt-dcp-01/CP-10/02-ui-otp-invalido.png"/></figure>
+    </section>
+<section>
+      <h2>6.47 Caso de uso: Creación de un caso con información válida — Prueba N.º 47 (CP-11)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-11</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Creación de un caso con información válida</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de casos, escenas y decisiones</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Crear caso con datos válidos</td><td>201</td><td class="si">SI</td><td>201</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-11: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-11-api.png"/></figure>
+<figure><figcaption>Evidencia CP-11 (UI): 03-ui-lista-casos.png</figcaption><img src="../evidencias-pt-dcp-01/CP-11/03-ui-lista-casos.png"/></figure>
+<figure><figcaption>Evidencia CP-11 (UI): 04-ui-crear-caso.png</figcaption><img src="../evidencias-pt-dcp-01/CP-11/04-ui-crear-caso.png"/></figure>
+<figure><figcaption>Evidencia CP-11 (UI): 05-ui-panel-casos-fresh.png</figcaption><img src="../evidencias-pt-dcp-01/CP-11/05-ui-panel-casos-fresh.png"/></figure>
+    </section>
+<section>
+      <h2>6.48 Caso de uso: Creación de un caso con información incompleta — Prueba N.º 48 (CP-12)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-12</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Creación de un caso con información incompleta</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de casos, escenas y decisiones</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Rechazo caso incompleto</td><td>422</td><td class="si">SI</td><td>422</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-12: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-12-api.png"/></figure>
+<figure><figcaption>Evidencia CP-12 (UI): 02-ui-validacion-incompleto.png</figcaption><img src="../evidencias-pt-dcp-01/CP-12/02-ui-validacion-incompleto.png"/></figure>
+    </section>
+<section>
+      <h2>6.49 Caso de uso: Registro de escenas asociadas a un caso — Prueba N.º 49 (CP-13)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-13</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Registro de escenas asociadas a un caso</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de casos, escenas y decisiones</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Principal</td><td>Conforme</td><td class="si">SI</td><td>Aprobado</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-13: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-13-api.png"/></figure>
+<figure><figcaption>Evidencia CP-13 (UI): 01-ui-escenas-form.png</figcaption><img src="../evidencias-pt-dcp-01/CP-13/01-ui-escenas-form.png"/></figure>
+<figure><figcaption>Evidencia CP-13 (UI): 02-ui-caso-escenas.png</figcaption><img src="../evidencias-pt-dcp-01/CP-13/02-ui-caso-escenas.png"/></figure>
+    </section>
+<section>
+      <h2>6.50 Caso de uso: Registro de decisiones y opciones de respuesta — Prueba N.º 50 (CP-14)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-14</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Registro de decisiones y opciones de respuesta</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de casos, escenas y decisiones</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Principal</td><td>Conforme</td><td class="si">SI</td><td>Aprobado</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-14: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-14-api.png"/></figure>
+<figure><figcaption>Evidencia CP-14 (UI): 01-ui-decisiones-form.png</figcaption><img src="../evidencias-pt-dcp-01/CP-14/01-ui-decisiones-form.png"/></figure>
+<figure><figcaption>Evidencia CP-14 (UI): 02-ui-caso-decisiones.png</figcaption><img src="../evidencias-pt-dcp-01/CP-14/02-ui-caso-decisiones.png"/></figure>
+    </section>
+<section>
+      <h2>6.51 Caso de uso: Validación de relaciones entre casos, escenas y decisiones — Prueba N.º 51 (CP-15)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-15</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Validación de relaciones entre casos, escenas y decisiones</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de casos, escenas y decisiones</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Rechazo relación/opción inválida en caso</td><td>400/422</td><td class="si">SI</td><td>422</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-15: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-15-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.52 Caso de uso: Registro de una respuesta válida — Prueba N.º 52 (CP-16)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-16</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Registro de una respuesta válida</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Iniciar sesión estudiante + base para respuesta</td><td>200</td><td class="si">SI</td><td>200</td></tr><tr><td>Registro respuesta válida</td><td>200/201</td><td class="si">SI</td><td>201</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-16: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-16-api.png"/></figure>
+<figure><figcaption>Evidencia CP-16 (continuación): solicitudes a la API y respuestas</figcaption><img src="capturas/CP-16-api-b.png"/></figure>
+    </section>
+<section>
+      <h2>6.53 Caso de uso: Almacenamiento y consulta de respuestas en MySQL — Prueba N.º 53 (CP-17)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-17</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Almacenamiento y consulta de respuestas en MySQL</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Consulta respuestas propias</td><td>200</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-17: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-17-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.54 Caso de uso: Consulta de respuestas de otro estudiante — Prueba N.º 54 (CP-18)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-18</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Consulta de respuestas de otro estudiante</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Consulta respuestas con actor no dueño</td><td>403/401 (o 200 si docente autorizado a monitorear)</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-18: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-18-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.55 Caso de uso: Registro de respuestas con la sesión finalizada — Prueba N.º 55 (CP-19)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-19</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Registro de respuestas con la sesión finalizada</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Rechazo respuesta con sesión finalizada</td><td>409/400</td><td class="si">SI</td><td>409</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-19: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-19-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.56 Caso de uso: Rechazo de opciones que no corresponden a la decisión — Prueba N.º 56 (CP-20)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-20</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Rechazo de opciones que no corresponden a la decisión</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Rechazo opción de otra decisión</td><td>400/409/422</td><td class="si">SI</td><td>422</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-20: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-20-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.57 Caso de uso: Prevención de respuestas duplicadas — Prueba N.º 57 (CP-21)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-21</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Prevención de respuestas duplicadas</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Segunda respuesta misma decisión (dup o update)</td><td>200/201/409</td><td class="si">SI</td><td>201</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-21: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-21-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.58 Caso de uso: Modificación de una respuesta — Prueba N.º 58 (CP-22)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-22</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Modificación de una respuesta</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Modificación de respuesta en sesión abierta</td><td>200/201 (si update) o 409 (si bloquea)</td><td class="si">SI</td><td>201</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-22: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-22-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.59 Caso de uso: Cálculo del progreso del estudiante — Prueba N.º 59 (CP-23)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-23</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Cálculo del progreso del estudiante</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Cálculo de progreso</td><td>200</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-23: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-23-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.60 Caso de uso: Funcionamiento del patrón Observer en la participación — Prueba N.º 60 (CP-24)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-24</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Funcionamiento del patrón Observer en la participación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Participación y respuestas</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Observer / notificaciones al finalizar participación</td><td>cierre 200 (notif Calificacion/Retro en DB)</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-24: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-24-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.61 Caso de uso: Registro de la rúbrica, publicación y archivo del caso — Prueba N.º 61 (CP-25)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-25</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Registro de la rúbrica, publicación y archivo del caso</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de casos, escenas y decisiones</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Principal</td><td>Conforme</td><td class="si">SI</td><td>Aprobado</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-25: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-25-api.png"/></figure>
+<figure><figcaption>Evidencia CP-25 (UI): 01-ui-rubrica-crear.png</figcaption><img src="../evidencias-pt-dcp-01/CP-25/01-ui-rubrica-crear.png"/></figure>
+<figure><figcaption>Evidencia CP-25 (UI): 02-ui-caso-publicado-rubrica.png</figcaption><img src="../evidencias-pt-dcp-01/CP-25/02-ui-caso-publicado-rubrica.png"/></figure>
+    </section>
+<section>
+      <h2>6.62 Caso de uso: Notificación de convocatoria y cambios de estudiantes — Prueba N.º 62 (CP-26)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-26</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Notificación de convocatoria y cambios de estudiantes</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Principal</td><td>Conforme</td><td class="si">SI</td><td>Aprobado</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-26: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-26-api.png"/></figure>
+<figure><figcaption>Evidencia CP-26 (UI): 01-ui-notificaciones-convocatoria.png</figcaption><img src="../evidencias-pt-dcp-01/CP-26/01-ui-notificaciones-convocatoria.png"/></figure>
+    </section>
+<section>
+      <h2>6.63 Caso de uso: Control del tiempo máximo de participación — Prueba N.º 63 (CP-27)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-27</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Control del tiempo máximo de participación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Control tiempo máximo / cerrar vencidas</td><td>actividad corta + cerrar-vencidas 200</td><td class="si">SI</td><td>act=201 cerrar=200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-27: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-27-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.64 Caso de uso: Restricción de ingreso tardío — Prueba N.º 64 (CP-28)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-28</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Restricción de ingreso tardío</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Restricción ingreso tardío / fuera de ventana</td><td>403/400/409 al entrar fuera de horario</td><td class="si">SI</td><td>403</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-28: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-28-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.65 Caso de uso: Cálculo de la nota con la rúbrica — Prueba N.º 65 (CP-29)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-29</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Cálculo de la nota con la rúbrica</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Cálculo de nota con rúbrica al finalizar</td><td>evaluación presente</td><td class="si">SI</td><td>nota=2.5</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-29: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-29-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.66 Caso de uso: Evaluación de intentos incompletos y ausencias — Prueba N.º 66 (CP-30)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-30</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Evaluación de intentos incompletos y ausencias</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Evaluación de intento (completo/incompleto)</td><td>evaluación al cierre</td><td class="si">SI</td><td>cerró con evaluación</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-30: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-30-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.67 Caso de uso: Resultado y retroalimentación final — Prueba N.º 67 (CP-31)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-31</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Resultado y retroalimentación final</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Resultado/retroalimentación estudiante</td><td>200</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-31: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-31-api.png"/></figure>
+<figure><figcaption>Evidencia CP-31 (UI): 01-ui-seguimiento-resultados.png</figcaption><img src="../evidencias-pt-dcp-01/CP-31/01-ui-seguimiento-resultados.png"/></figure>
+<figure><figcaption>Evidencia CP-31 (UI): 03-ui-hub-misiones.png</figcaption><img src="../evidencias-pt-dcp-01/CP-31/03-ui-hub-misiones.png"/></figure>
+<figure><figcaption>Evidencia CP-31 (UI): 04-ui-resultados-estudiante.png</figcaption><img src="../evidencias-pt-dcp-01/CP-31/04-ui-resultados-estudiante.png"/></figure>
+    </section>
+<section>
+      <h2>6.68 Caso de uso: Autorización de repetición excepcional — Prueba N.º 68 (CP-32)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-32</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Autorización de repetición excepcional</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Gestión de sesiones y actividades</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Rechazo nuevo intento sin autorización</td><td>409</td><td class="si">SI</td><td>409</td></tr><tr><td>Autorización de repetición excepcional</td><td>201 auth + 200 iniciar</td><td class="si">SI</td><td>auth=201 ini=200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-32: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-32-api.png"/></figure>
+<figure><figcaption>Evidencia CP-32 (continuación): solicitudes a la API y respuestas</figcaption><img src="capturas/CP-32-api-b.png"/></figure>
+    </section>
+<section>
+      <h2>6.69 Caso de uso: Consulta de participaciones por el docente — Prueba N.º 69 (CP-33)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-33</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Consulta de participaciones por el docente</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Consulta participaciones docente (API)</td><td>200</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-33: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-33-api.png"/></figure>
+<figure><figcaption>Evidencia CP-33 (UI): 01-ui-seguimiento-sesiones.png</figcaption><img src="../evidencias-pt-dcp-01/CP-33/01-ui-seguimiento-sesiones.png"/></figure>
+<figure><figcaption>Evidencia CP-33 (UI): 03-ui-seguimiento-fresh.png</figcaption><img src="../evidencias-pt-dcp-01/CP-33/03-ui-seguimiento-fresh.png"/></figure>
+    </section>
+<section>
+      <h2>6.70 Caso de uso: Retroalimentación general del docente — Prueba N.º 70 (CP-34)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-34</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Retroalimentación general del docente</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Retroalimentación general del docente</td><td>200/201</td><td class="si">SI</td><td>201</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-34: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-34-api.png"/></figure>
+<figure><figcaption>Evidencia CP-34 (UI): 01-ui-seguimiento-retro.png</figcaption><img src="../evidencias-pt-dcp-01/CP-34/01-ui-seguimiento-retro.png"/></figure>
+    </section>
+<section>
+      <h2>6.71 Caso de uso: Descarga del reporte de participación — Prueba N.º 71 (CP-35)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-35</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Descarga del reporte de participación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Descarga reporte participación CSV</td><td>200</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-35: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-35-api.png"/></figure>
+    </section>
+<section>
+      <h2>6.72 Caso de uso: Notificación de calificaciones y retroalimentación — Prueba N.º 72 (CP-36)</h2>
+      <h3>INFORMACIÓN GLOBAL DEL CASO DE PRUEBA</h3>
+      <table class="meta">
+        <tr><th>CASO DE PRUEBA No.</th><td>CP-36</td></tr>
+        <tr><th>VERSIÓN DE EJECUCIÓN</th><td>Rama develop, backend v1.0.0 — re-ejecución 25–26/11/2026</td></tr>
+        <tr><th>FECHA EJECUCIÓN</th><td>25/11/2026</td></tr>
+        <tr><th>CASO DE USO:</th><td>Notificación de calificaciones y retroalimentación</td></tr>
+        <tr><th>MODULO DEL SISTEMA</th><td>Evaluación, retroalimentación y seguimiento</td></tr>
+      </table>
+      <h3>DATOS DE ENTRADA</h3>
+      <table><thead><tr><th>CAMPO / ESCENARIO</th><th>RESPUESTA ESPERADA</th><th>COINCIDE</th><th>RESPUESTA DEL SISTEMA</th></tr></thead><tbody><tr><td>Notificación de calificación/retro</td><td>200 con items</td><td class="si">SI</td><td>200</td></tr></tbody></table>
+      <h3>RESULTADOS DE LA PRUEBA</h3>
+      <table class="meta">
+        <tr><th>Defectos y desviaciones</th><td>No se encontraron defectos.</td></tr>
+        <tr><th>Veredicto</th><td class="ok">Aprobado</td></tr>
+        <tr><th>Probador</th><td>Stefanía Díaz Raigoza (re-ejecución consolidada)</td></tr>
+      </table>
+      <h3>EVIDENCIAS DE EJECUCIÓN (capturas del sistema)</h3>
+      <figure><figcaption>Evidencia CP-36: solicitudes a la API, respuestas y verificación</figcaption><img src="capturas/CP-36-api.png"/></figure>
+    </section>
+  </body></html>

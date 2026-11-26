@@ -1,0 +1,6 @@
+{
+  "status": 409,
+  "data": {
+    "error": "El estudiante ha agotado los intentos permitidos para esta actividad."
+  }
+}

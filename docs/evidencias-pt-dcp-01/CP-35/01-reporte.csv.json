@@ -1,0 +1,6 @@
+{
+  "status": 200,
+  "preview": {
+    "raw": "Actividad,Caso,Estudiante,Nombres,Apellidos,Correo,Estado de participación,Intento de participación,Preguntas respondidas,Total de preguntas,Nota oficial,Intento de la nota\r\n48,46,22,Stefania,Diaz,sdiaz_549@unihumboldt.edu.co,Finalizado,1,2,2,2.50,1\r\n"
+  }
+}

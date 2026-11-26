@@ -1,0 +1,7 @@
+{
+  "status": 409,
+  "data": {
+    "error": "Solo se puede responder en una sesión En curso.",
+    "codigo": "ESTADO_NO_PERMITIDO"
+  }
+}
