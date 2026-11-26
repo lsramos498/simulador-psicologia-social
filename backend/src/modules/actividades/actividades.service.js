@@ -1,5 +1,6 @@
 ﻿import { TIPOS_NOTIFICACION } from '../notificaciones/notificaciones.factory.js';
 import { ACCIONES_CAMBIO_ESTUDIANTE } from '../notificaciones/notificaciones.strategy.js';
+import { urlAccesoEstudiante } from '../../utils/urlAcceso.js';
 
 const MAX_INT_MYSQL = 2147483647;
 export const ESTADOS_ACTIVIDAD = Object.freeze({
@@ -474,7 +475,7 @@ export function crearServicioActividades(
                 contextoHistoria: caso.contextoHistoria ?? ''
               },
               mensajePersonalizado: actividad.mensajePersonalizado,
-              urlAcceso: process.env.URL_ACCESO || 'http://localhost:5173',
+              urlAcceso: urlAccesoEstudiante({ correo: estudiante.correo }),
               codigoAutorizacion: codigo,
               // From = Lumina (SMTP_FROM). Reply-To = correo institucional del docente.
               docenteCorreo: docenteCorreo || undefined,
@@ -697,7 +698,7 @@ export function crearServicioActividades(
               casoTitulo: actividad.casoTitulo || `Caso ${actividad.casoId}`,
               accion: ACCIONES_CAMBIO_ESTUDIANTE.AGREGADO,
               codigoAutorizacion: codigo,
-              urlAcceso: process.env.URL_ACCESO || 'http://localhost:5173',
+              urlAcceso: urlAccesoEstudiante({ correo: estudiante.correo }),
               docenteCorreo: docenteCorreo || undefined,
               docenteNombre: docenteNombre || undefined
             }
@@ -815,11 +816,28 @@ export function crearServicioActividades(
     },
 
     async listar({ docenteId, todas = false } = {}) {
+      let filas;
       if (todas) {
-        return repositorio.listarTodas();
+        filas = await repositorio.listarTodas();
+      } else {
+        validarId(docenteId, 'docenteId');
+        filas = await repositorio.listarPorDocente(docenteId);
       }
-      validarId(docenteId, 'docenteId');
-      return repositorio.listarPorDocente(docenteId);
+      const ids = filas.map((a) => a.id);
+      const autorizados =
+        typeof repositorio.listarEstudiantesAutorizadosDeActividades === 'function'
+          ? await repositorio.listarEstudiantesAutorizadosDeActividades(ids)
+          : [];
+      const porActividad = new Map();
+      for (const fila of autorizados) {
+        const lista = porActividad.get(fila.actividadId) || [];
+        lista.push(fila);
+        porActividad.set(fila.actividadId, lista);
+      }
+      return filas.map((a) => ({
+        ...a,
+        estudiantesAutorizados: porActividad.get(a.id) || []
+      }));
     },
 
     async listarConvocatorias(actividadId, docenteId, { esAdmin = false } = {}) {

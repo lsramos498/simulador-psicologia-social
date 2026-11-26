@@ -9,7 +9,7 @@ export default function EditorTabDialogos({
     <div className="panel-editor">
       <p className="muted-light">
         Escribe lo que dice cada personaje al preguntarle en la simulación. Una línea por renglón.
-        Si dejas vacío, Lumina arma un diálogo automático con el perfil.
+        Si lo dejas vacío, Lumina arma un diálogo automático con el perfil.
       </p>
       {(personajes || []).length === 0 ? (
         <p className="muted-light">Agrega personajes primero.</p>
@@ -22,7 +22,7 @@ export default function EditorTabDialogos({
               <div key={pj.id || pj.nombre} className="field">
                 <label htmlFor={`dlg-${pj.id || pj.nombre}`}>
                   {pj.nombre}
-                  {pj.rolSocial ? ` · ${pj.rolSocial}` : ''}
+                  {pj.rolSocial ? ` - ${pj.rolSocial}` : ''}
                 </label>
                 <textarea
                   id={`dlg-${pj.id || pj.nombre}`}

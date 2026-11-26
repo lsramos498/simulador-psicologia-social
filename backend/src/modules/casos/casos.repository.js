@@ -16,6 +16,7 @@
  *    y devuelven `affectedRows` para que el servicio detecte carreras.
  */
 import { errorCaso } from './caso.errores.js';
+import { repararTextoUtf8 } from '../../utils/textoUtf8.js';
 
 // MySQL devuelve los BOOLEAN/TINYINT como 0 o 1; el API los entrega como true/false.
 function aBooleano(valor) {
@@ -53,9 +54,9 @@ function mapCaso(fila) {
   return {
     id: fila.id,
     creadorId: fila.creadorId,
-    titulo: fila.titulo,
-    desarrolloSituacional: fila.desarrolloSituacional,
-    contextoHistoria: fila.contextoHistoria,
+    titulo: repararTextoUtf8(fila.titulo),
+    desarrolloSituacional: repararTextoUtf8(fila.desarrolloSituacional),
+    contextoHistoria: repararTextoUtf8(fila.contextoHistoria),
     tiempoEstimadoSegundos: Number(fila.tiempoEstimadoSegundos),
     estado: fila.estado,
     fechaCreacion: fila.fechaCreacion,
@@ -158,7 +159,7 @@ export function crearRepositorioCasos(pool) {
         return filas.map((fila) => ({
           id: fila.id,
           creadorId: fila.creadorId,
-          titulo: fila.titulo,
+          titulo: repararTextoUtf8(fila.titulo),
           estado: fila.estado,
           tiempoEstimadoSegundos: Number(fila.tiempoEstimadoSegundos),
           fechaCreacion: fila.fechaCreacion,
@@ -247,9 +248,9 @@ export function crearRepositorioCasos(pool) {
            ) VALUES (?, ?, ?, ?, ?, 'Borrador', ?)`,
           [
             caso.creadorId,
-            caso.titulo,
-            caso.desarrolloSituacional,
-            caso.contextoHistoria,
+            repararTextoUtf8(caso.titulo),
+            repararTextoUtf8(caso.desarrolloSituacional),
+            repararTextoUtf8(caso.contextoHistoria),
             caso.tiempoEstimadoSegundos,
             new Date()
           ]
@@ -268,9 +269,9 @@ export function crearRepositorioCasos(pool) {
                tiempoEstimadoSegundos = ?, fechaActualizacion = ?
            WHERE id = ? AND estado = 'Borrador'`,
           [
-            datos.titulo,
-            datos.desarrolloSituacional,
-            datos.contextoHistoria,
+            repararTextoUtf8(datos.titulo),
+            repararTextoUtf8(datos.desarrolloSituacional),
+            repararTextoUtf8(datos.contextoHistoria),
             datos.tiempoEstimadoSegundos,
             new Date(),
             casoId
@@ -319,7 +320,13 @@ export function crearRepositorioCasos(pool) {
         const [resultado] = await conexion.execute(
           `INSERT INTO Escena (caso_id, nombre, contexto, \`orden\`, esFinal)
            VALUES (?, ?, ?, ?, ?)`,
-          [casoId, escena.nombre, escena.contexto, escena.orden, escena.esFinal]
+          [
+            casoId,
+            repararTextoUtf8(escena.nombre),
+            repararTextoUtf8(escena.contexto),
+            escena.orden,
+            escena.esFinal
+          ]
         );
         return resultado.insertId;
       },
@@ -330,7 +337,13 @@ export function crearRepositorioCasos(pool) {
           `UPDATE Escena
            SET nombre = ?, contexto = ?, \`orden\` = ?, esFinal = ?
            WHERE id = ?`,
-          [escena.nombre, escena.contexto, escena.orden, escena.esFinal, escenaId]
+          [
+            repararTextoUtf8(escena.nombre),
+            repararTextoUtf8(escena.contexto),
+            escena.orden,
+            escena.esFinal,
+            escenaId
+          ]
         );
         return resultado.affectedRows;
       },
@@ -340,7 +353,12 @@ export function crearRepositorioCasos(pool) {
         const [resultado] = await conexion.execute(
           `INSERT INTO Decision (escena_id, pregunta, \`orden\`, ayuda)
            VALUES (?, ?, ?, ?)`,
-          [escenaId, decision.pregunta, decision.orden, decision.ayuda]
+          [
+            escenaId,
+            repararTextoUtf8(decision.pregunta),
+            decision.orden,
+            repararTextoUtf8(decision.ayuda)
+          ]
         );
         return resultado.insertId;
       },
@@ -351,7 +369,12 @@ export function crearRepositorioCasos(pool) {
           `UPDATE Decision
            SET pregunta = ?, \`orden\` = ?, ayuda = ?
            WHERE id = ?`,
-          [decision.pregunta, decision.orden, decision.ayuda, decisionId]
+          [
+            repararTextoUtf8(decision.pregunta),
+            decision.orden,
+            repararTextoUtf8(decision.ayuda),
+            decisionId
+          ]
         );
         return resultado.affectedRows;
       },
@@ -448,7 +471,13 @@ export function crearRepositorioCasos(pool) {
           `INSERT INTO Rubrica (
              caso_id, nombre, descripcion, version, activa, fechaCreacion
            ) VALUES (?, ?, ?, ?, TRUE, ?)`,
-          [casoId, rubrica.nombre, rubrica.descripcion, version, new Date()]
+          [
+            casoId,
+            repararTextoUtf8(rubrica.nombre),
+            repararTextoUtf8(rubrica.descripcion),
+            version,
+            new Date()
+          ]
         );
         const rubricaId = resultado.insertId;
 
@@ -638,23 +667,23 @@ export function crearRepositorioCasos(pool) {
 
           rubrica = {
             id: rubricaFila.id,
-            nombre: rubricaFila.nombre,
-            descripcion: rubricaFila.descripcion,
+            nombre: repararTextoUtf8(rubricaFila.nombre),
+            descripcion: repararTextoUtf8(rubricaFila.descripcion),
             version: rubricaFila.version,
             activa: aBooleano(rubricaFila.activa),
             fechaCreacion: rubricaFila.fechaCreacion,
             criterios: criterios.map((criterio) => ({
               id: criterio.id,
-              nombre: criterio.nombre,
-              descripcion: criterio.descripcion,
+              nombre: repararTextoUtf8(criterio.nombre),
+              descripcion: repararTextoUtf8(criterio.descripcion),
               ponderacion: aNumero(criterio.ponderacion),
               puntajeMaximo: aNumero(criterio.puntajeMaximo),
               niveles: niveles
                 .filter((nivel) => nivel.criterioId === criterio.id)
                 .map((nivel) => ({
                   id: nivel.id,
-                  nombre: nivel.nombre,
-                  descripcion: nivel.descripcion,
+                  nombre: repararTextoUtf8(nivel.nombre),
+                  descripcion: repararTextoUtf8(nivel.descripcion),
                   puntaje: aNumero(nivel.puntaje),
                   orden: nivel.orden
                 }))
@@ -667,12 +696,12 @@ export function crearRepositorioCasos(pool) {
           const lista = opcionesPorDecision.get(opcion.decisionId) ?? [];
           lista.push({
             id: opcion.id,
-            texto: opcion.texto,
+            texto: repararTextoUtf8(opcion.texto),
             esCorrecta: aBooleano(opcion.esCorrecta),
-            consecuencia: opcion.consecuencia,
+            consecuencia: repararTextoUtf8(opcion.consecuencia),
             orden: opcion.orden,
-            explicacion: opcion.explicacion,
-            fundamentoTeorico: opcion.fundamentoTeorico
+            explicacion: repararTextoUtf8(opcion.explicacion),
+            fundamentoTeorico: repararTextoUtf8(opcion.fundamentoTeorico)
           });
           opcionesPorDecision.set(opcion.decisionId, lista);
         }
@@ -682,9 +711,9 @@ export function crearRepositorioCasos(pool) {
           const lista = decisionesPorEscena.get(decision.escenaId) ?? [];
           lista.push({
             id: decision.id,
-            pregunta: decision.pregunta,
+            pregunta: repararTextoUtf8(decision.pregunta),
             orden: decision.orden,
-            ayuda: decision.ayuda,
+            ayuda: repararTextoUtf8(decision.ayuda),
             opciones: (opcionesPorDecision.get(decision.id) ?? [])
               .sort((a, b) => a.orden - b.orden)
           });
@@ -701,8 +730,8 @@ export function crearRepositorioCasos(pool) {
         caso.personajes = personajes;
         caso.escenas = escenas.map((escena) => ({
           id: escena.id,
-          nombre: escena.nombre,
-          contexto: escena.contexto,
+          nombre: repararTextoUtf8(escena.nombre),
+          contexto: repararTextoUtf8(escena.contexto),
           orden: escena.orden,
           esFinal: aBooleano(escena.esFinal),
           personajes: personajesPorEscena.get(escena.id) ?? [],

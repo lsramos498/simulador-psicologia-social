@@ -16,12 +16,14 @@ import CasoFicha from '../components/casos/CasoFicha';
 import CasoEditor from '../components/casos/CasoEditor';
 import CrearCasoPanel from '../components/casos/CrearCasoPanel';
 import SimulacionPlayer from '../components/casos/SimulacionPlayer';
-import { emparejarEscenario } from '../components/casos/AsistenteIACasos';
-import BancoPersonajes from '../components/BancoPersonajes';
+import { emparejarEscenario, enriquecerEscenasIa } from '../components/casos/AsistenteIACasos';
+import CasosListaOrganizada from '../components/casos/CasosListaOrganizada';
+import GameDecor from '../components/GameDecor';
 import ActividadesPage from './ActividadesPage';
 import AdminPage from './AdminPage';
 import AvisosPage from './AvisosPage';
 import EspaciosPage from './EspaciosPage';
+import GruposEstudiantesPage from './GruposEstudiantesPage';
 import SeguimientoPage from './SeguimientoPage';
 import { mensajeError } from '../utils/casoHelpers';
 import { esAdministrador } from '../utils/roles';
@@ -57,6 +59,7 @@ export default function CasosPage({ sesion, onSalir }) {
   const [trabajando, setTrabajando] = useState(false);
   const [abriendoId, setAbriendoId] = useState(null);
   const [mostrarIaCrear, setMostrarIaCrear] = useState(false);
+  const [casoProgramarId, setCasoProgramarId] = useState(null);
 
   const admin = esAdministrador(usuario);
 
@@ -256,43 +259,54 @@ export default function CasosPage({ sesion, onSalir }) {
     setMensaje('');
     const nombres = personajesElegidos.map((p) => p.nombre);
 
-    const plantillaEscenas =
+    const plantillaEscenas = enriquecerEscenasIa(
       Array.isArray(escenasIa) && escenasIa.length > 0
         ? escenasIa
         : [
             {
               nombre: escenarioElegido.titulo,
-              contexto: escenarioElegido.descripcion,
+              contexto:
+                form.contextoHistoria?.trim() ||
+                escenarioElegido.descripcion ||
+                '',
               pregunta: form.pregunta.trim(),
               opcionBuena: form.opcionBuena.trim(),
               opcionMala: form.opcionMala.trim(),
               explicacionBuena: 'Favorece la contención y el diálogo.',
               explicacionMala: 'Evita el conflicto y refuerza la tensión.'
             }
-          ];
+          ],
+      escenarioElegido
+    );
 
     const escenasPayload = plantillaEscenas.map((esc, idx) => ({
-      nombre: (idx === 0 ? escenarioElegido.titulo : esc.nombre || `Lugar ${idx + 1}`).trim(),
-      contexto: (idx === 0 ? escenarioElegido.descripcion : esc.contexto || form.contextoHistoria).trim(),
+      nombre: String(esc.nombre || `Lugar ${idx + 1}`).trim(),
+      contexto: String(
+        esc.contexto || form.contextoHistoria || escenarioElegido.descripcion || ''
+      ).trim(),
       orden: idx + 1,
       esFinal: idx === plantillaEscenas.length - 1,
       personajes: nombres,
       decisiones: [
         {
-          pregunta: (esc.pregunta || form.pregunta).trim(),
+          pregunta: String(esc.pregunta || form.pregunta).trim(),
           orden: 1,
           opciones: [
             {
-              texto: (esc.opcionBuena || form.opcionBuena).trim(),
+              texto: String(esc.opcionBuena || form.opcionBuena).trim(),
               esCorrecta: true,
               orden: 1,
-              explicacion: (esc.explicacionBuena || 'Favorece una intervención ética.').trim()
+              explicacion: String(
+                esc.explicacionBuena || 'Favorece una intervención ética.'
+              ).trim()
             },
             {
-              texto: (esc.opcionMala || form.opcionMala).trim(),
+              texto: String(esc.opcionMala || form.opcionMala).trim(),
               esCorrecta: false,
               orden: 2,
-              explicacion: (esc.explicacionMala || 'Debilita el proceso de intervención.').trim()
+              explicacion: String(
+                esc.explicacionMala || 'Debilita el proceso de intervención.'
+              ).trim()
             }
           ]
         }
@@ -307,33 +321,43 @@ export default function CasosPage({ sesion, onSalir }) {
         tiempoEstimadoSegundos: Number(form.tiempoEstimadoSegundos),
         personajes: personajesElegidos.map(aPersonajeApi),
         escenas: escenasPayload,
-        rubrica: rubricaIa?.criterios?.length
-          ? {
-              nombre: rubricaIa.nombre || `Evaluación · ${form.titulo.trim()}`,
-              descripcion: rubricaIa.descripcion || null,
-              criterios: rubricaIa.criterios
-            }
-          : {
-              nombre: `Evaluación · ${form.titulo.trim()}`,
-              criterios: [
-                {
-                  nombre: 'Intervención',
-                  ponderacion: 100,
-                  puntajeMaximo: 4,
-                  niveles: [
-                    { nombre: 'Básico', descripcion: 'Identifica el conflicto.', puntaje: 1, orden: 1 },
-                    { nombre: 'Avanzado', descripcion: 'Media y propone acuerdo.', puntaje: 4, orden: 2 }
-                  ]
-                }
-              ]
-            }
+        rubrica: (() => {
+          const cargada = form.rubricaCargada?.criterios?.length ? form.rubricaCargada : null;
+          const deIa = rubricaIa?.criterios?.length ? rubricaIa : null;
+          const fuente = cargada || deIa;
+          if (fuente) {
+            return {
+              nombre: fuente.nombre || `Evaluación - ${form.titulo.trim()}`,
+              descripcion: fuente.descripcion || null,
+              criterios: fuente.criterios
+            };
+          }
+          return {
+            nombre: `Evaluación - ${form.titulo.trim()}`,
+            descripcion: form.rubricaPdfTexto
+              ? String(form.rubricaPdfTexto).slice(0, 2000)
+              : null,
+            criterios: [
+              {
+                nombre: 'Intervención',
+                ponderacion: 100,
+                puntajeMaximo: 5,
+                niveles: [
+                  { nombre: 'Básico', descripcion: 'Identifica el conflicto.', puntaje: 1, orden: 1 },
+                  { nombre: 'Avanzado', descripcion: 'Media y propone acuerdo.', puntaje: 5, orden: 2 }
+                ]
+              }
+            ]
+          };
+        })()
       });
 
       (respuesta.data?.escenas || []).forEach((escenaCreada, idx) => {
         const ref =
-          idx === 0
+          plantillaEscenas[idx]?.escenarioRef ||
+          (idx === 0
             ? escenarioElegido
-            : emparejarEscenario(plantillaEscenas[idx]?.nombre) || escenarioElegido;
+            : emparejarEscenario(plantillaEscenas[idx]?.nombre) || escenarioElegido);
         if (!ref) return;
         guardarPortadaEscena(respuesta.data.id, escenaCreada.id, ref);
         guardarPortadaEscena(respuesta.data.id, escenaCreada.orden, ref);
@@ -373,10 +397,12 @@ export default function CasosPage({ sesion, onSalir }) {
     setMensaje('');
     try {
       const respuesta = await publicarCaso(token, detalle.id);
-      setDetalle(respuesta.data);
-      setMensaje('Historia publicada. Ya está disponible para jugar.');
+      const publicado = respuesta.data;
+      setDetalle(publicado);
+      setCasoProgramarId(publicado?.id || detalle.id);
+      setMensaje('Caso publicado. Elige un grupo y programa la actividad.');
       await cargar();
-      setVista('ficha');
+      setVista('actividades');
     } catch (err) {
       setError(mensajeError(err));
     } finally {
@@ -421,7 +447,7 @@ export default function CasosPage({ sesion, onSalir }) {
               <span className="role-pill">{admin ? 'Admin' : 'Docente'}</span>
             </h1>
           </div>
-          {!['actividades', 'admin', 'seguimiento', 'avisos', 'espacios'].includes(vista) ? (
+          {!['actividades', 'admin', 'seguimiento', 'avisos', 'espacios', 'estudiantes'].includes(vista) ? (
             <div className="studio-filters">
               <label>
                 Buscar
@@ -456,20 +482,23 @@ export default function CasosPage({ sesion, onSalir }) {
 
         {mensaje ? <div className="alert alert-ok fade">{mensaje}</div> : null}
         {error ? <div className="alert fade">{error}</div> : null}
-        {cargando ? <p className="muted-light">Abriendo historias…</p> : null}
-        {abriendoId ? <p className="muted-light">Abriendo historia…</p> : null}
+        {cargando ? <p className="muted-light">Abriendo casos…</p> : null}
+        {abriendoId ? <p className="muted-light">Abriendo caso…</p> : null}
 
         {vista === 'historias' ? (
           <>
             <div className="quick-nav">
               <button type="button" className="chip-ejemplo" onClick={() => cambiarVista('crear')}>
-                + Crear historia
+                + Crear caso
+              </button>
+              <button type="button" className="chip-ejemplo" onClick={() => cambiarVista('estudiantes')}>
+                Grupos y estudiantes
               </button>
               <button type="button" className="chip-ejemplo" onClick={() => cambiarVista('actividades')}>
                 Actividades
               </button>
-              <button type="button" className="chip-ejemplo" onClick={() => cambiarVista('seguimiento')}>
-                Seguimiento
+              <button type="button" className="chip-ejemplo" onClick={() => cambiarVista('crear')}>
+                Crear caso
               </button>
               {admin ? (
                 <button type="button" className="chip-ejemplo" onClick={() => cambiarVista('admin')}>
@@ -501,10 +530,12 @@ export default function CasosPage({ sesion, onSalir }) {
                 }}
               />
             ) : busqueda.trim() ? (
-              <div className="empty-state soft">
-                <strong>Sin coincidencias</strong>
-                <p className="muted-light">Probá otro término o limpiá la búsqueda.</p>
-              </div>
+              <GameDecor
+                variant="empty"
+                munecos={2}
+                title="Sin coincidencias"
+                text="Prueba otro término o limpia la búsqueda."
+              />
             ) : null}
             {borradores.length > 0 ? (
               <CasosCarrusel
@@ -528,14 +559,31 @@ export default function CasosPage({ sesion, onSalir }) {
                 }}
               />
             ) : null}
+            <CasosListaOrganizada
+              titulo="Organizar casos"
+              subtitulo="Tabla rápida: ver o editar según el estado."
+              casos={casosFiltrados}
+              onCrear={() => {
+                setMostrarIaCrear(false);
+                cambiarVista('crear');
+              }}
+              onVer={(caso) => {
+                setDestacadoId(caso.id);
+                abrirFicha(caso);
+              }}
+              onEditar={(caso) => abrirEditor(caso)}
+            />
           </>
         ) : null}
 
-        {vista === 'banco' ? (
-          <BancoPersonajes modo="ver" titulo="Banco de personajes" />
+        {vista === 'actividades' ? (
+          <ActividadesPage
+            sesion={sesion}
+            casoIdInicial={casoProgramarId}
+            onCasoInicialConsumido={() => setCasoProgramarId(null)}
+          />
         ) : null}
-
-        {vista === 'actividades' ? <ActividadesPage sesion={sesion} /> : null}
+        {vista === 'estudiantes' ? <GruposEstudiantesPage sesion={sesion} /> : null}
         {vista === 'admin' && admin ? <AdminPage sesion={sesion} /> : null}
         {vista === 'seguimiento' ? (
           <SeguimientoPage sesion={sesion} onIrActividades={() => cambiarVista('actividades')} />
@@ -545,52 +593,41 @@ export default function CasosPage({ sesion, onSalir }) {
 
         {vista === 'biblioteca' ? (
           <>
-            <header className="crear-head" style={{ marginBottom: '0.5rem' }}>
-              <div>
-                <p className="kicker">Biblioteca</p>
-                <h2>Todas tus historias</h2>
-                <p className="muted-light">Borradores, publicadas y archivadas en un solo lugar.</p>
-              </div>
-              <button type="button" className="btn-play" onClick={() => cambiarVista('crear')}>
-                Nueva historia
-              </button>
-            </header>
-            {casosFiltrados.length === 0 ? (
-              <div className="empty-state">
-                <strong>{busqueda.trim() ? 'Sin coincidencias' : 'Biblioteca vacía'}</strong>
-                <p className="muted-light">
-                  {busqueda.trim()
-                    ? 'Probá otro término o limpiá la búsqueda.'
-                    : 'Creá tu primera historia para empezar la práctica.'}
-                </p>
-                {!busqueda.trim() ? (
-                  <button type="button" className="btn-play" onClick={() => cambiarVista('crear')}>
-                    Crear historia
-                  </button>
-                ) : null}
-              </div>
-            ) : (
-              <>
-                <CasosCarrusel
-                  titulo="Por completar"
-                  casos={borradores}
-                  seleccionadoId={destacado?.id}
-                  onSeleccionar={(caso) => abrirFicha(caso)}
-                />
-                <CasosCarrusel
-                  titulo="Listas para jugar"
-                  casos={publicados}
-                  seleccionadoId={destacado?.id}
-                  onSeleccionar={(caso) => abrirFicha(caso)}
-                />
-                <CasosCarrusel
-                  titulo="Archivadas"
-                  casos={archivados}
-                  seleccionadoId={destacado?.id}
-                  onSeleccionar={(caso) => abrirFicha(caso)}
-                />
-              </>
-            )}
+            <CasosListaOrganizada
+              titulo="Biblioteca de casos"
+              subtitulo="Borradores, publicados y archivados en un solo listado."
+              casos={casosFiltrados}
+              onCrear={() => {
+                setMostrarIaCrear(false);
+                cambiarVista('crear');
+              }}
+              onVer={(caso) => abrirFicha(caso)}
+              onEditar={(caso) => abrirEditor(caso)}
+            />
+            {borradores.length > 0 ? (
+              <CasosCarrusel
+                titulo="Por completar"
+                casos={borradores}
+                seleccionadoId={destacado?.id}
+                onSeleccionar={(caso) => abrirFicha(caso)}
+              />
+            ) : null}
+            {publicados.length > 0 ? (
+              <CasosCarrusel
+                titulo="Listas para jugar"
+                casos={publicados}
+                seleccionadoId={destacado?.id}
+                onSeleccionar={(caso) => abrirFicha(caso)}
+              />
+            ) : null}
+            {archivados.length > 0 ? (
+              <CasosCarrusel
+                titulo="Archivados"
+                casos={archivados}
+                seleccionadoId={destacado?.id}
+                onSeleccionar={(caso) => abrirFicha(caso)}
+              />
+            ) : null}
           </>
         ) : null}
 
@@ -606,7 +643,56 @@ export default function CasosPage({ sesion, onSalir }) {
             mostrarIa={mostrarIaCrear}
             onToggleIa={() => setMostrarIaCrear((v) => !v)}
             trabajando={trabajando}
-            onAplicarIa={({ form: generado, personajes, escenario, rubricaSugerida, borrador }) => {
+            setTrabajando={setTrabajando}
+            onMensaje={setMensaje}
+            onError={setError}
+            onRubricaCargada={(rubrica) => {
+              if (rubrica?.criterios?.length) {
+                setRubricaIa(rubrica);
+              }
+            }}
+            onCasoImportado={async (caso) => {
+              if (caso?.id) {
+                try {
+                  const completo = await obtenerCaso(token, caso.id);
+                  const data = completo.data || caso;
+                  (data.escenas || []).forEach((escena, idx) => {
+                    const ref =
+                      emparejarEscenario(escena.nombre) ||
+                      emparejarEscenario(data.titulo) ||
+                      emparejarEscenario(`escenario ${idx + 1}`);
+                    if (!ref) return;
+                    guardarPortadaEscena(data.id, escena.id, ref);
+                    guardarPortadaEscena(data.id, escena.orden, ref);
+                    guardarPortadaEscena(data.id, escena.nombre, ref);
+                  });
+                  await guardarMaterialCaso(token, data.id, {
+                    dialogos: data.material?.dialogos || {},
+                    portadas: portadasDeCasoLocal(data.id)
+                  });
+                } catch {
+                  /* el caso queda importado; portadas se pueden asignar en el editor */
+                }
+              }
+              await cargar();
+              if (caso?.id) abrirFicha(caso);
+            }}
+            onAplicarIa={({
+              form: generado,
+              personajes,
+              escenario,
+              rubricaSugerida,
+              escenasSugeridas,
+              borrador
+            }) => {
+              const escenas =
+                Array.isArray(escenasSugeridas) && escenasSugeridas.length
+                  ? escenasSugeridas
+                  : Array.isArray(borrador?.escenasSugeridas) && borrador.escenasSugeridas.length
+                    ? borrador.escenasSugeridas
+                    : borrador?.escenaSugerida
+                      ? [borrador.escenaSugerida]
+                      : [];
               setForm((prev) => ({
                 ...prev,
                 ...generado,
@@ -615,12 +701,17 @@ export default function CasosPage({ sesion, onSalir }) {
               if (personajes?.length) setPersonajesElegidos(personajes);
               if (escenario) setEscenarioElegido(escenario);
               if (rubricaSugerida) setRubricaIa(rubricaSugerida);
-              if (borrador?.escenasSugeridas?.length) setEscenasIa(borrador.escenasSugeridas);
-              else if (borrador?.escenaSugerida) setEscenasIa([borrador.escenaSugerida]);
+              if (escenas.length) setEscenasIa(escenas);
               setMensaje(
-                escenario
-                  ? 'Borrador de IA aplicado. Revisalo abajo y creá la historia.'
-                  : 'Borrador aplicado. Elegí un escenario para continuar.'
+                [
+                  'Borrador de IA aplicado:',
+                  personajes?.length ? `${personajes.length} personajes` : null,
+                  escenario ? `escenario «${escenario.titulo}»` : null,
+                  escenas.length ? `${escenas.length} escenas con pregunta y opciones` : null,
+                  'Revisa y pulsa Crear caso.'
+                ]
+                  .filter(Boolean)
+                  .join(' - ')
               );
               setError('');
               setMostrarIaCrear(false);

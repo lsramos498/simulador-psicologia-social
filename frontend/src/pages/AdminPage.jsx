@@ -13,6 +13,7 @@ import {
   listarCasos,
   listarEstudiantesAdmin
 } from '../api/client';
+import GameDecor from '../components/GameDecor';
 import { mensajeError } from '../utils/casoHelpers';
 
 const TABS = [
@@ -161,11 +162,12 @@ export default function AdminPage({ sesion }) {
 
   return (
     <section className="crear-caso">
+      <GameDecor variant="ambient" munecos={2} />
       <header className="crear-head">
         <div>
           <p className="kicker">Administración</p>
           <h2>Consola del sistema</h2>
-          <p className="muted-light">Usuarios, roles, permisos y vista global (RF-03 · Sofía).</p>
+          <p className="muted-light">Usuarios, roles, permisos y vista global (RF-03 - Sofía).</p>
         </div>
         <button type="button" className="btn-ghost-dark" onClick={cargar} disabled={cargando}>
           Actualizar
@@ -202,13 +204,13 @@ export default function AdminPage({ sesion }) {
             <article className="nodo-escena">
               <strong>Casos</strong>
               <p>
-                {casos.length} total · {publicados} publicados
+                {casos.length} total - {publicados} publicados
               </p>
             </article>
             <article className="nodo-escena">
               <strong>Actividades</strong>
               <p>
-                {actividades.length} total · {iniciadas} iniciadas
+                {actividades.length} total - {iniciadas} iniciadas
               </p>
             </article>
             <article className="nodo-escena">
@@ -219,18 +221,20 @@ export default function AdminPage({ sesion }) {
 
           <h3>Últimas actividades</h3>
           {(actividades || []).length === 0 ? (
-            <div className="empty-state soft">
-              <strong>Sin actividades todavía</strong>
-              <p className="muted-light">Cuando docentes programen prácticas, aparecerán aquí.</p>
-            </div>
+            <GameDecor
+              variant="empty"
+              munecos={2}
+              title="Sin actividades todavía"
+              text="Cuando docentes programen prácticas, aparecerán aquí."
+            />
           ) : (
             (actividades || []).slice(0, 8).map((a) => (
               <article key={a.id} className="nodo-escena">
                 <strong>
-                  #{a.id} · {a.estado}
+                  #{a.id} - {a.estado}
                 </strong>
                 <p className="muted-light">
-                  Caso {a.casoId} · Docente {a.docenteId} · {a.fechaInicio} → {a.fechaFin}
+                  Caso {a.casoId} - Docente {a.docenteId} - {a.fechaInicio} → {a.fechaFin}
                 </p>
               </article>
             ))
@@ -321,17 +325,19 @@ export default function AdminPage({ sesion }) {
 
           <h3 style={{ marginTop: '1.5rem' }}>Estudiantes ({estudiantes.length})</h3>
           {estudiantes.length === 0 ? (
-            <div className="empty-state soft">
-              <strong>Sin estudiantes</strong>
-              <p className="muted-light">Creá uno arriba para poder convocar prácticas.</p>
-            </div>
+            <GameDecor
+              variant="empty"
+              munecos={2}
+              title="Sin estudiantes"
+              text="Crea uno arriba para poder convocar prácticas."
+            />
           ) : (
             <ul className="asistente-meta">
               {estudiantes.map((est) => (
                 <li key={est.id}>
-                  #{est.id} · {est.nombres} {est.apellidos} · {est.correo}
-                  {est.activo === 0 || est.activo === false ? ' · inactivo' : ''}
-                  {' · '}
+                  #{est.id} - {est.nombres} {est.apellidos} - {est.correo}
+                  {est.activo === 0 || est.activo === false ? ' - inactivo' : ''}
+                  {' - '}
                   <button
                     type="button"
                     className="btn-ghost-dark"

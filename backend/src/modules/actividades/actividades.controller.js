@@ -1,4 +1,6 @@
-﻿function obtenerDocenteAutenticado(req) {
+﻿import { ROLES, tieneRol } from '../acceso/autorizacion.js';
+
+function obtenerDocenteAutenticado(req) {
   const docenteId = Number(req.usuario?.id);
 
   if (!Number.isSafeInteger(docenteId) || docenteId <= 0) {
@@ -70,9 +72,8 @@ export function crearControladorActividades(servicio) {
     },
 
     async consultarPorId(req, res) {
-      const docenteId = obtenerDocenteAutenticado(req);
-
-      if (!docenteId) {
+      const usuarioId = Number(req.usuario?.id);
+      if (!Number.isSafeInteger(usuarioId) || usuarioId <= 0) {
         return res.status(401).json({
           error: 'Se requiere una sesión autenticada.'
         });
@@ -80,15 +81,41 @@ export function crearControladorActividades(servicio) {
 
       try {
         const actividad = await servicio.consultarPorId(Number(req.params.id));
+        const esDuenio =
+          Number(actividad.docenteId) === usuarioId ||
+          tieneRol(req.usuario, ROLES.ADMINISTRADOR);
 
-        if (Number(actividad.docenteId) !== docenteId) {
-          return res.status(403).json({
-            error: 'No tiene autorización para consultar esta actividad.'
+        if (esDuenio) {
+          return res.status(200).json({ data: actividad });
+        }
+
+        // Estudiante convocado: solo ve el resumen de SU actividad.
+        if (tieneRol(req.usuario, ROLES.ESTUDIANTE)) {
+          const autorizado = (actividad.estudiantesAutorizados || []).some(
+            (e) => Number(e.estudianteId) === usuarioId && e.estado === 'Autorizado'
+          );
+          if (!autorizado) {
+            return res.status(403).json({
+              error: 'No tiene autorización para consultar esta actividad.'
+            });
+          }
+          return res.status(200).json({
+            data: {
+              id: actividad.id,
+              casoId: actividad.casoId,
+              casoTitulo: actividad.casoTitulo,
+              estado: actividad.estado,
+              fechaInicio: actividad.fechaInicio,
+              fechaFin: actividad.fechaFin,
+              lugar: actividad.lugar,
+              mensajePersonalizado: actividad.mensajePersonalizado,
+              tiempoLimiteSegundos: actividad.tiempoLimiteSegundos
+            }
           });
         }
 
-        return res.status(200).json({
-          data: actividad
+        return res.status(403).json({
+          error: 'No tiene autorización para consultar esta actividad.'
         });
       } catch (error) {
         return responderError(res, error);

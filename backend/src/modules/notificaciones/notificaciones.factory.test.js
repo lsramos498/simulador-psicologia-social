@@ -5,13 +5,15 @@ import {
   CreadorNotificacion,
   CreadorConvocatoria,
   CreadorCambioEstudiante,
+  CreadorComentarioDocente,
   TIPOS_NOTIFICACION,
   obtenerCreadorNotificacion
 } from './notificaciones.factory.js';
 
 import {
   NotificacionConvocatoriaStrategy,
-  NotificacionCambioEstudianteStrategy
+  NotificacionCambioEstudianteStrategy,
+  NotificacionComentarioDocenteStrategy
 } from './notificaciones.strategy.js';
 test('El creador base exige implementar crearEstrategia', () => {
   const creador = new CreadorNotificacion();
@@ -53,6 +55,17 @@ test('Selecciona el creador de cambios de estudiantes', () => {
 
   assert.ok(creador instanceof CreadorCambioEstudiante);
 });
+
+test('Crea la estrategia de comentario docente', () => {
+  const creador = new CreadorComentarioDocente();
+  assert.ok(creador.crearEstrategia() instanceof NotificacionComentarioDocenteStrategy);
+});
+
+test('Selecciona el creador de comentario docente', () => {
+  const creador = obtenerCreadorNotificacion(TIPOS_NOTIFICACION.COMENTARIO_DOCENTE);
+  assert.ok(creador instanceof CreadorComentarioDocente);
+});
+
 test('Rechaza tipos de notificación desconocidos', () => {
   assert.throws(
     () => obtenerCreadorNotificacion('NOTIFICACION_INVALIDA'),

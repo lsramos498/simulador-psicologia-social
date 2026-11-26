@@ -62,7 +62,7 @@ export default function BancoPersonajes({
           <h2>{titulo}</h2>
           <p className="muted-light">
             {modo === 'elegir'
-              ? 'Elige a los personajes (muñequitos) a quienes se podrá preguntar.'
+              ? 'Selecciona quiénes participan en esta escena (puedes crear uno nuevo si hace falta).'
               : 'Personajes del caso. Crea los tuyos y asígnales imagen, rol y descripción.'}
           </p>
         </div>

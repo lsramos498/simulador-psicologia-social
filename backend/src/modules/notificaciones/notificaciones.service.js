@@ -29,7 +29,8 @@ export function crearServicioNotificaciones(transporte, repositorio = null) {
         asunto: mensaje.subject,
         estado: envio?.estado || 'ENVIADO',
         canal: envio?.canal || null,
-        previewUrl: envio?.previewUrl || null
+        previewUrl: envio?.previewUrl || null,
+        demo: Boolean(envio?.demo)
       };
     },
 

@@ -56,7 +56,7 @@ export default function SelectorEscenarios({ valor, onElegir, titulo = 'Escoge e
                 type="button"
                 role="listitem"
                 className={activo ? 'escenario-card activo' : 'escenario-card'}
-                style={{ backgroundImage: `linear-gradient(180deg, transparent 30%, rgba(8,6,16,0.92)), url('${esc.imagen}')` }}
+                style={{ backgroundImage: `url('${esc.imagen}')` }}
                 onClick={() => onElegir?.(esc)}
               >
                 {activo ? <span className="caso-check">✓</span> : null}

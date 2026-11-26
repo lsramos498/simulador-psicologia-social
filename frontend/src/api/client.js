@@ -12,23 +12,35 @@
  *    propietario en cada petición; aquí solo se muestran los errores.
  */
 
-// Claves de localStorage donde se conserva la sesión entre recargas de la página.
+// Sesión por pestaña (sessionStorage): el correo del estudiante abre login
+// aunque otra pestaña siga con el taller docente. localStorage se limpia
+// para no arrastrar sesiones viejas entre pestañas.
 const TOKEN_KEY = 'lumina.token';
 const USUARIO_KEY = 'lumina.usuario';
+
+function borrarClaves(store) {
+  try {
+    store.removeItem(TOKEN_KEY);
+    store.removeItem(USUARIO_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 /**
  * Guarda la sesión en el navegador tras un ingreso exitoso.
  * @param {{ token: string, usuario: object }} sesion  Respuesta de `ingresarDocente`.
  */
 export function guardarSesion({ token, usuario }) {
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USUARIO_KEY, JSON.stringify(usuario));
+  borrarClaves(localStorage);
+  sessionStorage.setItem(TOKEN_KEY, token);
+  sessionStorage.setItem(USUARIO_KEY, JSON.stringify(usuario));
 }
 
 /** Borra la sesión del navegador (cerrar sesión o token inválido). */
 export function limpiarSesion() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USUARIO_KEY);
+  borrarClaves(sessionStorage);
+  borrarClaves(localStorage);
 }
 
 /**
@@ -37,8 +49,11 @@ export function limpiarSesion() {
  * @returns {{ token: string, usuario: object }|null} null si no hay sesión válida.
  */
 export function leerSesion() {
-  const token = localStorage.getItem(TOKEN_KEY);
-  const crudo = localStorage.getItem(USUARIO_KEY);
+  // Migración: no reutilizar localStorage entre pestañas (causaba ir al taller docente).
+  borrarClaves(localStorage);
+
+  const token = sessionStorage.getItem(TOKEN_KEY);
+  const crudo = sessionStorage.getItem(USUARIO_KEY);
   if (!token || !crudo) {
     return null;
   }
@@ -340,7 +355,7 @@ export function guardarMaterialCaso(token, id, material) {
   });
 }
 
-/** Solicita el código de convocatoria al correo del estudiante. */
+/** Solicita el OTP de inicio de sesión al correo del estudiante. */
 export function enviarCodigoEstudiante({ correo }) {
   return pedir('/api/acceso/estudiantes/enviar-codigo', {
     method: 'POST',
@@ -348,12 +363,17 @@ export function enviarCodigoEstudiante({ correo }) {
   });
 }
 
-/** Ingreso de estudiante con correo + código de convocatoria. */
+/** Ingreso de estudiante con correo + código de sesión (OTP). */
 export function ingresarEstudiante({ correo, codigo }) {
   return pedir('/api/acceso/estudiantes/ingreso', {
     method: 'POST',
     body: { correo, codigo }
   });
+}
+
+/** Actividades convocadas del estudiante (título/hora; sin contenido si Programada). */
+export function listarMisActividades(token) {
+  return pedir('/api/acceso/estudiantes/mis-actividades', { token });
 }
 
 export function listarEspacios(token) {
@@ -371,6 +391,60 @@ export function listarEstudiantesAdmin(token) {
 /** Roster de estudiantes para convocar (docente o admin). */
 export function listarEstudiantes(token) {
   return pedir('/api/acceso/estudiantes', { token });
+}
+
+/** Alta de estudiante por docente o admin. */
+export function crearEstudiante(token, datos) {
+  return pedir('/api/acceso/estudiantes', {
+    method: 'POST',
+    token,
+    body: datos
+  });
+}
+
+/** Alta masiva desde texto extraído de PDF/lista. */
+export function crearEstudiantesLote(token, texto) {
+  return pedir('/api/acceso/estudiantes/lote', {
+    method: 'POST',
+    token,
+    body: { texto }
+  });
+}
+
+/** Importa y construye un caso desde texto de PDF. */
+export function importarCasoDesdeTexto(token, { texto, publicar = false }) {
+  return pedir('/api/casos/importar-texto', {
+    method: 'POST',
+    token,
+    body: { texto, publicar }
+  });
+}
+
+export function listarGrupos(token) {
+  return pedir('/api/grupos', { token });
+}
+
+export function crearGrupo(token, datos) {
+  return pedir('/api/grupos', { method: 'POST', token, body: datos });
+}
+
+export function obtenerGrupo(token, id) {
+  return pedir(`/api/grupos/${id}`, { token });
+}
+
+export function asignarEstudiantesGrupo(token, grupoId, estudiantesIds) {
+  return pedir(`/api/grupos/${grupoId}/estudiantes`, {
+    method: 'POST',
+    token,
+    body: { estudiantesIds }
+  });
+}
+
+export function retirarEstudianteGrupo(token, grupoId, estudianteId) {
+  return pedir(`/api/grupos/${grupoId}/estudiantes/${estudianteId}`, {
+    method: 'DELETE',
+    token
+  });
 }
 
 export function listarActividades(token) {

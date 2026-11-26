@@ -39,6 +39,32 @@ function crearRepositorio(cambios = {}) {
       llamadas.push(['preparar', actividadId]);
       return { sesionesCreadas: 2, asistenciasCreadas: 2 };
     },
+    async consultarAutorizacion(actividadId, estudianteId) {
+      if (cambios.sinAutorizacion) return null;
+      return {
+        id: 1,
+        actividadId,
+        estudianteId,
+        estado: 'Autorizado'
+      };
+    },
+    async consultarActividadResumen(actividadId) {
+      return {
+        id: actividadId,
+        casoId: fila.casoId,
+        casoTitulo: 'Caso de prueba',
+        estado: fila.estadoActividad,
+        fechaInicio: fila.fechaInicio,
+        fechaFin: fila.fechaFin,
+        lugar: null,
+        mensajePersonalizado: null
+      };
+    },
+    async marcarActividadIniciada(actividadId) {
+      llamadas.push(['marcarIniciada', actividadId]);
+      fila = { ...fila, estadoActividad: 'Iniciada' };
+      return 1;
+    },
     async listarVencidas() {
       return cambios.vencidas ?? [];
     },
@@ -46,6 +72,9 @@ function crearRepositorio(cambios = {}) {
       return { ...fila };
     },
     async obtenerPorEstudiante(actividadId, estudianteId) {
+      if (cambios.sinSesionInicial && !llamadas.some((l) => l[0] === 'preparar')) {
+        return null;
+      }
       if (Number(fila.actividadId) === Number(actividadId)
         && Number(fila.estudianteId) === Number(estudianteId)) {
         return { ...fila };
@@ -112,16 +141,26 @@ test('El estudiante pasa su sesión a En curso dentro de la ventana', async () =
   assert.deepEqual(repo.llamadas.at(-1), ['asistencia', 'Presente']);
 });
 
-test('Rechaza iniciar fuera de la ventana y si la actividad no fue iniciada', async () => {
+test('Rechaza iniciar fuera de la ventana', async () => {
   const servicio = crearServicioSesiones(crearRepositorio());
   await assert.rejects(
     servicio.iniciarPropia(3, 7, new Date('2026-11-09T13:00:00')),
     { statusCode: 403 }
   );
-  const sinIniciar = crearServicioSesiones(crearRepositorio({
-    fila: { estadoActividad: 'Programada' }
-  }));
-  await assert.rejects(sinIniciar.iniciarPropia(3, 7, ahora), { statusCode: 409 });
+});
+
+test('Si la actividad está Programada, el estudiante no puede adelantar el inicio', async () => {
+  const repo = crearRepositorio({
+    fila: {
+      estadoActividad: 'Programada',
+      fechaInicio: new Date('2026-11-09T14:58:00')
+    }
+  });
+  await assert.rejects(
+    crearServicioSesiones(repo).iniciarPropia(3, 7, ahora),
+    { statusCode: 409 }
+  );
+  assert.ok(!repo.llamadas.some((l) => l[0] === 'marcarIniciada'));
 });
 
 test('Al finalizar calcula la nota y avisa al estudiante', async () => {
@@ -171,8 +210,13 @@ test('El cierre de una sesión que nunca empezó queda en cero y como ausencia',
 });
 
 test('RF-22: después de la mitad del tiempo límite no se puede iniciar (403 INGRESO_TARDIO)', async () => {
-  // Actividad desde las 14:00 con 10 minutos: el límite para iniciar es 14:05.
-  const repo = crearRepositorio();
+  // Ventana 14:00–14:10: el límite para iniciar es 14:05 (mitad de la convocatoria).
+  const repo = crearRepositorio({
+    fila: {
+      fechaInicio: new Date('2026-11-09T14:00:00'),
+      fechaFin: new Date('2026-11-09T14:10:00')
+    }
+  });
   const servicio = crearServicioSesiones(repo);
   await assert.rejects(
     servicio.iniciarPropia(3, 7, new Date('2026-11-09T14:06:00')),
@@ -182,7 +226,12 @@ test('RF-22: después de la mitad del tiempo límite no se puede iniciar (403 IN
 });
 
 test('RF-22: justo en la mitad del tiempo todavía puede iniciar', async () => {
-  const repo = crearRepositorio();
+  const repo = crearRepositorio({
+    fila: {
+      fechaInicio: new Date('2026-11-09T14:00:00'),
+      fechaFin: new Date('2026-11-09T14:10:00')
+    }
+  });
   const sesion = await crearServicioSesiones(repo).iniciarPropia(3, 7, new Date('2026-11-09T14:05:00'));
   assert.equal(sesion.estado, 'En curso');
 });

@@ -1,25 +1,36 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   enviarCodigoEstudiante,
   guardarSesion,
   ingresarDocente,
   ingresarEstudiante
 } from '../api/client';
+import { limpiarParamsAcceso, leerParamsAcceso } from '../utils/destinoAcceso';
+
+function esCorreoInstitucional(valor) {
+  const correo = String(valor || '').trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.edu\.co$/i.test(correo);
+}
 
 export default function LoginPage({ onSesion }) {
-  const [fase, setFase] = useState('portada'); // portada | sesion
+  const accesoInicial = leerParamsAcceso();
+  const [fase, setFase] = useState(() =>
+    accesoInicial.forzarLoginEstudiante || accesoInicial.accesoEstudiante ? 'sesion' : 'portada'
+  );
   const [modo, setModo] = useState('estudiante'); // estudiante | docente
-  const [correo, setCorreo] = useState('');
+  const [correo, setCorreo] = useState(() => accesoInicial.correo || '');
   const [contrasena, setContrasena] = useState('');
   const [codigo, setCodigo] = useState('');
   const [codigoEnviado, setCodigoEnviado] = useState(false);
-  const [aviso, setAviso] = useState('');
-  const [previewUrl, setPreviewUrl] = useState('');
-  const [codigoVisible, setCodigoVisible] = useState('');
   const [cargando, setCargando] = useState(false);
   const [enviandoCodigo, setEnviandoCodigo] = useState(false);
   const [error, setError] = useState('');
   const correoRef = useRef(null);
+
+  const correoValidoEstudiante = useMemo(
+    () => modo === 'estudiante' && esCorreoInstitucional(correo),
+    [modo, correo]
+  );
 
   useEffect(() => {
     if (fase === 'sesion') {
@@ -31,10 +42,6 @@ export default function LoginPage({ onSesion }) {
     setFase('sesion');
     setModo('estudiante');
     setError('');
-    setAviso('');
-    setPreviewUrl('');
-    setCodigoVisible('');
-    setCorreo('');
     setContrasena('');
     setCodigo('');
     setCodigoEnviado(false);
@@ -43,19 +50,14 @@ export default function LoginPage({ onSesion }) {
   function volverPortada() {
     setFase('portada');
     setError('');
-    setAviso('');
-    setPreviewUrl('');
-    setCodigoVisible('');
     setCargando(false);
     setEnviandoCodigo(false);
+    limpiarParamsAcceso();
   }
 
   function cambiarModo(siguiente) {
     setModo(siguiente);
     setError('');
-    setAviso('');
-    setPreviewUrl('');
-    setCodigoVisible('');
     setContrasena('');
     setCodigo('');
     setCodigoEnviado(false);
@@ -63,34 +65,17 @@ export default function LoginPage({ onSesion }) {
 
   async function pedirCodigo() {
     setError('');
-    setAviso('');
-    setPreviewUrl('');
-    setCodigoVisible('');
-    if (!correo.trim()) {
-      setError('Escribe tu correo institucional.');
+    if (!esCorreoInstitucional(correo)) {
+      setError('Usa tu correo institucional (.edu.co).');
       correoRef.current?.focus();
       return;
     }
 
     setEnviandoCodigo(true);
     try {
-      const resultado = await enviarCodigoEstudiante({ correo });
+      await enviarCodigoEstudiante({ correo });
       setCodigoEnviado(true);
-      if (resultado.codigo) {
-        const recibido = String(resultado.codigo).toUpperCase();
-        setCodigoVisible(recibido);
-        setCodigo(recibido);
-        setAviso(resultado.mensaje || 'Lumina generó tu código. Ya quedó listo para entrar.');
-      } else if (resultado.previewUrl) {
-        setPreviewUrl(resultado.previewUrl);
-        setAviso('Abre el enlace para ver el código del correo de prueba.');
-        window.open(resultado.previewUrl, '_blank', 'noopener,noreferrer');
-      } else {
-        setAviso(
-          resultado.mensaje ||
-            'Si tu correo está convocado, te enviamos el código. Revisa tu bandeja (y spam).'
-        );
-      }
+      setCodigo('');
     } catch (err) {
       setError(err.message || 'No se pudo enviar el código.');
     } finally {
@@ -121,6 +106,7 @@ export default function LoginPage({ onSesion }) {
       if (!token) {
         throw new Error('El servidor no devolvió un token.');
       }
+      limpiarParamsAcceso();
       guardarSesion({ token, usuario });
       onSesion({ token, usuario });
     } catch (err) {
@@ -140,12 +126,8 @@ export default function LoginPage({ onSesion }) {
           <div className="login-lupa">
             <div className="login-lupa-cristal">
               <span
-                className="login-lupa-face a"
-                style={{ backgroundImage: "url('/personajes/elena.jpg')" }}
-              />
-              <span
-                className="login-lupa-face b"
-                style={{ backgroundImage: "url('/personajes/bruno.jpg')" }}
+                className="login-lupa-face"
+                style={{ backgroundImage: "url('/personajes/game-pj-03.jpg')" }}
               />
             </div>
             <span className="login-lupa-aro" />
@@ -168,20 +150,15 @@ export default function LoginPage({ onSesion }) {
               Iniciar sesión
             </button>
             <p className="login-hint">
-              Estudiante: correo + código · Docente/admin: correo + contraseña
+              Estudiante: correo + código de sesión - Docente/admin: correo + contraseña
             </p>
           </div>
         ) : (
-          <form className="login-splash-form" onSubmit={enviar}>
+          <form className="login-splash-form" onSubmit={enviar} autoComplete="off">
             <button type="button" className="login-back" onClick={volverPortada} disabled={cargando}>
               ← Volver
             </button>
             <h2>Iniciar sesión</h2>
-            <p className="login-form-lead">
-              {modo === 'estudiante'
-                ? 'Escribe tu correo y el código de tu convocatoria. Si no lo tienes, pídelo a tu correo.'
-                : 'Docentes y administradores: correo y contraseña.'}
-            </p>
 
             <div className="login-mode-tabs" role="tablist" aria-label="Tipo de cuenta">
               <button
@@ -207,7 +184,7 @@ export default function LoginPage({ onSesion }) {
             </div>
 
             <div className="field">
-              <label htmlFor="correo">Correo</label>
+              <label htmlFor="correo">Correo institucional</label>
               <input
                 id="correo"
                 ref={correoRef}
@@ -217,9 +194,6 @@ export default function LoginPage({ onSesion }) {
                 onChange={(e) => {
                   setCorreo(e.target.value);
                   setCodigoEnviado(false);
-                  setAviso('');
-                  setPreviewUrl('');
-                  setCodigoVisible('');
                   setCodigo('');
                 }}
                 placeholder={
@@ -250,22 +224,31 @@ export default function LoginPage({ onSesion }) {
               <>
                 <button
                   type="button"
-                  className="login-btn-game green login-btn-send-code"
+                  className={
+                    correoValidoEstudiante
+                      ? 'login-btn-send-code listo'
+                      : 'login-btn-send-code'
+                  }
                   onClick={pedirCodigo}
-                  disabled={cargando || enviandoCodigo || !correo.trim()}
+                  disabled={cargando || enviandoCodigo || !correoValidoEstudiante}
                 >
-                  {enviandoCodigo ? 'Enviando…' : codigoEnviado ? 'Reenviar código' : '¿No tienes el código? Enviarlo a mi correo'}
+                  {enviandoCodigo
+                    ? 'Enviando…'
+                    : codigoEnviado
+                      ? 'Reenviar código'
+                      : 'Enviar código'}
                 </button>
-
                 <div className="field">
-                  <label htmlFor="codigo">Código de la convocatoria (llega a tu correo)</label>
+                  <label htmlFor="codigo">Código de inicio de sesión</label>
                   <input
                     id="codigo"
                     type="text"
-                    autoComplete="one-time-code"
+                    name="codigo-sesion-lumina"
+                    autoComplete="off"
+                    inputMode="text"
                     value={codigo}
                     onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-                    placeholder="Ej. ABCD2345"
+                    placeholder="Código"
                     required
                     disabled={cargando}
                   />
@@ -273,19 +256,6 @@ export default function LoginPage({ onSesion }) {
               </>
             )}
 
-            {aviso ? <div className="login-ok">{aviso}</div> : null}
-            {codigoVisible ? (
-              <p className="login-codigo-demo">
-                Código Lumina: <strong>{codigoVisible}</strong>
-              </p>
-            ) : null}
-            {previewUrl ? (
-              <p className="login-preview">
-                <a href={previewUrl} target="_blank" rel="noreferrer">
-                  Ver código en el correo de prueba →
-                </a>
-              </p>
-            ) : null}
             {error ? <div className="alert">{error}</div> : null}
 
             <button

@@ -3,7 +3,9 @@ import { crearTransporteCorreo } from './notificaciones.smtp.js';
 
 const MAPA_TIPO = Object.freeze({
   [TIPOS_NOTIFICACION.CONVOCATORIA]: 'Convocatoria',
-  [TIPOS_NOTIFICACION.CAMBIO_ESTUDIANTE]: 'CambioConvocatoria'
+  [TIPOS_NOTIFICACION.CAMBIO_ESTUDIANTE]: 'CambioConvocatoria',
+  [TIPOS_NOTIFICACION.COMENTARIO_DOCENTE]: 'Retroalimentacion',
+  [TIPOS_NOTIFICACION.CODIGO_SESION]: 'CodigoSesion'
 });
 
 /**
@@ -69,7 +71,13 @@ export async function crearTransporteNotificaciones(repositorio, configuracion =
         }
       }
 
-      if (Number.isSafeInteger(usuarioId) && usuarioId > 0) {
+      // OTP de sesión no se guarda en Notificacion (CHECK de tipo + no ensucia el inbox).
+      const persistir =
+        meta.tipo !== TIPOS_NOTIFICACION.CODIGO_SESION &&
+        Number.isSafeInteger(usuarioId) &&
+        usuarioId > 0;
+
+      if (persistir) {
         await repositorio.insertar({
           usuarioId,
           actividadId: Number.isSafeInteger(actividadId) && actividadId > 0 ? actividadId : null,

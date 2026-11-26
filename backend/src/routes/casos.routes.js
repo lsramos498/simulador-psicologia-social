@@ -28,6 +28,7 @@ import { crearServicioProtegido } from '../modules/acceso/servicioProtegido.prox
 import { crearRepositorioCasos } from '../modules/casos/casos.repository.js';
 import { crearServicioCasos } from '../modules/casos/casos.service.js';
 import { estadoAsistenteIa, generarBorradorCaso } from '../modules/casos/asistenteIa.service.js';
+import { importarCasoDesdeTexto } from '../modules/casos/importarCasoDesdeTexto.js';
 
 /**
  * Convierte un error en la respuesta JSON estándar `{ error, codigo?, errores? }`.
@@ -193,6 +194,23 @@ export function crearRutasCasos(
   router.post('/asistente-ia', ...docente, (req, res) => ejecutar(res, async () => {
     const borrador = await generarBorradorCaso(datosEntrada(req));
     return res.status(200).json({ data: borrador });
+  }));
+
+  // Importa un caso desde texto extraído de PDF (cliente) y lo construye.
+  router.post('/importar-texto', ...docente, (req, res) => ejecutar(res, async (servicio) => {
+    const texto = typeof req.body?.texto === 'string' ? req.body.texto : '';
+    const publicar = Boolean(req.body?.publicar);
+    const borrador = importarCasoDesdeTexto(texto, { creadorId: req.usuario.id });
+    const { metaImportacion, ...payload } = borrador;
+    const caso = await servicio.construir(payload);
+    let resultado = caso;
+    if (publicar) {
+      resultado = await servicio.publicar(caso.id, req.usuario);
+    }
+    return res.status(201).json({
+      data: resultado,
+      metaImportacion
+    });
   }));
 
   // Crear un caso se protege con el patrón Proxy (no con requierePermiso),

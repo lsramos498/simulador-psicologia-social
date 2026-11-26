@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { listarNotificaciones, marcarNotificacionLeida } from '../api/client';
+import GameDecor from '../components/GameDecor';
 import { mensajeError } from '../utils/casoHelpers';
 
 export default function AvisosPage({ sesion }) {
@@ -62,13 +63,14 @@ export default function AvisosPage({ sesion }) {
 
   return (
     <section className="crear-caso">
+      <GameDecor variant="ambient" munecos={2} />
       <header className="crear-head">
         <div>
           <p className="kicker">Avisos</p>
           <h2>Bandeja de notificaciones</h2>
           <p className="muted-light">
             Convocatorias y cambios de actividad
-            {noLeidas ? ` · ${noLeidas} sin leer` : ''}.
+            {noLeidas ? ` - ${noLeidas} sin leer` : ''}.
           </p>
         </div>
         <div className="ficha-acciones">
@@ -99,12 +101,11 @@ export default function AvisosPage({ sesion }) {
       {cargando ? <p className="muted-light">Cargando avisos…</p> : null}
       <div className="panel-editor">
         {visibles.length === 0 ? (
-          <div className="empty-state">
-            <strong>{soloNoLeidas ? 'No hay avisos sin leer' : 'Bandeja vacía'}</strong>
-            <p className="muted-light">
-              Cuando haya convocatorias o cambios de actividad, aparecerán aquí.
-            </p>
-          </div>
+          <GameDecor
+            variant="empty"
+            title={soloNoLeidas ? 'No hay avisos sin leer' : 'Bandeja vacía'}
+            text="Cuando haya convocatorias o cambios de actividad, aparecerán aquí."
+          />
         ) : (
           <ul className="asistente-meta">
             {visibles.map((n) => (
@@ -112,8 +113,8 @@ export default function AvisosPage({ sesion }) {
                 <strong>{n.asunto || n.tipo}</strong>
                 <span className="muted-light">
                   {' '}
-                  · {n.estado} · {n.canal}
-                  {n.actividadId != null ? ` · actividad #${n.actividadId}` : ''}
+                  - {n.estado} - {n.canal}
+                  {n.actividadId != null ? ` - actividad #${n.actividadId}` : ''}
                 </span>
                 <p style={{ whiteSpace: 'pre-wrap', margin: '0.35rem 0' }}>
                   {(n.mensaje || '').slice(0, 500)}

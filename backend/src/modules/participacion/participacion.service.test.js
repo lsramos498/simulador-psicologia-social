@@ -97,9 +97,34 @@ test('Consulta respuestas del propietario incluso después de finalizar', async 
   assert.deepEqual(await servicio.consultar(1, 7), [{ id: 10, ...datos }]);
 });
 
+test('El docente de la actividad puede consultar respuestas ajenas', async () => {
+  const { servicio } = preparar({
+    obtenerSesion: async () => sesionEnCurso({ estudianteId: 7, docenteId: 55 })
+  });
+  assert.deepEqual(
+    await servicio.consultar(1, { id: 55, roles: ['Docente'] }),
+    [{ id: 10, ...datos }]
+  );
+});
+
+test('Un administrador puede consultar respuestas de cualquier sesión', async () => {
+  const { servicio } = preparar({
+    obtenerSesion: async () => sesionEnCurso({ estudianteId: 7, docenteId: 55 })
+  });
+  assert.deepEqual(
+    await servicio.consultar(1, { id: 99, roles: ['Administrador'] }),
+    [{ id: 10, ...datos }]
+  );
+});
+
 test('Consulta vacía y rechazo de consultas ajenas, inexistentes o inválidas', async () => {
   assert.deepEqual(await preparar({ consultarRespuestas: async () => [] }).servicio.consultar(1, 7), []);
   await assert.rejects(preparar().servicio.consultar(1, 8), { codigo: 'SESION_AJENA' });
+  await assert.rejects(
+    preparar({ obtenerSesion: async () => sesionEnCurso({ estudianteId: 7, docenteId: 55 }) })
+      .servicio.consultar(1, { id: 99, roles: ['Docente'] }),
+    { codigo: 'SESION_AJENA' }
+  );
   await assert.rejects(preparar({ obtenerSesion: async () => null }).servicio.consultar(1, 7), { codigo: 'SESION_NO_EXISTE' });
   await assert.rejects(preparar().servicio.consultar('1', 7), TypeError);
 });

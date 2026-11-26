@@ -316,6 +316,28 @@
       return filas;
     },
 
+    async listarEstudiantesAutorizadosDeActividades(actividadIds) {
+      const ids = (actividadIds || []).map(Number).filter((n) => n > 0);
+      if (!ids.length) return [];
+      const placeholders = ids.map(() => '?').join(', ');
+      const [filas] = await pool.execute(
+        `SELECT
+           ea.id,
+           ea.actividad_id AS actividadId,
+           ea.estudiante_id AS estudianteId,
+           u.nombres,
+           u.apellidos,
+           ea.estado,
+           ea.fechaAutorizacion
+         FROM EstudianteAutorizado ea
+         INNER JOIN Usuario u ON u.id = ea.estudiante_id
+         WHERE ea.actividad_id IN (${placeholders})
+         ORDER BY ea.actividad_id, ea.id`,
+        ids
+      );
+      return filas;
+    },
+
     async listarPorDocente(docenteId) {
       const [filas] = await pool.execute(
         `${consultaListado} WHERE a.docente_id = ? ORDER BY a.fechaInicio DESC, a.id DESC`,

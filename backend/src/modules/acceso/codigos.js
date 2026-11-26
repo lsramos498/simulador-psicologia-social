@@ -151,20 +151,22 @@ export function validarAccesoEstudiante(credenciales, registro, ahora = new Date
     throw crearErrorHttp('La convocatoria asociada al código no existe', 404);
   }
 
-  if (ahora < new Date(actividad.fechaInicio)) {
+  const sesionFinalizada = Boolean(
+    sesion && sesion.estado === ESTADOS_SESION.FINALIZADO
+  );
+
+  // Con sesión finalizada se permite el ingreso para ver nota y comentario docente.
+  if (!sesionFinalizada && ahora < new Date(actividad.fechaInicio)) {
     throw crearErrorHttp('La actividad todavía no ha comenzado', 403);
   }
 
-  if (ahora > new Date(actividad.fechaFin)) {
+  if (!sesionFinalizada && ahora > new Date(actividad.fechaFin)) {
     throw crearErrorHttp('La actividad ya terminó', 403);
-  }
-
-  if (sesion && sesion.estado === ESTADOS_SESION.FINALIZADO) {
-    throw crearErrorHttp('La participación en esta actividad ya fue finalizada', 403);
   }
 
   return {
     estudianteId: estudiante.id,
-    actividadId: actividad.id
+    actividadId: actividad.id,
+    verResultado: sesionFinalizada
   };
 }

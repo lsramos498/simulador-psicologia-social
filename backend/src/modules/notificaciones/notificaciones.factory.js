@@ -1,11 +1,15 @@
 import {
   NotificacionConvocatoriaStrategy,
-  NotificacionCambioEstudianteStrategy
+  NotificacionCambioEstudianteStrategy,
+  NotificacionComentarioDocenteStrategy,
+  NotificacionCodigoSesionStrategy
 } from './notificaciones.strategy.js';
 
 export const TIPOS_NOTIFICACION = Object.freeze({
   CONVOCATORIA: 'CONVOCATORIA',
-  CAMBIO_ESTUDIANTE: 'CAMBIO_ESTUDIANTE'
+  CAMBIO_ESTUDIANTE: 'CAMBIO_ESTUDIANTE',
+  COMENTARIO_DOCENTE: 'COMENTARIO_DOCENTE',
+  CODIGO_SESION: 'CODIGO_SESION'
 });
 export class CreadorNotificacion {
   crearEstrategia() {
@@ -31,6 +35,18 @@ export class CreadorCambioEstudiante extends CreadorNotificacion {
     return new NotificacionCambioEstudianteStrategy();
   }
 }
+
+export class CreadorComentarioDocente extends CreadorNotificacion {
+  crearEstrategia() {
+    return new NotificacionComentarioDocenteStrategy();
+  }
+}
+
+export class CreadorCodigoSesion extends CreadorNotificacion {
+  crearEstrategia() {
+    return new NotificacionCodigoSesionStrategy();
+  }
+}
 export function obtenerCreadorNotificacion(tipo) {
   switch (tipo) {
     case TIPOS_NOTIFICACION.CONVOCATORIA:
@@ -38,6 +54,12 @@ export function obtenerCreadorNotificacion(tipo) {
 
     case TIPOS_NOTIFICACION.CAMBIO_ESTUDIANTE:
       return new CreadorCambioEstudiante();
+
+    case TIPOS_NOTIFICACION.COMENTARIO_DOCENTE:
+      return new CreadorComentarioDocente();
+
+    case TIPOS_NOTIFICACION.CODIGO_SESION:
+      return new CreadorCodigoSesion();
 
     default:
       throw new TypeError(

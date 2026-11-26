@@ -12,6 +12,7 @@ import {
   obtenerCaso,
   obtenerSesion
 } from '../api/client';
+import GameDecor from '../components/GameDecor';
 import { mensajeError } from '../utils/casoHelpers';
 import { enriquecerRespuestas } from '../utils/casoPreguntas';
 import { esAdministrador, esDocente } from '../utils/roles';
@@ -109,7 +110,7 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
       const [ses, prog, resp, retro] = await Promise.all([
         obtenerSesion(token, sesionId),
         consultarProgresoSesion(token, sesionId).catch(() => null),
-        consultarRespuestasSesion(token, sesionId).catch(() => null),
+        consultarRespuestasSesion(token, sesionId),
         consultarRetroalimentacionSesion(token, sesionId).catch(() => null)
       ]);
       const sesionData = ses.data?.sesion || ses.data;
@@ -123,7 +124,7 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
           caso = null;
         }
       }
-      const crudas = resp?.data || [];
+      const crudas = Array.isArray(resp?.data) ? resp.data : [];
       setComentario(ses.data?.evaluacion?.comentarioDocente ?? '');
       setDetalle({
         sesion: sesionData,
@@ -152,7 +153,16 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
         evaluacion: { ...actual.evaluacion, comentarioDocente: data.comentarioDocente }
       } : actual);
       setComentario(data.comentarioDocente);
-      setMensaje('Comentario docente guardado.');
+      const aviso = data?.notificacion;
+      if (aviso?.estado === 'Fallida') {
+        setMensaje(
+          `Comentario enviado. El correo no se pudo entregar${aviso.error ? `: ${aviso.error}` : '.'}`
+        );
+      } else if (aviso?.destinatario) {
+        setMensaje(`Comentario enviado al estudiante (${aviso.destinatario}).`);
+      } else {
+        setMensaje('Comentario enviado.');
+      }
     } catch (err) {
       setError(mensajeError(err));
     } finally {
@@ -207,13 +217,14 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
 
   return (
     <section className="crear-caso">
+      <GameDecor variant="ambient" munecos={2} />
       <header className="crear-head">
         <div>
           <p className="kicker">Docente</p>
-          <h2>Seguimiento en vivo</h2>
+          <h2>Seguimiento y resultados</h2>
           <p className="muted-light">
-            Monitorea sesiones, progreso y respuestas. Se actualiza cada 12 s.
-            {enCurso ? ` · ${enCurso} en curso` : ''}
+            Ves quién entró, progreso, respuestas, nota y retroalimentación. Se actualiza cada 12 s.
+            {enCurso ? ` - ${enCurso} en curso` : ''}
           </p>
         </div>
         <div className="ficha-acciones">
@@ -243,9 +254,12 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
       {cargando ? <p className="muted-light">Cargando actividades…</p> : null}
 
       {actividades.length === 0 && !cargando ? (
-        <div className="empty-state">
-          <strong>No hay actividades para monitorear</strong>
-          <p className="muted-light">Creá e iniciá una actividad para ver las sesiones de los estudiantes.</p>
+        <div className="game-empty-wrap">
+          <GameDecor
+            variant="empty"
+            title="No hay actividades para monitorear"
+            text="Crea e inicia una actividad para ver las sesiones de los estudiantes."
+          />
           {onIrActividades ? (
             <button type="button" className="btn-play" onClick={onIrActividades}>
               Ir a Actividades
@@ -260,7 +274,7 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
               <option value="">Elegir actividad</option>
               {actividades.map((a) => (
                 <option key={a.id} value={a.id}>
-                  #{a.id} · {a.estado} · caso {a.casoId}
+                  #{a.id} - {a.estado} - caso {a.casoId}
                 </option>
               ))}
             </select>
@@ -269,38 +283,48 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
           {actividadDetalle ? (
             <div className="asistente-resultado" style={{ marginBottom: '1rem' }}>
               <strong>
-                {casoTitulo || `Caso #${actividadDetalle.casoId}`} · {actividadDetalle.estado}
+                {casoTitulo || `Caso #${actividadDetalle.casoId}`} - {actividadDetalle.estado}
               </strong>
               <p className="muted-light" style={{ margin: '0.35rem 0 0' }}>
                 {actividadDetalle.fechaInicio} → {actividadDetalle.fechaFin}
                 {actividadDetalle.estudiantesAutorizados?.length != null
-                  ? ` · ${actividadDetalle.estudiantesAutorizados.length} convocados`
+                  ? ` - ${actividadDetalle.estudiantesAutorizados.length} convocados`
                   : ''}
               </p>
+              <div className="estudiantes-acciones-fila" style={{ marginTop: '0.75rem' }}>
+                <span className="chip-ejemplo">Sesiones {sesiones.length}</span>
+                <span className="chip-ejemplo">En curso {enCurso}</span>
+                <span className="chip-ejemplo">
+                  Finalizadas {sesiones.filter((s) => s.estado === 'Finalizado').length}
+                </span>
+                <span className="chip-ejemplo">
+                  Sin iniciar {sesiones.filter((s) => s.estado === 'Sin iniciar' || s.estado === 'Programada').length}
+                </span>
+              </div>
             </div>
           ) : null}
 
           <div className="panel-editor">
             <h3>Sesiones ({sesiones.length})</h3>
             {sesiones.length === 0 ? (
-              <div className="empty-state soft">
-                <p className="muted-light" style={{ margin: 0 }}>
-                  No hay sesiones aún. Si la actividad está Programada, iniciála en Actividades para
-                  preparar las de los convocados.
-                </p>
-              </div>
+              <GameDecor
+                variant="empty"
+                munecos={2}
+                title="No hay sesiones aún"
+                text="Si la actividad está Programada, iniciala en Actividades para preparar las de los convocados."
+              />
             ) : (
               <div className="arbol-escenas">
                 {sesiones.map((s) => (
                   <article key={s.id} className="nodo-escena">
                     <header>
                       <strong>
-                        #{s.id} · {s.nombres} {s.apellidos}
-                        {s.estado === 'En curso' ? ' · 🟢' : ''}
+                        #{s.id} - {s.nombres} {s.apellidos}
+                        {s.estado === 'En curso' ? ' - 🟢' : ''}
                       </strong>
                       <p className="muted-light">
-                        {s.correo || `Estudiante #${s.estudianteId}`} · {s.estado}
-                        {s.numeroIntento ? ` · intento ${s.numeroIntento}` : ''}
+                        {s.correo || `Estudiante #${s.estudianteId}`} - {s.estado}
+                        {s.numeroIntento ? ` - intento ${s.numeroIntento}` : ''}
                       </p>
                     </header>
                     <div className="ficha-acciones">
@@ -334,20 +358,21 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
       {detalle ? (
         <div className="panel-editor">
           <h3>
-            Detalle sesión #{detalle.sesion?.id} · {detalle.sesion?.estado}
+            Detalle sesión #{detalle.sesion?.id} - {detalle.sesion?.estado}
           </h3>
           {detalle.evaluacion?.resultado != null ? (
             <p className="sim-nota">
-              Nota oficial: <strong>{detalle.evaluacion.resultado}</strong>
+              Nota oficial: <strong>{detalle.evaluacion.resultado}</strong> / 5
             </p>
           ) : null}
           {detalle.evaluacion?.comentarioDocente ? (
-            <div>
-              <h4>Comentario docente guardado</h4>
-              <p style={{ whiteSpace: 'pre-wrap' }}>{detalle.evaluacion.comentarioDocente}</p>
+            <div className="alert alert-ok">
+              <strong>Comentario enviado</strong>
+              <p style={{ whiteSpace: 'pre-wrap', margin: '0.5rem 0 0' }}>
+                {detalle.evaluacion.comentarioDocente}
+              </p>
             </div>
-          ) : null}
-          {puedeComentar ? (
+          ) : puedeComentar ? (
             <form onSubmit={guardarComentario}>
               <div className="field">
                 <label htmlFor="comentario-docente">Comentario docente</label>
@@ -364,7 +389,7 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
                 className="btn-play"
                 disabled={trabajando || !comentario.trim()}
               >
-                Guardar comentario
+                {trabajando ? 'Enviando…' : 'Enviar comentario'}
               </button>
             </form>
           ) : null}
@@ -375,7 +400,7 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
                 ? ` / ${detalle.progreso.totalPreguntas}`
                 : ''}
               {detalle.progreso.preguntasPendientes != null
-                ? ` · pendientes ${detalle.progreso.preguntasPendientes}`
+                ? ` - pendientes ${detalle.progreso.preguntasPendientes}`
                 : ''}
             </p>
           ) : null}
@@ -386,11 +411,11 @@ export default function SeguimientoPage({ sesion, onIrActividades }) {
             <ul className="asistente-meta">
               {detalle.respuestas.map((r) => (
                 <li key={r.key}>
-                  {r.escena ? <em className="muted-light">{r.escena} · </em> : null}
+                  {r.escena ? <em className="muted-light">{r.escena} - </em> : null}
                   <strong>{r.pregunta}</strong>
                   <br />
                   Elegió: {r.opcionTexto}
-                  {r.esCorrecta != null ? (r.esCorrecta ? ' · correcta' : ' · incorrecta') : ''}
+                  {r.esCorrecta != null ? (r.esCorrecta ? ' - correcta' : ' - incorrecta') : ''}
                 </li>
               ))}
             </ul>

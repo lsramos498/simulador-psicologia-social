@@ -137,7 +137,7 @@ export default function CasoFicha({
                   <header>
                     <strong>
                       {escena.orden}. {escena.nombre}
-                      {escena.esFinal ? ' · final' : ''}
+                      {escena.esFinal ? ' - final' : ''}
                     </strong>
                     <p className="muted-light">{escena.contexto}</p>
                     <p className="muted-light">
@@ -154,7 +154,7 @@ export default function CasoFicha({
                         {(decision.opciones || []).map((op) => (
                           <li key={op.id}>
                             <span className={op.esCorrecta ? 'op-ok' : 'op-no'}>
-                              {op.esCorrecta ? '✓' : '·'} {op.texto}
+                              {op.esCorrecta ? '✓' : ' - '} {op.texto}
                             </span>
                             {op.explicacion ? (
                               <small className="muted-light"> — {op.explicacion}</small>
@@ -178,7 +178,7 @@ export default function CasoFicha({
             {(caso.rubrica.criterios || []).map((c) => (
               <div key={c.id || c.nombre} className="criterio-linea">
                 <span>
-                  {c.nombre} · {c.ponderacion}% · máx {c.puntajeMaximo}
+                  {c.nombre} - {c.ponderacion}% - máx {c.puntajeMaximo}
                 </span>
                 <ul>
                   {(c.niveles || []).map((n) => (

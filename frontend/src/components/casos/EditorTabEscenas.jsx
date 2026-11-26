@@ -1,3 +1,4 @@
+import BancoPersonajes from '../BancoPersonajes';
 import SelectorEscenarios from '../SelectorEscenarios';
 import { portadaEscena } from '../../utils/escenasLocal';
 
@@ -9,6 +10,8 @@ export default function EditorTabEscenas({
   setEscenaForm,
   escenarioNuevo,
   setEscenarioNuevo,
+  personajesEscenaNueva = [],
+  onTogglePersonajeEscena,
   decisionForms,
   setDecisionForms,
   opcionForms,
@@ -26,13 +29,17 @@ export default function EditorTabEscenas({
     <div className="panel-editor">
       {(escenas || []).length === 0 ? (
         <p className="muted-light">
-          Todavía no hay lugares. Elige un escenario abajo o usa la IA en Historia.
+          Todavía no hay escenas. Crea una abajo: elige escenario y personajes en el mismo paso.
         </p>
       ) : null}
-      <form onSubmit={onCrearEscena} className="bloque-nuevo">
+      <form onSubmit={onCrearEscena} className="bloque-nuevo escena-creacion-bloque">
         <h3>Nueva escena</h3>
+        <p className="muted-light">
+          En esta misma creación eliges el escenario y los personajes que participan. No hay un módulo
+          aparte de personajes.
+        </p>
         <SelectorEscenarios
-          titulo="¿A qué lugar va el estudiante en esta escena?"
+          titulo="Escenario de esta escena"
           valor={escenarioNuevo}
           onElegir={(esc) => {
             setEscenarioNuevo(esc);
@@ -42,6 +49,12 @@ export default function EditorTabEscenas({
               contexto: esc.descripcion
             });
           }}
+        />
+        <BancoPersonajes
+          modo="elegir"
+          titulo="Personajes de esta escena"
+          seleccionados={personajesEscenaNueva}
+          onToggle={onTogglePersonajeEscena}
         />
         <div className="crear-grid">
           <div className="field">
@@ -127,29 +140,34 @@ export default function EditorTabEscenas({
               </div>
 
               <div className="asociar-row">
-                <label>
-                  Asociar personaje
-                  <select
-                    defaultValue=""
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      e.target.value = '';
-                      onVincularPj(escena.id, val);
-                    }}
-                  >
-                    <option value="" disabled>
-                      Elegir…
-                    </option>
-                    {disponibles.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <p className="muted-light">
-                  En escena: {(escena.personajes || []).map((p) => p.nombre).join(', ') || 'ninguno'}
+                <p className="muted-light" style={{ margin: 0 }}>
+                  Personajes en esta escena:{' '}
+                  <strong>
+                    {(escena.personajes || []).map((p) => p.nombre).join(', ') || 'ninguno'}
+                  </strong>
                 </p>
+                {disponibles.length > 0 ? (
+                  <label>
+                    Agregar otro del caso
+                    <select
+                      defaultValue=""
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        e.target.value = '';
+                        onVincularPj(escena.id, val);
+                      }}
+                    >
+                      <option value="" disabled>
+                        Elegir…
+                      </option>
+                      {disponibles.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
               </div>
 
               {(escena.decisiones || []).map((decision) => {

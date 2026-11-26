@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { crearEspacio, listarEspacios } from '../api/client';
+import GameDecor from '../components/GameDecor';
 import { mensajeError } from '../utils/casoHelpers';
 
 export default function EspaciosPage({ sesion }) {
@@ -50,6 +51,7 @@ export default function EspaciosPage({ sesion }) {
 
   return (
     <section className="crear-caso">
+      <GameDecor variant="ambient" munecos={2} />
       <header className="crear-head">
         <div>
           <p className="kicker">Espacios</p>
@@ -92,15 +94,16 @@ export default function EspaciosPage({ sesion }) {
       <div className="panel-editor">
         <h3>Registrados ({espacios.length})</h3>
         {espacios.length === 0 ? (
-          <div className="empty-state soft">
-            <strong>Todavía no hay espacios</strong>
-            <p className="muted-light">Creá uno arriba; luego lo elegís al programar una actividad.</p>
-          </div>
+          <GameDecor
+            variant="empty"
+            title="Todavía no hay espacios"
+            text="Crea uno arriba; luego lo eliges al programar una actividad."
+          />
         ) : (
           <ul className="asistente-meta">
             {espacios.map((e) => (
               <li key={e.id}>
-                #{e.id} · {e.nombre} {e.codigo ? `(${e.codigo})` : ''}
+                #{e.id} - {e.nombre} {e.codigo ? `(${e.codigo})` : ''}
               </li>
             ))}
           </ul>

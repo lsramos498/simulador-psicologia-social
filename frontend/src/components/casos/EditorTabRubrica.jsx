@@ -4,6 +4,7 @@ import {
   descargarRubricaJson,
   leerArchivoRubrica
 } from '../../utils/rubricaArchivo';
+import { extraerTextoPdf } from '../../utils/pdfTexto';
 
 export default function EditorTabRubrica({
   caso,
@@ -23,7 +24,8 @@ export default function EditorTabRubrica({
         <div>
           <p className="kicker">Archivo de rúbrica</p>
           <p className="muted-light">
-            Sube un JSON o CSV, o descarga la plantilla y edítala en Excel/Word y vuelve a subirla.
+            Sube PDF, JSON, CSV o TXT. También puedes descargar la plantilla, editarla y volver a
+            subirla.
           </p>
         </div>
         <div className="ficha-acciones">
@@ -31,16 +33,20 @@ export default function EditorTabRubrica({
             Subir rúbrica
             <input
               type="file"
-              accept=".json,.csv,.txt,application/json,text/csv"
+              accept=".json,.csv,.txt,.pdf,application/json,text/csv,application/pdf"
               hidden
               onChange={async (e) => {
                 const file = e.target.files?.[0];
                 e.target.value = '';
                 if (!file) return;
                 try {
-                  const importada = await leerArchivoRubrica(file);
+                  const importada = await leerArchivoRubrica(file, {
+                    extraerPdf: extraerTextoPdf
+                  });
                   setRubrica(importada);
-                  onMensaje(`Rúbrica «${importada.nombre}» cargada. Revisa y guarda.`);
+                  onMensaje(
+                    `Rúbrica «${importada.nombre}» cargada (${importada.criterios?.length || 0} criterios). Revisa y guarda.`
+                  );
                   onError('');
                 } catch (err) {
                   onError(err.message || 'No se pudo leer el archivo.');
@@ -236,10 +242,10 @@ export default function EditorTabRubrica({
                 {
                   nombre: `Criterio ${rubrica.criterios.length + 1}`,
                   ponderacion: 0,
-                  puntajeMaximo: 4,
+                  puntajeMaximo: 5,
                   niveles: [
                     { nombre: 'Básico', descripcion: '', puntaje: 1, orden: 1 },
-                    { nombre: 'Alto', descripcion: '', puntaje: 4, orden: 2 }
+                    { nombre: 'Alto', descripcion: '', puntaje: 5, orden: 2 }
                   ]
                 }
               ]

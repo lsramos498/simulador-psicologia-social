@@ -28,26 +28,26 @@ export function dialogosDeCaso(caso) {
   return { ...demo, ...local, ...servidor };
 }
 
-/** Genera líneas útiles a partir del perfil del personaje y la escena. */
+/** Genera pistas / fragmentos de historia (no entrevista). */
 export function dialogosAutomaticos(personaje, escena, caso) {
   const nombre = personaje?.nombre || 'Persona';
-  const rol = personaje?.rolSocial || 'testigo';
+  const rol = personaje?.rolSocial || 'participante';
   const perfil = String(personaje?.perfil || '').trim();
   const pautas = String(personaje?.pautasComportamiento || '').trim();
   const lugar = escena?.nombre || 'este lugar';
   const contexto = String(escena?.contexto || caso?.contextoHistoria || '').trim();
 
   const lineas = [
-    `${nombre}: Hola. Soy ${rol.toLocaleLowerCase('es')} aquí en ${lugar}. ¿Qué necesitas saber?`,
+    `${nombre} (${rol}): En ${lugar} se siente la tensión. Esto es lo que alcanzo a aportar.`,
     perfil
       ? `${nombre}: ${perfil}`
-      : `${nombre}: He visto parte de lo que está pasando, pero prefiero ir con cuidado.`,
+      : `${nombre}: Vi solo una parte de lo que pasó; mi versión es incompleta.`,
     contexto
-      ? `${nombre}: Sobre lo de «${lugar}»: ${contexto.slice(0, 180)}${contexto.length > 180 ? '…' : ''}`
-      : `${nombre}: Si preguntas con respeto, te cuento lo que sé.`,
+      ? `${nombre}: Pista sobre este lugar: ${contexto.slice(0, 200)}${contexto.length > 200 ? '…' : ''}`
+      : `${nombre}: Si contrastas mi relato con el de otros, vas a notar huecos.`,
     pautas
-      ? `${nombre}: Ten en cuenta esto: ${pautas}`
-      : `${nombre}: Te recomiendo contrastar mi versión con la de otras personas.`
+      ? `${nombre}: Fíjate en esto: ${pautas}`
+      : `${nombre}: No te quedes solo conmigo: cada persona suma un pedazo distinto de la historia.`
   ];
   return lineas;
 }

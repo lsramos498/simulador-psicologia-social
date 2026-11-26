@@ -196,6 +196,102 @@ export function crearRepositorioAcceso(pool) {
       `, [codigoHash, fechaAutorizacion, actividadId, estudianteId]);
 
       return resultado.affectedRows;
+    },
+
+    async asegurarTablaCodigoLogin() {
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS CodigoLoginEstudiante (
+          id INT NOT NULL AUTO_INCREMENT,
+          usuario_id INT NOT NULL,
+          codigoHash VARCHAR(64) NOT NULL,
+          expiraEn DATETIME NOT NULL,
+          usado BOOLEAN NOT NULL DEFAULT FALSE,
+          fechaCreacion DATETIME NOT NULL,
+          PRIMARY KEY (id),
+          KEY idx_codigo_login_hash (codigoHash),
+          KEY idx_codigo_login_usuario (usuario_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+    },
+
+    async guardarCodigoLogin(usuarioId, codigoHash, expiraEn, fechaCreacion = new Date()) {
+      await this.asegurarTablaCodigoLogin();
+      await pool.execute(
+        `UPDATE CodigoLoginEstudiante SET usado = TRUE WHERE usuario_id = ? AND usado = FALSE`,
+        [usuarioId]
+      );
+      const [resultado] = await pool.execute(
+        `INSERT INTO CodigoLoginEstudiante (usuario_id, codigoHash, expiraEn, usado, fechaCreacion)
+         VALUES (?, ?, ?, FALSE, ?)`,
+        [usuarioId, codigoHash, expiraEn, fechaCreacion]
+      );
+      return resultado.insertId;
+    },
+
+    async consumirCodigoLogin(codigoHash, ahora = new Date()) {
+      await this.asegurarTablaCodigoLogin();
+      if (typeof codigoHash !== 'string' || !HASH_CODIGO_VALIDO.test(codigoHash)) {
+        return null;
+      }
+      const [filas] = await pool.execute(
+        `SELECT id, usuario_id AS usuarioId, expiraEn, usado
+         FROM CodigoLoginEstudiante
+         WHERE codigoHash = ?
+         ORDER BY id DESC
+         LIMIT 1`,
+        [codigoHash]
+      );
+      const fila = filas[0];
+      if (!fila || fila.usado) return null;
+      if (new Date(fila.expiraEn).getTime() < ahora.getTime()) return null;
+      await pool.execute(`UPDATE CodigoLoginEstudiante SET usado = TRUE WHERE id = ?`, [fila.id]);
+      return { usuarioId: Number(fila.usuarioId) };
+    },
+
+    /** Actividades a las que el estudiante está convocado (vista segura, sin contenido del caso). */
+    async listarActividadesDelEstudiante(estudianteId) {
+      validarId(estudianteId);
+      const [filas] = await pool.execute(
+        `SELECT
+           ap.id AS actividadId,
+           ap.estado AS estadoActividad,
+           ap.fechaInicio,
+           ap.fechaFin,
+           ap.lugar,
+           c.id AS casoId,
+           c.titulo AS casoTitulo,
+           ea.estado AS estadoAutorizacion,
+           s.id AS sesionId,
+           s.estado AS estadoSesion
+         FROM EstudianteAutorizado ea
+         JOIN ActividadProgramada ap ON ap.id = ea.actividad_id
+         JOIN Caso c ON c.id = ap.caso_id
+         LEFT JOIN SesionSimulacion s
+           ON s.actividad_id = ap.id
+          AND s.estudiante_id = ea.estudiante_id
+          AND s.numeroIntento = (
+            SELECT MAX(s2.numeroIntento)
+            FROM SesionSimulacion s2
+            WHERE s2.actividad_id = ap.id AND s2.estudiante_id = ea.estudiante_id
+          )
+         WHERE ea.estudiante_id = ?
+           AND ea.estado = 'Autorizado'
+         ORDER BY ap.fechaInicio DESC, ap.id DESC`,
+        [estudianteId]
+      );
+      return filas.map((f) => ({
+        id: Number(f.actividadId),
+        estado: f.estadoActividad,
+        fechaInicio: f.fechaInicio,
+        fechaFin: f.fechaFin,
+        lugar: f.lugar || null,
+        casoId: Number(f.casoId),
+        casoTitulo: f.casoTitulo,
+        sesionId: f.sesionId != null ? Number(f.sesionId) : null,
+        estadoSesion: f.estadoSesion || null,
+        puedeJugar: f.estadoActividad === 'Iniciada' && f.estadoSesion !== 'Finalizado',
+        soloVistaPrevia: f.estadoActividad === 'Programada'
+      }));
     }
   };
 }

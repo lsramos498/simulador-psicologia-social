@@ -16,7 +16,17 @@ function preparar(t) {
   db.exec(`
     CREATE TABLE ActividadProgramada (
       id INTEGER PRIMARY KEY, docente_id INTEGER, estado TEXT, fechaInicio TEXT,
-      fechaFin TEXT, tiempoLimiteSegundos INTEGER, rubrica_id INTEGER, caso_id INTEGER
+      fechaFin TEXT, tiempoLimiteSegundos INTEGER, rubrica_id INTEGER, caso_id INTEGER,
+      lugar TEXT, mensajePersonalizado TEXT
+    );
+    CREATE TABLE Caso (
+      id INTEGER PRIMARY KEY, titulo TEXT
+    );
+    CREATE TABLE Usuario (
+      id INTEGER PRIMARY KEY, nombres TEXT, apellidos TEXT, correoInstitucional TEXT
+    );
+    CREATE TABLE EstudianteAutorizado (
+      id INTEGER PRIMARY KEY, actividad_id INTEGER, estudiante_id INTEGER, estado TEXT
     );
     CREATE TABLE SesionSimulacion (
       id INTEGER PRIMARY KEY, actividad_id INTEGER, estudiante_id INTEGER,
@@ -30,8 +40,18 @@ function preparar(t) {
     CREATE TABLE ResultadoCriterio (
       evaluacion_id INTEGER, criterio_id INTEGER, puntuacion DECIMAL(8,2), observacion TEXT
     );
+    INSERT INTO Caso VALUES (31, 'Caso de prueba');
+    INSERT INTO Usuario VALUES
+      (11, 'Docente', 'Prueba', 'docente@u.edu'),
+      (20, 'Estudiante', 'Uno', 'est20@u.edu'),
+      (22, 'Estudiante', 'Dos', 'est22@u.edu'),
+      (23, 'Estudiante', 'Tres', 'est23@u.edu');
     INSERT INTO ActividadProgramada VALUES
-      (4, 11, 'Iniciada', '2026-05-01', '2026-05-02', 1800, 21, 31);
+      (4, 11, 'Iniciada', '2026-05-01', '2026-05-02', 1800, 21, 31, 'Aula', 'Mensaje');
+    INSERT INTO EstudianteAutorizado VALUES
+      (1, 4, 20, 'Autorizado'),
+      (2, 4, 22, 'Autorizado'),
+      (3, 4, 23, 'Autorizado');
     INSERT INTO SesionSimulacion VALUES
       (51, 4, 20, 1, 'Finalizado', NULL, NULL, 0, NULL),
       (52, 4, 22, 1, 'En curso', NULL, NULL, 0, NULL),
@@ -74,7 +94,8 @@ test('el creador registra y edita el comentario sin cambiar la nota ni el mensaj
   const estado = db.prepare('SELECT resultado, retroalimentacionGeneral, comentarioDocente FROM Evaluacion');
   const texto = 'Buen análisis.\nRevisa el último punto.';
   const creado = await guardar(`  ${texto}  `).expect(201);
-  assert.deepEqual(creado.body.data, { comentarioDocente: texto });
+  assert.equal(creado.body.data.comentarioDocente, texto);
+  assert.equal(creado.body.data.notificacion, null);
   assert.deepEqual({ ...estado.get() }, {
     resultado: 4.25,
     retroalimentacionGeneral: 'Resultado automático',

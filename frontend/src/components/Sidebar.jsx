@@ -3,14 +3,12 @@ import { listarNotificaciones } from '../api/client';
 import { esAdministrador } from '../utils/roles';
 
 const ITEMS_BASE = [
-  { id: 'historias', label: 'Historias', icon: 'home' },
-  { id: 'banco', label: 'Personajes', icon: 'people' },
-  { id: 'crear', label: 'Crear', icon: 'plus' },
+  { id: 'historias', label: 'Casos psicológicos', icon: 'home' },
+  { id: 'crear', label: 'Crear caso', icon: 'plus' },
+  { id: 'estudiantes', label: 'Grupos y estudiantes', icon: 'people' },
   { id: 'actividades', label: 'Actividades', icon: 'calendar' },
   { id: 'seguimiento', label: 'Seguimiento', icon: 'eye' },
-  { id: 'espacios', label: 'Espacios', icon: 'place' },
-  { id: 'avisos', label: 'Avisos', icon: 'bell' },
-  { id: 'biblioteca', label: 'Biblioteca', icon: 'box' }
+  { id: 'avisos', label: 'Avisos', icon: 'bell' }
 ];
 
 function Icon({ name }) {
@@ -59,14 +57,6 @@ function Icon({ name }) {
       </svg>
     );
   }
-  if (name === 'place') {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
-        <circle cx="12" cy="10" r="2.2" fill="currentColor" />
-      </svg>
-    );
-  }
   if (name === 'shield') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -77,7 +67,6 @@ function Icon({ name }) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-11Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
     </svg>
   );
 }
@@ -110,18 +99,24 @@ export default function Sidebar({ activa, onCambiar, usuario, onSalir, token }) 
   }, [token, activa]);
 
   return (
-    <aside className="side-nav">
+    <aside className="side-nav side-nav-game">
       <div className="side-brand">
+        <span
+          className="side-mascot sim-fin-bob"
+          style={{ backgroundImage: "url('/personajes/game-guia.jpg')" }}
+          aria-hidden="true"
+        />
         <span className="brand-mark">Lumina</span>
-        <small>{admin ? 'Administración' : 'Docente'}</small>
+        <small className="side-role-chip">{admin ? 'Admin' : 'Docente'}</small>
       </div>
 
       <nav aria-label="Principal">
-        {items.map((item) => (
+        {items.map((item, idx) => (
           <button
             key={item.id}
             type="button"
             className={activa === item.id ? 'side-item activo' : 'side-item'}
+            style={{ '--side-delay': `${idx * 55}ms` }}
             onClick={() => onCambiar(item.id)}
           >
             <span className="side-icon">

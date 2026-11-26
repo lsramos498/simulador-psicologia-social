@@ -8,11 +8,12 @@ import espaciosRoutes from './routes/espacios.routes.js';
 import sesionesRoutes from './routes/sesiones.routes.js';
 import participacionRoutes from './routes/participacion.routes.js';
 import notificacionesRoutes from './routes/notificaciones.routes.js';
+import gruposRoutes from './routes/grupos.routes.js';
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '4mb' }));
 
 app.get('/', (_req, res) => {
   res.status(200).json({
@@ -29,5 +30,6 @@ app.use('/api/espacios', espaciosRoutes);
 app.use('/api/sesiones', sesionesRoutes);
 app.use('/api/participacion', participacionRoutes);
 app.use('/api/notificaciones', notificacionesRoutes);
+app.use('/api/grupos', gruposRoutes);
 
 export default app;

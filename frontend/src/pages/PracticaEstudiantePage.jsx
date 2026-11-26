@@ -5,8 +5,6 @@ import {
   consultarSesionActividad,
   finalizarSesion,
   iniciarSesionActividad,
-  listarNotificaciones,
-  marcarNotificacionLeida,
   obtenerCaso,
   registrarRespuesta
 } from '../api/client';
@@ -14,6 +12,8 @@ import SimulacionPlayer from '../components/casos/SimulacionPlayer';
 import PracticaInicio from '../components/practica/PracticaInicio';
 import PracticaResultado from '../components/practica/PracticaResultado';
 import PracticaShell from '../components/practica/PracticaShell';
+import EstudiantePanel from '../components/practica/EstudiantePanel';
+import GameDecor from '../components/GameDecor';
 import { mensajeError } from '../utils/casoHelpers';
 
 function preguntaDeCaso(caso, decisionId) {
@@ -30,17 +30,19 @@ function preguntaDeCaso(caso, decisionId) {
 
 export default function PracticaEstudiantePage({ sesion, onSalir }) {
   const { token, usuario } = sesion;
-  const actividadId = Number(usuario?.actividadId);
-  const [fase, setFase] = useState('inicio'); // inicio | jugar | fin
+  const [actividadId, setActividadId] = useState(
+    () => (usuario?.actividadId != null ? Number(usuario.actividadId) : null)
+  );
+  const [vista, setVista] = useState('panel'); // panel | practica | jugar | resultados
   const [caso, setCaso] = useState(null);
+  const [actividad, setActividad] = useState(null);
   const [sesionData, setSesionData] = useState(null);
   const [progreso, setProgreso] = useState(null);
   const [retro, setRetro] = useState(null);
   const [evaluacion, setEvaluacion] = useState(null);
-  const [notificaciones, setNotificaciones] = useState([]);
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
-  const [cargando, setCargando] = useState(true);
+  const [cargando, setCargando] = useState(false);
   const [errorLive, setErrorLive] = useState('');
 
   const retroItems = useMemo(() => {
@@ -56,17 +58,16 @@ export default function PracticaEstudiantePage({ sesion, onSalir }) {
         item.fundamentoTeorico ||
         item.opcionTexto ||
         item.texto ||
-        ''
+        '',
+      esCorrecta: item.esCorrecta
     }));
   }, [retro, caso]);
 
-  async function cargarCasoDesdeSesion(s) {
-    const casoId = s?.casoId;
-    if (!casoId) {
-      throw new Error('La sesión no trae el caso asociado. Pedile al docente que reinicie la actividad.');
-    }
+  async function cargarCasoDesdeIds(casoId) {
+    if (!casoId) return null;
     const casoRes = await obtenerCaso(token, casoId);
     setCaso(casoRes.data);
+    return casoRes.data;
   }
 
   async function refrescarProgreso(sesionId) {
@@ -74,103 +75,137 @@ export default function PracticaEstudiantePage({ sesion, onSalir }) {
       const res = await consultarProgresoSesion(token, sesionId);
       setProgreso(res.data);
     } catch {
-      /* progreso opcional mientras juega */
+      /* progreso opcional */
     }
   }
 
-  async function cargarNotificaciones() {
-    try {
-      const res = await listarNotificaciones(token);
-      setNotificaciones(res.data || []);
-    } catch {
-      setNotificaciones([]);
+  async function prepararActividad(id, { silencioso = false, destino = null } = {}) {
+    if (!id) {
+      setSesionData(null);
+      setActividad(null);
+      setCaso(null);
+      setVista('panel');
+      return;
     }
-  }
 
-  async function marcarLeida(id) {
-    try {
-      await marcarNotificacionLeida(token, id);
-      setNotificaciones((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, estado: 'Leida' } : n))
-      );
-    } catch {
-      /* no bloquea */
-    }
-  }
-
-  async function preparar({ silencioso = false } = {}) {
     if (!silencioso) setCargando(true);
     setError('');
     try {
-      await cargarNotificaciones();
-      if (!actividadId) {
-        throw new Error('No hay actividad asociada a tu ingreso. Usa el código de convocatoria.');
+      const ya = await consultarSesionActividad(token, id);
+      const s = ya.data?.sesion || null;
+      const act = ya.data?.actividad || null;
+      setSesionData(s);
+      setActividad(act);
+      setEvaluacion(ya.data?.evaluacion || null);
+
+      const estadoAct = act?.estado;
+      const casoId = s?.casoId || act?.casoId;
+
+      // Contenido del caso solo si la actividad ya fue iniciada por el docente
+      // o el estudiante ya tiene sesión en curso / finalizada.
+      const puedeVerContenido =
+        estadoAct === 'Iniciada' ||
+        s?.estado === 'En curso' ||
+        s?.estado === 'Finalizado';
+
+      if (puedeVerContenido && casoId) {
+        try {
+          await cargarCasoDesdeIds(casoId);
+        } catch {
+          /* título puede venir de actividad.casoTitulo */
+        }
+      } else {
+        setCaso(null);
       }
 
-      try {
-        const ya = await consultarSesionActividad(token, actividadId);
-        const s = ya.data?.sesion || ya.data;
-        setSesionData(s);
-        setEvaluacion(ya.data?.evaluacion || null);
-        if (s?.casoId) {
-          await cargarCasoDesdeSesion(s);
-        }
+      if (destino === 'resultados' || s?.estado === 'Finalizado') {
         if (s?.estado === 'Finalizado') {
-          setFase('fin');
-          setMensaje('');
           try {
             const r = await consultarRetroalimentacionSesion(token, s.id);
             setRetro(r.data);
           } catch {
             setRetro(null);
           }
-        } else if (s?.estado === 'En curso') {
-          setFase('jugar');
-          setMensaje('');
-          await refrescarProgreso(s.id);
-        } else {
-          setFase('inicio');
-          setMensaje('Tu sesión está lista. Cuando el docente haya iniciado la actividad, pulsá Empezar.');
         }
-      } catch (err) {
-        setSesionData(null);
-        if (err?.status === 404) {
-          setMensaje(
-            'Todavía no hay sesión preparada. Cuando el docente inicie la actividad, pulsá Actualizar o Empezar.'
-          );
-        } else if (err?.status === 403) {
-          setError(
-            mensajeError(err) ||
-              'No estás autorizado para esta actividad. Verificá el código con tu docente.'
-          );
-        } else if (err?.status === 401) {
-          setError('Tu sesión expiró. Volvé a ingresar con tu correo y código.');
-        } else {
-          setError(mensajeError(err) || 'No se pudo consultar la sesión.');
-        }
+        setVista(destino === 'resultados' || s?.estado === 'Finalizado' ? 'resultados' : 'panel');
+        setMensaje('');
+      } else if (destino === 'jugar' || s?.estado === 'En curso') {
+        setVista('jugar');
+        setMensaje('');
+        if (casoId) await cargarCasoDesdeIds(casoId);
+        if (s?.id) await refrescarProgreso(s.id);
+      } else if (destino === 'practica' || estadoAct === 'Iniciada') {
+        setVista('practica');
+        setMensaje(
+          estadoAct === 'Iniciada'
+            ? 'Tu docente ya inició la actividad. Cuando quieras, empieza la práctica.'
+            : 'Cuando tu docente inicie la actividad vas a poder practicar.'
+        );
+      } else {
+        setVista('panel');
+        setMensaje('La actividad sigue programada. Solo ves el título y la hora hasta que el docente la inicie.');
       }
     } catch (err) {
-      setError(mensajeError(err));
+      setSesionData(null);
+      setVista('panel');
+      if (err?.status === 409) {
+        setError(
+          mensajeError(err) ||
+            'La actividad aún está programada. Espera a que tu docente la inicie.'
+        );
+      } else if (err?.status === 403) {
+        setError(
+          mensajeError(err) ||
+            'No estás autorizado para esta actividad. Pídele a tu docente que te convoque.'
+        );
+      } else if (err?.status === 401) {
+        setError('Tu sesión expiró. Vuelve a ingresar con tu correo y el código de sesión.');
+      } else if (err?.status === 404) {
+        setError('No encontramos tu convocatoria. Pídele a tu docente que te convoque de nuevo.');
+      } else {
+        setError(mensajeError(err) || 'No se pudo consultar la actividad.');
+      }
     } finally {
       if (!silencioso) setCargando(false);
     }
   }
 
   useEffect(() => {
-    preparar();
+    if (actividadId) {
+      prepararActividad(actividadId, { destino: 'panel' });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (fase !== 'inicio') return undefined;
-    const timer = setInterval(() => {
-      preparar({ silencioso: true });
-    }, 12_000);
-    return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fase]);
+  async function elegirActividad(item, destino) {
+    const id = Number(item?.id);
+    if (!id) return;
+    if (item.soloVistaPrevia || item.estado === 'Programada') {
+      setActividadId(id);
+      setActividad({
+        id,
+        estado: item.estado,
+        fechaInicio: item.fechaInicio,
+        fechaFin: item.fechaFin,
+        lugar: item.lugar,
+        casoId: item.casoId,
+        casoTitulo: item.casoTitulo
+      });
+      setCaso(null);
+      setSesionData(null);
+      setError('');
+      setMensaje(
+        'Esta actividad está programada. Vas a poder ver el contenido y practicar cuando tu docente la inicie.'
+      );
+      setVista('panel');
+      return;
+    }
+    setActividadId(id);
+    await prepararActividad(id, { destino });
+  }
 
   async function empezar() {
+    if (!actividadId) return;
     setCargando(true);
     setError('');
     setMensaje('');
@@ -179,15 +214,25 @@ export default function PracticaEstudiantePage({ sesion, onSalir }) {
       const res = await iniciarSesionActividad(token, actividadId);
       const s = res.data;
       setSesionData(s);
-      if (!caso) {
-        await cargarCasoDesdeSesion(s);
+      const casoId = s.casoId || actividad?.casoId;
+      let casoCargado = null;
+      try {
+        casoCargado = await cargarCasoDesdeIds(casoId);
+      } catch (errCaso) {
+        throw new Error(
+          mensajeError(errCaso) ||
+            'Se abrió la sesión pero no se pudo cargar el caso. Pídele al docente que publique el caso.'
+        );
       }
-      setFase('jugar');
-      setMensaje('Sesión en curso. Responde con cuidado.');
+      if (!casoCargado) {
+        throw new Error('La actividad no tiene un caso asociado. Pídele ayuda a tu docente.');
+      }
+      setVista('jugar');
       await refrescarProgreso(s.id);
     } catch (err) {
-      setError(mensajeError(err));
-      await preparar({ silencioso: true });
+      setVista('practica');
+      setError(mensajeError(err) || 'No se pudo iniciar la práctica.');
+      await prepararActividad(actividadId, { silencioso: true, destino: 'practica' });
     } finally {
       setCargando(false);
     }
@@ -233,7 +278,7 @@ export default function PracticaEstudiantePage({ sesion, onSalir }) {
       } catch {
         setRetro(null);
       }
-      setFase('fin');
+      setVista('resultados');
     } catch (err) {
       setError(mensajeError(err));
       setErrorLive(mensajeError(err));
@@ -242,67 +287,148 @@ export default function PracticaEstudiantePage({ sesion, onSalir }) {
     }
   }
 
-  if (cargando && !caso && fase !== 'fin' && fase !== 'inicio') {
-    return (
-      <PracticaShell usuario={usuario} onSalir={onSalir}>
-        <section className="crear-caso">
-          <p className="muted-light">Preparando tu práctica…</p>
-        </section>
-      </PracticaShell>
-    );
-  }
+  const tabs = [
+    { id: 'panel', label: 'Misiones' },
+    { id: 'practica', label: 'Jugar' },
+    { id: 'resultados', label: 'Resultados' }
+  ];
 
-  if (fase === 'jugar' && caso && sesionData) {
-    return (
-      <PracticaShell usuario={usuario} onSalir={onSalir}>
-        {progreso ? (
-          <div className="alert alert-ok" style={{ margin: '0.8rem 1rem' }}>
-            Progreso: {progreso.preguntasRespondidas ?? progreso.respondidas ?? 0}
-            {progreso.totalPreguntas != null ? ` de ${progreso.totalPreguntas}` : ''} preguntas
-            {progreso.preguntasPendientes != null
-              ? ` · pendientes ${progreso.preguntasPendientes}`
-              : ''}
-          </div>
-        ) : null}
-        {errorLive || error ? <div className="alert">{errorLive || error}</div> : null}
-        <SimulacionPlayer
-          key={`live-${sesionData.id}`}
-          caso={caso}
-          modoLive
-          onResponder={alResponder}
-          onTerminar={alTerminar}
-          onSalir={onSalir}
-        />
-      </PracticaShell>
-    );
-  }
-
-  if (fase === 'fin') {
-    return (
-      <PracticaShell usuario={usuario} onSalir={onSalir}>
-        <PracticaResultado
-          caso={caso}
-          evaluacion={evaluacion}
-          retroItems={retroItems}
-          onSalir={onSalir}
-        />
-      </PracticaShell>
-    );
-  }
+  const hayResultados =
+    sesionData?.estado === 'Finalizado' || evaluacion != null;
+  const puedeAbrirPractica =
+    actividadId && actividad?.estado !== 'Programada' && (caso || sesionData);
 
   return (
     <PracticaShell usuario={usuario} onSalir={onSalir}>
-      <PracticaInicio
-        actividadId={actividadId}
-        caso={caso}
-        mensaje={mensaje}
-        error={error}
-        cargando={cargando}
-        notificaciones={notificaciones}
-        onActualizar={() => preparar()}
-        onEmpezar={empezar}
-        onMarcarLeida={marcarLeida}
-      />
+      {vista !== 'jugar' ? (
+        <nav className="estudiante-tabs" aria-label="Secciones estudiante">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className={vista === t.id ? 'estudiante-tab activo' : 'estudiante-tab'}
+              disabled={t.disabled}
+              onClick={() => setVista(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+      ) : null}
+
+      {error && vista === 'panel' ? <div className="alert estudiante-hub-alerta">{error}</div> : null}
+
+      {vista === 'jugar' ? (
+        !caso || !sesionData ? (
+          <section className="crear-caso practica-panel">
+            {error ? <div className="alert">{error}</div> : null}
+            <p className="muted-light">
+              {cargando ? 'Abriendo la simulación…' : 'No se pudo abrir el caso de la práctica.'}
+            </p>
+            <div className="practica-resultado-acciones">
+              <button
+                type="button"
+                className="login-btn-game green practica-btn-uniforme"
+                disabled={cargando}
+                onClick={() => {
+                  setVista('practica');
+                  prepararActividad(actividadId, { destino: 'practica' });
+                }}
+              >
+                Volver
+              </button>
+            </div>
+          </section>
+        ) : (
+          <>
+            {progreso ? (
+              <div className="practica-progreso">
+                Progreso: {progreso.preguntasRespondidas ?? progreso.respondidas ?? 0}
+                {progreso.totalPreguntas != null ? ` de ${progreso.totalPreguntas}` : ''} preguntas
+                {progreso.preguntasPendientes != null
+                  ? ` - pendientes ${progreso.preguntasPendientes}`
+                  : ''}
+              </div>
+            ) : null}
+            {errorLive || error ? (
+              <div className="alert practica-alerta">{errorLive || error}</div>
+            ) : null}
+            <SimulacionPlayer
+              key={`live-${sesionData.id}`}
+              caso={caso}
+              modoLive
+              onResponder={alResponder}
+              onTerminar={alTerminar}
+              onSalir={() => setVista('panel')}
+            />
+          </>
+        )
+      ) : null}
+
+      {vista === 'resultados' ? (
+        hayResultados ? (
+          <PracticaResultado
+            caso={caso}
+            evaluacion={evaluacion}
+            retroItems={retroItems}
+            onSalir={() => setVista('panel')}
+          />
+        ) : (
+          <section className="estudiante-hub">
+            <GameDecor
+              variant="empty"
+              munecos={2}
+              title="Aún no hay resultados"
+              text="Cuando termines una misión, tus resultados aparecen aquí. También puedes tocar Ver resultados en una misión hecha."
+            />
+            <div className="practica-resultado-acciones" style={{ justifyContent: 'center' }}>
+              <button
+                type="button"
+                className="mision-btn play"
+                style={{ maxWidth: 260 }}
+                onClick={() => setVista('panel')}
+              >
+                Ir a misiones
+              </button>
+            </div>
+          </section>
+        )
+      ) : null}
+
+      {vista === 'practica' ? (
+        puedeAbrirPractica ? (
+          <PracticaInicio
+            actividadId={actividadId}
+            actividad={actividad}
+            caso={caso}
+            error={error}
+            cargando={cargando}
+            bloqueada={actividad?.estado === 'Programada'}
+            onEmpezar={empezar}
+          />
+        ) : (
+          <EstudiantePanel
+            token={token}
+            usuario={usuario}
+            actividadActivaId={actividadId}
+            cargando={cargando}
+            soloJugables
+            tituloHub="Listas para jugar"
+            textoHub="Estas misiones ya fueron iniciadas por tu docente. Elige una para entrar."
+            onElegirActividad={elegirActividad}
+          />
+        )
+      ) : null}
+
+      {vista === 'panel' ? (
+        <EstudiantePanel
+          token={token}
+          usuario={usuario}
+          actividadActivaId={actividadId}
+          cargando={cargando}
+          onElegirActividad={elegirActividad}
+        />
+      ) : null}
     </PracticaShell>
   );
 }

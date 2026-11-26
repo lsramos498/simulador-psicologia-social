@@ -1,15 +1,34 @@
 /**
  * Asistente de IA para docentes que crean casos situacionales.
  * Usa OpenAI si hay OPENAI_API_KEY; si no, un generador local de práctica.
+ * Respeta cantidades pedidas en el prompt (p. ej. 6 involucrados, 4 escenas).
  */
+
+const BANCO_NOMBRES = [
+  'Lucía', 'Pedro', 'Sofía', 'Elena', 'Andrés', 'Valeria', 'Marta', 'Diego',
+  'Camila', 'Nina', 'Bruno', 'Hugo', 'Gina', 'Félix', 'Ana', 'Tomás'
+];
+
+const LUGARES_EXTRA = [
+  'Calle del barrio',
+  'Recepción de la comisaría',
+  'Sala de espera del hospital',
+  'Orientación escolar',
+  'Sede de la ONG',
+  'Oficina laboral',
+  'Plaza principal',
+  'Café del barrio',
+  'Sala de la casa',
+  'Parque comunitario'
+];
 
 const PLANTILLAS = [
   {
     claves: ['barrio', 'vecino', 'convivencia', 'ruido', 'conjunto'],
     escenarioSugerido: 'Calle del barrio',
-    personajesSugeridos: ['Lucía', 'Pedro', 'Sofía', 'Elena'],
+    personajesSugeridos: ['Lucía', 'Pedro', 'Sofía', 'Elena', 'Diego', 'Camila'],
     armar: (idea) =>
-      conEscena(idea, {
+      baseCaso(idea, {
         titulo: idea.titulo || 'Conflicto de convivencia en el barrio',
         desarrolloSituacional:
           idea.detalle ||
@@ -28,9 +47,9 @@ const PLANTILLAS = [
   {
     claves: ['comisaría', 'denuncia', 'policía', 'agente', 'violencia'],
     escenarioSugerido: 'Recepción de la comisaría',
-    personajesSugeridos: ['Andrés', 'Sofía', 'Valeria', 'Elena'],
+    personajesSugeridos: ['Andrés', 'Sofía', 'Valeria', 'Elena', 'Bruno', 'Ana'],
     armar: (idea) =>
-      conEscena(idea, {
+      baseCaso(idea, {
         titulo: idea.titulo || 'Acompañamiento en la comisaría',
         desarrolloSituacional:
           idea.detalle ||
@@ -49,9 +68,9 @@ const PLANTILLAS = [
   {
     claves: ['hospital', 'salud', 'enfermera', 'paciente', 'urgencia'],
     escenarioSugerido: 'Sala de espera del hospital',
-    personajesSugeridos: ['Marta', 'Sofía', 'Diego', 'Elena'],
+    personajesSugeridos: ['Marta', 'Sofía', 'Diego', 'Elena', 'Hugo', 'Gina'],
     armar: (idea) =>
-      conEscena(idea, {
+      baseCaso(idea, {
         titulo: idea.titulo || 'Orientación en sala de espera hospitalaria',
         desarrolloSituacional:
           idea.detalle ||
@@ -70,9 +89,9 @@ const PLANTILLAS = [
   {
     claves: ['colegio', 'escuela', 'docente', 'estudiante', 'aula', 'bullying', 'acoso'],
     escenarioSugerido: 'Orientación escolar',
-    personajesSugeridos: ['Camila', 'Nina', 'Diego', 'Sofía'],
+    personajesSugeridos: ['Camila', 'Nina', 'Diego', 'Sofía', 'Pedro', 'Valeria'],
     armar: (idea) =>
-      conEscena(idea, {
+      baseCaso(idea, {
         titulo: idea.titulo || 'Conflicto escolar entre estudiantes',
         desarrolloSituacional:
           idea.detalle ||
@@ -91,9 +110,9 @@ const PLANTILLAS = [
   {
     claves: ['trabajo', 'oficina', 'laboral', 'jefe', 'empresa'],
     escenarioSugerido: 'Oficina laboral',
-    personajesSugeridos: ['Elena', 'Valeria', 'Camila', 'Pedro'],
+    personajesSugeridos: ['Elena', 'Valeria', 'Camila', 'Pedro', 'Andrés', 'Marta'],
     armar: (idea) =>
-      conEscena(idea, {
+      baseCaso(idea, {
         titulo: idea.titulo || 'Tensión laboral y mediación',
         desarrolloSituacional:
           idea.detalle ||
@@ -112,9 +131,9 @@ const PLANTILLAS = [
   {
     claves: ['ong', 'comunidad', 'voluntariado', 'remisión', 'apoyo'],
     escenarioSugerido: 'Sede de la ONG',
-    personajesSugeridos: ['Elena', 'Lucía', 'Sofía', 'Valeria'],
+    personajesSugeridos: ['Elena', 'Lucía', 'Sofía', 'Valeria', 'Diego', 'Camila'],
     armar: (idea) =>
-      conEscena(idea, {
+      baseCaso(idea, {
         titulo: idea.titulo || 'Remisión y apoyo en la ONG comunitaria',
         desarrolloSituacional:
           idea.detalle ||
@@ -132,62 +151,11 @@ const PLANTILLAS = [
   }
 ];
 
-function conEscena(idea, base) {
-  const escenario = base.escenarioSugerido || 'Plaza principal';
-  const segunda =
-    /comisaría|denuncia/i.test(escenario) ? 'Calle del barrio'
-      : /hospital/i.test(escenario) ? 'Café del barrio'
-        : /colegio|orientación/i.test(escenario) ? 'Sala de la casa'
-          : /ong/i.test(escenario) ? 'Plaza principal'
-            : /trabajo|oficina/i.test(escenario) ? 'Café del barrio'
-              : 'Sede de la ONG';
-
-  const escena1 = {
-    nombre: escenario,
-    contexto: base.contextoHistoria,
-    pregunta: base.pregunta,
-    opcionBuena: base.opcionBuena,
-    opcionMala: base.opcionMala,
-    explicacionBuena: base.explicacionBuena,
-    explicacionMala: base.explicacionMala
-  };
-  const escena2 = {
-    nombre: segunda,
-    contexto: `Segundo punto del recorrido para contrastar lo escuchado en ${escenario}.`,
-    pregunta: '¿Qué conviene hacer después de contrastar esta nueva versión?',
-    opcionBuena: 'Integrar lo nuevo con lo anterior y proponer un siguiente paso ético',
-    opcionMala: 'Descartar todo lo anterior y actuar solo con este relato',
-    explicacionBuena: 'Contrastar e integrar evita decisiones parciales.',
-    explicacionMala: 'Ignorar lo previo debilita el análisis situacional.'
-  };
-
-  return {
-    ...base,
-    escenarioSugerido: escenario,
-    escenaSugerida: escena1,
-    escenasSugeridas: [escena1, escena2],
-    rubricaSugerida: {
-      nombre: `Evaluación · ${base.titulo}`,
-      criterios: [
-        {
-          nombre: 'Intervención ética',
-          ponderacion: 100,
-          puntajeMaximo: 4,
-          niveles: [
-            { nombre: 'Básico', descripcion: 'Identifica el conflicto y escucha.', puntaje: 1, orden: 1 },
-            { nombre: 'Avanzado', descripcion: 'Media, contrasta versiones y propone ruta clara.', puntaje: 4, orden: 2 }
-          ]
-        }
-      ]
-    }
-  };
-}
-
 const PLANTILLA_DEFAULT = {
   escenarioSugerido: 'Plaza principal',
-  personajesSugeridos: ['Valeria', 'Elena', 'Lucía', 'Diego'],
+  personajesSugeridos: ['Valeria', 'Elena', 'Lucía', 'Diego', 'Camila', 'Sofía'],
   armar: (idea) =>
-    conEscena(idea, {
+    baseCaso(idea, {
       titulo: idea.titulo || 'Caso situacional de intervención social',
       desarrolloSituacional:
         idea.detalle ||
@@ -203,6 +171,122 @@ const PLANTILLA_DEFAULT = {
       escenarioSugerido: 'Plaza principal'
     })
 };
+
+/** Extrae cantidades pedidas en el prompt del docente. */
+export function parsearCantidadesPrompt(prompt) {
+  const texto = String(prompt || '');
+  const norm = texto
+    .toLocaleLowerCase('es')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '');
+
+  let personajes = null;
+  let escenas = null;
+
+  const rePj = /(\d{1,2})\s*(?:involucrad\w*|personajes?|actores?|participantes?|personas?)/i;
+  const reEsc = /(\d{1,2})\s*(?:escenas?|lugares?|escenarios?|escenas\s+distintas?)/i;
+  const rePjAlt = /(?:involucrad\w*|personajes?|actores?|participantes?)\s*(?:son|:)?\s*(\d{1,2})/i;
+  const reEscAlt = /(?:escenas?|lugares?|escenarios?)\s*(?:son|:)?\s*(\d{1,2})/i;
+
+  const mPj = norm.match(rePj) || norm.match(rePjAlt);
+  const mEsc = norm.match(reEsc) || norm.match(reEscAlt);
+  if (mPj) personajes = Number(mPj[1]);
+  if (mEsc) escenas = Number(mEsc[1]);
+
+  return {
+    personajes: Number.isFinite(personajes) ? Math.min(12, Math.max(2, personajes)) : null,
+    escenas: Number.isFinite(escenas) ? Math.min(12, Math.max(2, escenas)) : null
+  };
+}
+
+function completarNombres(base = [], cantidad = 4) {
+  const out = [];
+  const usados = new Set();
+  for (const n of [...base, ...BANCO_NOMBRES]) {
+    const nombre = String(n || '').trim();
+    if (!nombre || usados.has(nombre.toLocaleLowerCase('es'))) continue;
+    usados.add(nombre.toLocaleLowerCase('es'));
+    out.push(nombre);
+    if (out.length >= cantidad) break;
+  }
+  while (out.length < cantidad) {
+    out.push(`Persona ${out.length + 1}`);
+  }
+  return out.slice(0, cantidad);
+}
+
+function baseCaso(idea, base) {
+  return { ...base };
+}
+
+function armarEscenas(base, cantidadEscenas, escenarioPrincipal) {
+  const n = Math.min(12, Math.max(2, Number(cantidadEscenas) || 2));
+  const principal = escenarioPrincipal || base.escenarioSugerido || 'Plaza principal';
+  const lugares = [principal, ...LUGARES_EXTRA.filter((l) => l !== principal)];
+
+  const escenas = [];
+  for (let i = 0; i < n; i += 1) {
+    const lugar = lugares[i % lugares.length];
+    if (i === 0) {
+      escenas.push({
+        nombre: lugar,
+        contexto: base.contextoHistoria,
+        pregunta: base.pregunta,
+        opcionBuena: base.opcionBuena,
+        opcionMala: base.opcionMala,
+        explicacionBuena: base.explicacionBuena,
+        explicacionMala: base.explicacionMala
+      });
+      continue;
+    }
+    escenas.push({
+      nombre: lugar,
+      contexto: `Punto ${i + 1} del recorrido para contrastar lo escuchado en ${principal}.`,
+      pregunta:
+        i === 1
+          ? '¿Qué conviene hacer después de contrastar esta nueva versión?'
+          : `En ${lugar}, ¿cuál es la intervención más ética ahora?`,
+      opcionBuena: 'Integrar lo nuevo con lo anterior y proponer un siguiente paso ético',
+      opcionMala: 'Actuar solo con este relato e ignorar el resto de la historia',
+      explicacionBuena: 'Contrastar e integrar evita decisiones parciales.',
+      explicacionMala: 'Ignorar lo previo debilita el análisis situacional.'
+    });
+  }
+  return escenas;
+}
+
+function conCantidades(base, { personajes, escenas }, plantillaNombres = []) {
+  const cantPj = personajes || Math.max(4, plantillaNombres.length || 4);
+  const cantEsc = escenas || 4;
+  const nombres = completarNombres(
+    [...(Array.isArray(base.personajesSugeridos) ? base.personajesSugeridos : []), ...plantillaNombres],
+    cantPj
+  );
+  const listaEscenas = Array.isArray(base.escenasSugeridas) && base.escenasSugeridas.length >= cantEsc
+    ? base.escenasSugeridas.slice(0, cantEsc)
+    : armarEscenas(base, cantEsc, base.escenarioSugerido);
+
+  return {
+    ...base,
+    personajesSugeridos: nombres,
+    escenaSugerida: listaEscenas[0],
+    escenasSugeridas: listaEscenas,
+    rubricaSugerida: base.rubricaSugerida || {
+      nombre: `Evaluación - ${base.titulo}`,
+      criterios: [
+        {
+          nombre: 'Intervención ética',
+          ponderacion: 100,
+          puntajeMaximo: 4,
+          niveles: [
+            { nombre: 'Básico', descripcion: 'Identifica el conflicto y escucha.', puntaje: 1, orden: 1 },
+            { nombre: 'Avanzado', descripcion: 'Media, contrasta versiones y propone ruta clara.', puntaje: 4, orden: 2 }
+          ]
+        }
+      ]
+    }
+  };
+}
 
 function normalizarTexto(valor) {
   return String(valor || '')
@@ -229,7 +313,7 @@ function extraerTitulo(prompt) {
   return limpio.slice(0, 90);
 }
 
-function generarLocal({ prompt, nivel, lugar }) {
+function generarLocal({ prompt, nivel, lugar, cantidades }) {
   const idea = {
     titulo: extraerTitulo(prompt),
     detalle: [prompt, lugar ? `Lugar sugerido: ${lugar}.` : '', nivel ? `Nivel: ${nivel}.` : '']
@@ -239,36 +323,45 @@ function generarLocal({ prompt, nivel, lugar }) {
   const plantilla = elegirPlantilla(`${prompt} ${lugar || ''}`);
   const base = plantilla.armar(idea);
   const escenarioSugerido = lugar?.trim() || plantilla.escenarioSugerido || base.escenarioSugerido;
-  return {
+  const conEscenario = {
     ...base,
     escenarioSugerido,
-    escenaSugerida: {
-      ...(base.escenaSugerida || {}),
-      nombre: escenarioSugerido
-    },
-    personajesSugeridos: plantilla.personajesSugeridos,
+    personajesSugeridos: plantilla.personajesSugeridos
+  };
+  const completo = conCantidades(conEscenario, cantidades, plantilla.personajesSugeridos);
+  return {
+    ...completo,
     fuente: 'asistente-local',
     tipDocente:
-      'Revisa el borrador, ajusta nombres y matices éticos, elige personajes/escenario y crea el caso.'
+      `Revisa el borrador: ${completo.personajesSugeridos.length} involucrados y ${completo.escenasSugeridas.length} escenas. Ajusta nombres y crea el caso.`
   };
 }
 
-async function generarConOpenAI({ prompt, nivel, lugar }) {
+async function generarConOpenAI({ prompt, nivel, lugar, cantidades }) {
   const key = process.env.OPENAI_API_KEY?.trim();
   if (!key) return null;
 
   const modelo = process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini';
+  const cantPj = cantidades.personajes || 6;
+  const cantEsc = cantidades.escenas || 4;
+
   const sistema = `Eres asistente pedagógico de Lumina, simulador de psicología social para docentes universitarios en Colombia.
 Generas borradores de casos situacionales para práctica (comisaría, hospital, barrio, colegio, ONG, trabajo).
 Responde SOLO JSON válido con estas claves:
 titulo, desarrolloSituacional, contextoHistoria, tiempoEstimadoSegundos (número 480-1200),
-pregunta, opcionBuena, opcionMala, explicacionBuena, explicacionMala,
-escenarioSugerido (lugar concreto), personajesSugeridos (array de 3 a 4 nombres), tipDocente.
+escenarioSugerido (lugar concreto),
+personajesSugeridos (array con EXACTAMENTE ${cantPj} nombres distintos),
+escenasSugeridas (array con EXACTAMENTE ${cantEsc} objetos; cada uno: nombre, contexto, pregunta, opcionBuena, opcionMala, explicacionBuena, explicacionMala),
+tipDocente.
+OBLIGATORIO: personajesSugeridos.length === ${cantPj} y escenasSugeridas.length === ${cantEsc}.
+Cada escena debe ser un lugar/momento distinto del recorrido del caso.
 Tono claro, ético, no sensacionalista, útil para intervención social.`;
 
   const usuario = `Idea del docente: ${prompt}
 Nivel: ${nivel || 'pregrado'}
-Lugar preferido: ${lugar || 'el que mejor encaje'}`;
+Lugar preferido: ${lugar || 'el que mejor encaje'}
+Cantidad EXACTA de involucrados/personajes: ${cantPj}
+Cantidad EXACTA de escenas: ${cantEsc}`;
 
   const respuesta = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -278,7 +371,7 @@ Lugar preferido: ${lugar || 'el que mejor encaje'}`;
     },
     body: JSON.stringify({
       model: modelo,
-      temperature: 0.7,
+      temperature: 0.55,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: sistema },
@@ -306,35 +399,49 @@ Lugar preferido: ${lugar || 'el que mejor encaje'}`;
   }
 
   const escenarioSugerido = String(data.escenarioSugerido || lugar || 'Plaza principal');
-  const enriquecido = conEscena(
-    { titulo: data.titulo },
-    {
-      titulo: String(data.titulo || '').slice(0, 200),
-      desarrolloSituacional: String(data.desarrolloSituacional || ''),
-      contextoHistoria: String(data.contextoHistoria || ''),
-      tiempoEstimadoSegundos: Number(data.tiempoEstimadoSegundos) || 800,
-      pregunta: String(data.pregunta || ''),
-      opcionBuena: String(data.opcionBuena || ''),
-      opcionMala: String(data.opcionMala || ''),
-      explicacionBuena: String(data.explicacionBuena || ''),
-      explicacionMala: String(data.explicacionMala || ''),
-      escenarioSugerido
-    }
-  );
+  const escenasIa = Array.isArray(data.escenasSugeridas)
+    ? data.escenasSugeridas.map((e, i) => ({
+        nombre: String(e?.nombre || `Escena ${i + 1}`).slice(0, 120),
+        contexto: String(e?.contexto || data.contextoHistoria || ''),
+        pregunta: String(e?.pregunta || ''),
+        opcionBuena: String(e?.opcionBuena || ''),
+        opcionMala: String(e?.opcionMala || ''),
+        explicacionBuena: String(e?.explicacionBuena || ''),
+        explicacionMala: String(e?.explicacionMala || '')
+      }))
+    : [];
 
-  return {
-    ...enriquecido,
+  const base = {
+    titulo: String(data.titulo || '').slice(0, 200),
+    desarrolloSituacional: String(data.desarrolloSituacional || ''),
+    contextoHistoria: String(data.contextoHistoria || ''),
+    tiempoEstimadoSegundos: Number(data.tiempoEstimadoSegundos) || 800,
+    pregunta: String(escenasIa[0]?.pregunta || data.pregunta || ''),
+    opcionBuena: String(escenasIa[0]?.opcionBuena || data.opcionBuena || ''),
+    opcionMala: String(escenasIa[0]?.opcionMala || data.opcionMala || ''),
+    explicacionBuena: String(escenasIa[0]?.explicacionBuena || data.explicacionBuena || ''),
+    explicacionMala: String(escenasIa[0]?.explicacionMala || data.explicacionMala || ''),
+    escenarioSugerido,
     personajesSugeridos: Array.isArray(data.personajesSugeridos)
-      ? data.personajesSugeridos.map(String).slice(0, 6)
-      : ['Valeria', 'Elena', 'Lucía'],
-    tipDocente: String(data.tipDocente || 'Revisa y ajusta el borrador antes de crear el caso.'),
+      ? data.personajesSugeridos.map(String)
+      : [],
+    escenasSugeridas: escenasIa
+  };
+
+  const completo = conCantidades(base, { personajes: cantPj, escenas: cantEsc }, base.personajesSugeridos);
+  return {
+    ...completo,
+    tipDocente: String(
+      data.tipDocente ||
+        `Revisa: ${completo.personajesSugeridos.length} involucrados y ${completo.escenasSugeridas.length} escenas.`
+    ),
     fuente: 'openai'
   };
 }
 
 /**
  * Genera un borrador de caso a partir de una idea del docente.
- * @param {{ prompt: string, nivel?: string, lugar?: string }} entrada
+ * @param {{ prompt: string, nivel?: string, lugar?: string, cantidadPersonajes?: number, cantidadEscenas?: number }} entrada
  */
 export async function generarBorradorCaso(entrada = {}) {
   const prompt = String(entrada.prompt || '').trim();
@@ -353,20 +460,30 @@ export async function generarBorradorCaso(entrada = {}) {
 
   const nivel = String(entrada.nivel || '').trim();
   const lugar = String(entrada.lugar || '').trim();
+  const parseadas = parsearCantidadesPrompt(prompt);
+  const cantidades = {
+    personajes:
+      Number(entrada.cantidadPersonajes) > 0
+        ? Math.min(12, Math.max(2, Number(entrada.cantidadPersonajes)))
+        : parseadas.personajes || 6,
+    escenas:
+      Number(entrada.cantidadEscenas) > 0
+        ? Math.min(12, Math.max(2, Number(entrada.cantidadEscenas)))
+        : parseadas.escenas || 4
+  };
 
   try {
-    const externo = await generarConOpenAI({ prompt, nivel, lugar });
+    const externo = await generarConOpenAI({ prompt, nivel, lugar, cantidades });
     if (externo?.titulo && externo?.desarrolloSituacional) {
       return externo;
     }
   } catch (error) {
-    // Si falla la IA externa, caemos al generador local para no bloquear al docente.
     if (error.codigo === 'IA_EXTERNA' && process.env.IA_REQUERIR_EXTERNA === '1') {
       throw error;
     }
   }
 
-  return generarLocal({ prompt, nivel, lugar });
+  return generarLocal({ prompt, nivel, lugar, cantidades });
 }
 
 export function estadoAsistenteIa() {

@@ -5,7 +5,7 @@ import { crearRepositorioAdministracion } from '../modules/acceso/administracion
 import { crearServicioAdministracion } from '../modules/acceso/administracion.service.js';
 import { autenticar } from '../modules/acceso/autenticar.middleware.js';
 import { requiereRol } from '../modules/acceso/autorizar.middleware.js';
-import { ROLES } from '../modules/acceso/autorizacion.js';
+import { ROLES, tieneRol } from '../modules/acceso/autorizacion.js';
 import { crearRutasAdministracion } from './administracion.routes.js';
 import { responderErrorHttp } from '../modules/acceso/errores.js';
 
@@ -52,7 +52,7 @@ export function crearRutasAcceso(obtenerServicio) {
 
     if (!esTextoConContenido(correo) || !esTextoConContenido(codigo)) {
       return res.status(400).json({
-        error: 'El correo institucional y el código de autorización son obligatorios'
+        error: 'El correo institucional y el código de inicio de sesión son obligatorios'
       });
     }
 
@@ -63,6 +63,19 @@ export function crearRutasAcceso(obtenerServicio) {
       return res.status(200).json(resultado);
     } catch (error) {
       return responderErrorHttp(res, error, 'ingreso de estudiante');
+    }
+  });
+
+  router.get('/estudiantes/mis-actividades', autenticar, async (req, res) => {
+    try {
+      if (!tieneRol(req.usuario, ROLES.ESTUDIANTE)) {
+        return res.status(403).json({ error: 'Solo estudiantes.' });
+      }
+      const servicio = await obtenerServicio();
+      const data = await servicio.listarMisActividades(req.usuario.id);
+      return res.status(200).json({ data });
+    } catch (error) {
+      return responderErrorHttp(res, error, 'mis actividades');
     }
   });
 
@@ -104,6 +117,71 @@ export function crearRutasAcceso(obtenerServicio) {
         return res.status(200).json({ data });
       } catch (error) {
         return responderErrorHttp(res, error, 'listado de estudiantes');
+      }
+    }
+  );
+
+  // Alta masiva desde texto/PDF parseado en el cliente (antes de POST /estudiantes).
+  router.post(
+    '/estudiantes/lote',
+    autenticar,
+    requiereRol(ROLES.DOCENTE, ROLES.ADMINISTRADOR),
+    async (req, res) => {
+      try {
+        const { parsearListaEstudiantes } = await import(
+          '../modules/acceso/estudiantes.lote.js'
+        );
+        const texto = typeof req.body?.texto === 'string' ? req.body.texto : '';
+        const { filas, errores } = parsearListaEstudiantes(texto);
+        if (filas.length === 0) {
+          return res.status(400).json({
+            error: 'No se encontraron estudiantes válidos en el archivo o texto.',
+            errores
+          });
+        }
+
+        const admin = await obtenerServicioAdministracion();
+        const creados = [];
+        const omitidos = [];
+        for (const fila of filas) {
+          try {
+            const data = await admin.crearEstudiante(fila, req.usuario.id);
+            creados.push(data);
+          } catch (error) {
+            omitidos.push({
+              correo: fila.correo,
+              motivo: error.message || 'No se pudo crear'
+            });
+          }
+        }
+
+        return res.status(201).json({
+          data: {
+            creados,
+            omitidos,
+            erroresParseo: errores,
+            totalCreados: creados.length,
+            totalOmitidos: omitidos.length
+          }
+        });
+      } catch (error) {
+        return responderErrorHttp(res, error, 'alta masiva de estudiantes');
+      }
+    }
+  );
+
+  // Alta de estudiantes para Docente y Admin (misma lógica que /admin/estudiantes).
+  router.post(
+    '/estudiantes',
+    autenticar,
+    requiereRol(ROLES.DOCENTE, ROLES.ADMINISTRADOR),
+    async (req, res) => {
+      try {
+        const admin = await obtenerServicioAdministracion();
+        const data = await admin.crearEstudiante(req.body, req.usuario.id);
+        return res.status(201).json({ data });
+      } catch (error) {
+        return responderErrorHttp(res, error, 'creación de estudiante');
       }
     }
   );

@@ -4,11 +4,13 @@ import assert from 'node:assert/strict';
 import {
   ACCIONES_CAMBIO_ESTUDIANTE,
   NotificacionConvocatoriaStrategy,
-  NotificacionCambioEstudianteStrategy
+  NotificacionCambioEstudianteStrategy,
+  NotificacionComentarioDocenteStrategy
 } from './notificaciones.strategy.js';
 
 const convocatoria = new NotificacionConvocatoriaStrategy();
 const cambios = new NotificacionCambioEstudianteStrategy();
+const comentarioDocenteMail = new NotificacionComentarioDocenteStrategy();
 const datosConvocatoria = {
   destinatario: 'estudiante@universidad.edu.co',
   caso: {
@@ -37,8 +39,9 @@ test('Genera correctamente un correo de convocatoria', () => {
 
   assert.match(resultado.text, /ABC23456/);
   assert.match(resultado.text, /Prepárate para participar/);
+  assert.match(resultado.text, /código de sesión/i);
   assert.match(resultado.html, /lumina\.edu\.co/);
-  assert.match(resultado.html, /Tu código de acceso/);
+  assert.match(resultado.html, /código de inicio de sesión/i);
   assert.match(resultado.html, /LUMINA|cid:lumina-portada/);
   assert.equal(resultado.replyTo, 'docente.casos@unihumboldt.edu.co');
   assert.match(resultado.text, /Docente Casos/);
@@ -134,4 +137,28 @@ test('Rechaza títulos de caso vacíos', () => {
     }),
     TypeError
   );
+});
+
+test('Genera correo de comentario docente con título y retroalimentación', () => {
+  const resultado = comentarioDocenteMail.crearMensaje({
+    destinatario: 'estudiante@universidad.edu.co',
+    casoTitulo: 'Conflicto en sala de espera',
+    comentarioDocente: 'Muy buen cierre de la intervención.',
+    retroalimentacionGeneral: 'Respondiste con criterio ético.',
+    nota: 4,
+    casoId: 41,
+    docenteCorreo: 'docente.casos@unihumboldt.edu.co',
+    docenteNombre: 'Docente Casos',
+    estudianteNombre: 'Ana Pérez'
+  });
+
+  assert.equal(resultado.to, 'estudiante@universidad.edu.co');
+  assert.match(resultado.subject, /Conflicto en sala de espera/);
+  assert.match(resultado.text, /Muy buen cierre/);
+  assert.match(resultado.text, /Respondiste con criterio ético/);
+  assert.match(resultado.html, /Comentario del docente/);
+  assert.match(resultado.html, /Conflicto en sala de espera/);
+  assert.doesNotMatch(resultado.html, /Ver mi resultado/);
+  assert.equal(resultado.replyTo, 'docente.casos@unihumboldt.edu.co');
+  assert.ok(Array.isArray(resultado.attachments));
 });

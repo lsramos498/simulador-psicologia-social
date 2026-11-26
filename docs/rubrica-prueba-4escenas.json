@@ -1,0 +1,106 @@
+{
+  "nombre": "Rubrica 4x4 - mediacion en residencia (nota sobre 5)",
+  "descripcion": "Evaluacion del caso de prueba con 4 escenas y 16 preguntas. La nota oficial es proporcional a los aciertos: 16/16 = 5.",
+  "criterios": [
+    {
+      "nombre": "Contencion y escucha",
+      "ponderacion": 25,
+      "puntajeMaximo": 5,
+      "niveles": [
+        {
+          "nombre": "Basico",
+          "descripcion": "Reconoce la tension pero no ordena el dialogo.",
+          "puntaje": 1,
+          "orden": 1
+        },
+        {
+          "nombre": "Medio",
+          "descripcion": "Valida emociones y propone turnos de palabra.",
+          "puntaje": 3,
+          "orden": 2
+        },
+        {
+          "nombre": "Avanzado",
+          "descripcion": "Contiene, protege privacidad y baja la intensidad con claridad.",
+          "puntaje": 5,
+          "orden": 3
+        }
+      ]
+    },
+    {
+      "nombre": "Contraste de versiones",
+      "ponderacion": 25,
+      "puntajeMaximo": 5,
+      "niveles": [
+        {
+          "nombre": "Basico",
+          "descripcion": "Escucha una sola version.",
+          "puntaje": 1,
+          "orden": 1
+        },
+        {
+          "nombre": "Medio",
+          "descripcion": "Contrasta relatos con respeto y hechos.",
+          "puntaje": 3,
+          "orden": 2
+        },
+        {
+          "nombre": "Avanzado",
+          "descripcion": "Integra versiones y evita juicios prematuros.",
+          "puntaje": 5,
+          "orden": 3
+        }
+      ]
+    },
+    {
+      "nombre": "Acuerdos y seguimiento",
+      "ponderacion": 25,
+      "puntajeMaximo": 5,
+      "niveles": [
+        {
+          "nombre": "Basico",
+          "descripcion": "Propone ideas vagas sin compromiso.",
+          "puntaje": 1,
+          "orden": 1
+        },
+        {
+          "nombre": "Medio",
+          "descripcion": "Define normas concretas de convivencia.",
+          "puntaje": 3,
+          "orden": 2
+        },
+        {
+          "nombre": "Avanzado",
+          "descripcion": "Cierra con acuerdo voluntario y ruta de seguimiento.",
+          "puntaje": 5,
+          "orden": 3
+        }
+      ]
+    },
+    {
+      "nombre": "Etica, privacidad y limites de rol",
+      "ponderacion": 25,
+      "puntajeMaximo": 5,
+      "niveles": [
+        {
+          "nombre": "Basico",
+          "descripcion": "Actua sin aclarar limites ni confidencialidad.",
+          "puntaje": 1,
+          "orden": 1
+        },
+        {
+          "nombre": "Medio",
+          "descripcion": "Cuida datos sensibles en la mayoria de decisiones.",
+          "puntaje": 3,
+          "orden": 2
+        },
+        {
+          "nombre": "Avanzado",
+          "descripcion": "Protege dignidad, informa con mesura y no excede el rol.",
+          "puntaje": 5,
+          "orden": 3
+        }
+      ]
+    }
+  ]
+}

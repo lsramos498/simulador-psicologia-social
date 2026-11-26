@@ -1,0 +1,16 @@
+Rubrica: Evaluacion de practica - mediacion breve
+
+Criterio 1: Contencion emocional
+El estudiante valida emociones sin minimizar ni sobreexponer a las partes.
+Nivel basico: reconoce la tension.
+Nivel avanzado: baja la intensidad y abre espacio de dialogo.
+
+Criterio 2: Privacidad y limites de rol
+Protege datos sensibles y no asume funciones que no le corresponden.
+Nivel basico: evita comentarios publicos.
+Nivel avanzado: explica limites y coordina con el equipo.
+
+Criterio 3: Cierre y seguimiento
+Propone un acuerdo concreto y una ruta clara de continuidad.
+Nivel basico: resume lo ocurrido.
+Nivel avanzado: acuerda proximos pasos y responsables.

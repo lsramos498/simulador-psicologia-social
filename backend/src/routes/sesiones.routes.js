@@ -107,12 +107,14 @@ export function crearRutasSesiones(obtenerServicio) {
     requiereRol(ROLES.DOCENTE),
     async (req, res) => {
       try {
-        const { creado, comentarioDocente } = await (await obtenerServicio()).guardarComentarioDocente(
+        const { creado, comentarioDocente, notificacion } = await (await obtenerServicio()).guardarComentarioDocente(
           Number(req.params.id),
           req.usuario.id,
           req.body?.comentarioDocente
         );
-        return res.status(creado ? 201 : 200).json({ data: { comentarioDocente } });
+        return res.status(creado ? 201 : 200).json({
+          data: { comentarioDocente, notificacion: notificacion || null }
+        });
       } catch (error) {
         return responderErrorHttp(res, error, 'sesiones');
       }
@@ -160,7 +162,23 @@ export async function obtenerServicioSesiones() {
     const { pool } = await import('../config/database.js');
     const { crearRepositorioSesiones } = await import('../modules/sesiones/sesiones.repository.js');
     const { crearServicioSesiones } = await import('../modules/sesiones/sesiones.service.js');
-    servicioPorDefecto = crearServicioSesiones(crearRepositorioSesiones(pool));
+    const { crearRepositorioNotificaciones } = await import(
+      '../modules/notificaciones/notificaciones.repository.js'
+    );
+    const { crearTransporteNotificaciones } = await import(
+      '../modules/notificaciones/notificaciones.transporte.js'
+    );
+    const { crearServicioNotificaciones } = await import(
+      '../modules/notificaciones/notificaciones.service.js'
+    );
+    const repoNotif = crearRepositorioNotificaciones(pool);
+    const transporte = await crearTransporteNotificaciones(repoNotif);
+    const notificaciones = crearServicioNotificaciones(transporte, repoNotif);
+    servicioPorDefecto = crearServicioSesiones(
+      crearRepositorioSesiones(pool),
+      () => new Date(),
+      notificaciones
+    );
   }
   return servicioPorDefecto;
 }

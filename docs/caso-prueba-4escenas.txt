@@ -1,0 +1,78 @@
+Titulo: Mediacion en residencia universitaria - caso de prueba 4x4
+
+Desarrollo situacional:
+En una residencia universitaria hay un conflicto entre companeros de piso por ruido nocturno, uso de espacios comunes y rumores en el grupo de WhatsApp. Sofia denuncia que no puede dormir ni estudiar; Andres sostiene que "todos hacen fiesta" y que ella exagera. Valeria, encargada de convivencia, pide intervencion del practicante de psicologia social antes de escalar a sancion formal. El estudiante debe contener, contrastar versiones, proteger la dignidad de las partes y proponer acuerdos claros sin exceder su rol.
+
+Contexto:
+Practica supervisada. Objetivos: escucha activa, mediacion breve, limites de rol, privacidad digital y seguimiento. La evaluacion se hace sobre 5 segun aciertos en las decisiones del caso.
+
+Personajes:
+- Sofia
+- Andres
+- Valeria
+
+Escena 1: Sala comun del piso
+Sofia llega alterada; Andres habla fuerte y hay vecinos mirando. Valeria observa desde la puerta. El ambiente es tenso y publico.
+Pregunta 1: Cual es tu primera accion para bajar la tension sin exponer datos sensibles?
+Correcta: Separar el dialogo a un espacio mas privado y validar emociones de ambas partes
+Incorrecta: Confrontar a Andres en voz alta delante de los vecinos
+Pregunta 2: Que pedis primero para ordenar la conversacion?
+Correcta: Acordar turnos de palabra y reglas minimas de respeto
+Incorrecta: Dejar que hablen a la vez para "sacar todo"
+Pregunta 3: Como proteges la privacidad en este momento?
+Correcta: Evitar comentarios publicos y pedir no grabar ni difundir el conflicto
+Incorrecta: Publicar un resumen en el grupo de WhatsApp del piso
+Pregunta 4: Que limite de rol explicas al inicio?
+Correcta: Aclaras que medias y orientas, pero no impones sancion disciplinaria
+Incorrecta: Prometes expulsar a quien "tenga la culpa"
+
+Escena 2: Oficina de convivencia
+Valeria ofrece un espacio reservado. Sofia describe insomnio y mensajes hostiles; Andres niega acoso y habla de "bromas". Hay que contrastar relatos.
+Pregunta 1: Como contrastas las versiones sin invalidar a nadie?
+Correcta: Pedis hechos concretos, tiempos y ejemplos a cada uno por turnos
+Incorrecta: Decidis de inmediato quien miente
+Pregunta 2: Que haces con la evidencia de WhatsApp que muestra Sofia?
+Correcta: Pedis consentimiento para revisar capturas solo lo necesario y con confidencialidad
+Incorrecta: Lees en voz alta todos los mensajes ante Andres
+Pregunta 3: Como respondes si Andres minimiza el impacto en Sofia?
+Correcta: Nombras el impacto reportado y pedis que escuche sin interrumpir
+Incorrecta: Le restas importancia y cambias de tema
+Pregunta 4: Que informacion registras en esta etapa?
+Correcta: Hechos relevantes, acuerdos provisorios y datos minimos necesarios
+Incorrecta: Opiniones personales y rumores del piso
+
+Escena 3: Espacio de acuerdo
+Tras el contraste, ambas partes aceptan buscar un acuerdo de convivencia. Hay que concretar normas y seguimiento.
+Pregunta 1: Que propuesta de acuerdo priorizas?
+Correcta: Horarios de silencio, uso de espacios comunes y canal privado para quejas
+Incorrecta: Prohibir cualquier reunion social de forma indefinida
+Pregunta 2: Como aseguras que el acuerdo sea voluntario?
+Correcta: Confirmas comprension y consentimiento de ambas partes punto por punto
+Incorrecta: Impones el texto sin preguntar
+Pregunta 3: Que plan de seguimiento defines?
+Correcta: Revision breve en 7 dias con Valeria y canal claro si se incumple
+Incorrecta: Cerrar el caso sin seguimiento
+Pregunta 4: Que haces si reaparece hostilidad digital?
+Correcta: Pausar, reafirmar limites y escalar a Valeria con hechos
+Incorrecta: Responder con el mismo tono en el grupo
+
+Escena 4: Cierre con el equipo
+Valeria pide una sintesis etica para el archivo de convivencia. El practicante debe informar sin vulnerar dignidad ni datos innecesarios.
+Pregunta 1: Que informas al equipo de convivencia?
+Correcta: Resumen factual, acuerdos y riesgos, sin detalles intimos innecesarios
+Incorrecta: Relato completo con juicios morales sobre las partes
+Pregunta 2: Que resguardas por confidencialidad?
+Correcta: Contenido sensible de mensajes y datos de salud mental no esenciales
+Incorrecta: Todo el chat reenviado al correo institucional amplio
+Pregunta 3: Como describes tu rol en el cierre?
+Correcta: Mediacion breve supervisada, con limites claros y derivacion si hace falta
+Incorrecta: Como sancionador oficial del conflicto
+Pregunta 4: Cual es el cierre etico mas adecuado?
+Correcta: Entregar acuerdos, ruta de seguimiento y oferta de apoyo institucional
+Incorrecta: Dar el caso por cerrado y culpar a una sola parte
+
+Rubrica:
+Criterio principal: intervencion etica y mediacion (contencion, contraste, acuerdos, privacidad).
+Nivel basico: identifica el conflicto.
+Nivel avanzado: media, protege privacidad y cierra con seguimiento concreto.
+Nota oficial: escala 0 a 5 segun aciertos (16/16 = 5).

@@ -54,21 +54,21 @@ export function crearRutasParticipacion(obtenerServicio, opciones = {}) {
   router.get('/sesiones/:sesionId/respuestas', autenticar, (req, res) => atender(
     req,
     res,
-    (servicio) => servicio.consultar(Number(req.params.sesionId), req.usuario.id),
+    (servicio) => servicio.consultar(Number(req.params.sesionId), req.usuario),
     200
   ));
 
   router.get('/sesiones/:sesionId/progreso', autenticar, (req, res) => atender(
     req,
     res,
-    (servicio) => servicio.progreso(Number(req.params.sesionId), req.usuario.id),
+    (servicio) => servicio.progreso(Number(req.params.sesionId), req.usuario),
     200
   ));
 
   router.get('/sesiones/:sesionId/retroalimentacion', autenticar, (req, res) => atender(
     req,
     res,
-    (servicio) => servicio.retroalimentacion(Number(req.params.sesionId), req.usuario.id),
+    (servicio) => servicio.retroalimentacion(Number(req.params.sesionId), req.usuario),
     200
   ));
 

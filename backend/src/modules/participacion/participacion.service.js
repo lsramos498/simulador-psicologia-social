@@ -25,6 +25,32 @@ function comprobarPropietario(sesion, estudianteId) {
   }
 }
 
+function normalizarActor(actor) {
+  if (typeof actor === 'number') {
+    return { id: actor, roles: [] };
+  }
+  return actor && typeof actor === 'object' ? actor : { id: null, roles: [] };
+}
+
+/** Estudiante dueño, docente de la actividad o administrador. */
+function comprobarAccesoConsulta(sesion, actorCrudo) {
+  if (!sesion) {
+    throw errorParticipacion('SESION_NO_EXISTE', 'La sesión no existe.', 404);
+  }
+  const actor = normalizarActor(actorCrudo);
+  const propia = Number(sesion.estudianteId) === Number(actor.id);
+  const delDocente = Number(sesion.docenteId) === Number(actor.id);
+  const roles = Array.isArray(actor.roles) ? actor.roles : [];
+  const esAdmin = roles.includes('Administrador');
+  if (!propia && !delDocente && !esAdmin) {
+    throw errorParticipacion(
+      'SESION_AJENA',
+      'No tiene autorización para consultar esta sesión.',
+      403
+    );
+  }
+}
+
 export function crearServicioParticipacion(repositorio, eventos = new EventosParticipacion()) {
   eventos.suscribir((evento) => {
     crearNotificacionInterna(evento);
@@ -81,25 +107,24 @@ export function crearServicioParticipacion(repositorio, eventos = new EventosPar
         throw error;
       }
     },
-    async consultar(sesionId, estudianteId) {
-      [sesionId, estudianteId].forEach(validarId);
+    async consultar(sesionId, actor) {
+      validarId(sesionId);
       const sesion = await repositorio.obtenerSesion(sesionId);
-      comprobarPropietario(sesion, estudianteId);
-      // La consulta está permitida también después de finalizar, sin revelar soluciones.
+      comprobarAccesoConsulta(sesion, actor);
       return repositorio.consultarRespuestas(sesionId);
     },
-    async progreso(sesionId, estudianteId) {
-      [sesionId, estudianteId].forEach(validarId);
+    async progreso(sesionId, actor) {
+      validarId(sesionId);
       const sesion = await repositorio.obtenerSesion(sesionId);
-      comprobarPropietario(sesion, estudianteId);
+      comprobarAccesoConsulta(sesion, actor);
       const total = Number(await repositorio.contarPreguntas(sesion.casoId));
       const respondidas = Number(await repositorio.contarRespuestas(sesionId));
       return calcularProgreso(total, respondidas);
     },
-    async retroalimentacion(sesionId, estudianteId) {
-      [sesionId, estudianteId].forEach(validarId);
+    async retroalimentacion(sesionId, actor) {
+      validarId(sesionId);
       const sesion = await repositorio.obtenerSesion(sesionId);
-      comprobarPropietario(sesion, estudianteId);
+      comprobarAccesoConsulta(sesion, actor);
       if (sesion.estado !== ESTADOS_SESION.FINALIZADO) {
         throw errorParticipacion(
           'ESTADO_NO_PERMITIDO',

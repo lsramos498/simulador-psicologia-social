@@ -1,11 +1,13 @@
+/** Escala oficial de la rúbrica (máximo = todos los aciertos). */
+export const NOTA_MAXIMA = 5;
+
 function redondear(valor) {
   return Math.round((Number(valor) + Number.EPSILON) * 100) / 100;
 }
 
 /**
- * Nota al cerrar la sesión.
- * Cada pregunta no respondida cuenta como cero (ausencia o intento incompleto).
- * El resultado reparte ese acierto según la ponderación de la rúbrica.
+ * Nota al cerrar la sesión, siempre en escala 0–5.
+ * 100% de aciertos → 5. Cada pregunta no respondida cuenta como cero.
  */
 export function calcularEvaluacion({ preguntas = [], respuestas = [], criterios = [] }) {
   const decisiones = new Set();
@@ -37,29 +39,33 @@ export function calcularEvaluacion({ preguntas = [], respuestas = [], criterios 
   }
 
   const fraccion = total === 0 ? 0 : correctas / total;
+  const notaEscala = redondear(NOTA_MAXIMA * fraccion);
+
   const resultados = criterios.map((criterio) => ({
     criterioId: Number(criterio.criterioId),
     rubricaId: Number(criterio.rubricaId ?? criterio.rubrica_id),
-    puntuacion: redondear(Number(criterio.puntajeMaximo) * fraccion),
+    puntuacion: notaEscala,
     observacion: respondidas === 0
       ? 'Ausencia: no hubo respuestas. Cada pregunta cuenta como cero.'
-      : `Aciertos: ${correctas} de ${total}. Las preguntas sin respuesta cuentan como cero.`
+      : `Aciertos: ${correctas} de ${total}. Nota sobre ${NOTA_MAXIMA}. Las preguntas sin respuesta cuentan como cero.`
   }));
 
-  const resultado = redondear(resultados.reduce(
-    (suma, criterio, indice) => suma + criterio.puntuacion * (Number(criterios[indice].ponderacion) / 100),
-    0
-  ));
+  const resultado = criterios.length === 0
+    ? notaEscala
+    : redondear(resultados.reduce(
+      (suma, criterio, indice) => suma + criterio.puntuacion * (Number(criterios[indice].ponderacion) / 100),
+      0
+    ));
 
   let retroalimentacionGeneral;
   if (total === 0) {
     retroalimentacionGeneral = 'El caso no tiene preguntas para evaluar.';
   } else if (respondidas === 0) {
-    retroalimentacionGeneral = `Ausencia: 0 de ${total} preguntas. Cada pregunta sin respuesta cuenta como cero.`;
+    retroalimentacionGeneral = `Ausencia: 0 de ${total} preguntas. Nota: ${resultado} / ${NOTA_MAXIMA}.`;
   } else if (respondidas < total) {
-    retroalimentacionGeneral = `Intento incompleto: ${correctas} aciertos de ${total} preguntas. Las no respondidas cuentan como cero.`;
+    retroalimentacionGeneral = `Intento incompleto: ${correctas} aciertos de ${total}. Nota: ${resultado} / ${NOTA_MAXIMA}.`;
   } else {
-    retroalimentacionGeneral = `${correctas} aciertos de ${total} preguntas.`;
+    retroalimentacionGeneral = `${correctas} aciertos de ${total} preguntas. Nota: ${resultado} / ${NOTA_MAXIMA}.`;
   }
 
   return {

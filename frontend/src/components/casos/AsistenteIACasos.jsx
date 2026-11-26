@@ -22,38 +22,134 @@ const EJEMPLOS = [
   'Acoso escolar: rumores y exclusión en el colegio'
 ];
 
-export function emparejarPersonajes(nombres = []) {
-  const lower = nombres.map((n) => String(n).toLocaleLowerCase('es'));
-  const encontrados = BANCO_PERSONAJES.filter((p) =>
-    lower.some(
-      (n) =>
-        p.nombre.toLocaleLowerCase('es') === n ||
-        p.rolSocial.toLocaleLowerCase('es').includes(n)
-    )
-  );
-  if (encontrados.length >= 2) return encontrados.slice(0, 4);
-  return BANCO_PERSONAJES.slice(0, 3);
+function normalizar(texto) {
+  return String(texto || '')
+    .toLocaleLowerCase('es')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .trim();
 }
 
+/** Elige personajes del banco según nombres sugeridos por la IA. */
+export function emparejarPersonajes(nombres = [], cantidadObjetivo = 6) {
+  const meta = Math.min(12, Math.max(2, Number(cantidadObjetivo) || nombres.length || 6));
+  const banco = [...BANCO_PERSONAJES];
+  const elegidos = [];
+  const usados = new Set();
+
+  for (const crudo of nombres) {
+    const q = normalizar(crudo);
+    if (!q) continue;
+    const exacto = banco.find(
+      (p) => !usados.has(p.id) && normalizar(p.nombre) === q
+    );
+    const porRol = banco.find(
+      (p) =>
+        !usados.has(p.id) &&
+        (normalizar(p.rolSocial).includes(q) || q.includes(normalizar(p.nombre)))
+    );
+    const pick = exacto || porRol;
+    if (pick) {
+      elegidos.push(pick);
+      usados.add(pick.id);
+    }
+    if (elegidos.length >= meta) break;
+  }
+
+  for (const p of banco) {
+    if (elegidos.length >= meta) break;
+    if (usados.has(p.id)) continue;
+    elegidos.push(p);
+    usados.add(p.id);
+  }
+
+  return elegidos.slice(0, meta);
+}
+
+/** Empareja un lugar sugerido con un escenario real del banco. */
 export function emparejarEscenario(nombreSugerido = '') {
-  const q = String(nombreSugerido).toLocaleLowerCase('es');
+  const q = normalizar(nombreSugerido);
   if (!q) return BANCO_ESCENARIOS[0] || null;
-  const exacto = BANCO_ESCENARIOS.find((e) => e.titulo.toLocaleLowerCase('es') === q);
+
+  const exacto = BANCO_ESCENARIOS.find((e) => normalizar(e.titulo) === q);
   if (exacto) return exacto;
-  const porTitulo = BANCO_ESCENARIOS.find((e) =>
-    e.titulo.toLocaleLowerCase('es').includes(q.split(' ')[0] || '')
+
+  const contiene = BANCO_ESCENARIOS.find(
+    (e) => normalizar(e.titulo).includes(q) || q.includes(normalizar(e.titulo))
   );
-  if (porTitulo) return porTitulo;
-  const claves = ['comisaría', 'hospital', 'barrio', 'colegio', 'ong', 'trabajo', 'plaza', 'café', 'cafe', 'hogar'];
-  const clave = claves.find((c) => q.includes(c.replace('á', 'a')) || q.includes(c));
-  if (clave) {
-    const porCat = BANCO_ESCENARIOS.find((e) =>
-      e.categoriaNombre.toLocaleLowerCase('es').includes(clave.replace('á', 'a').slice(0, 5)) ||
-      e.titulo.toLocaleLowerCase('es').includes(clave.slice(0, 5))
+  if (contiene) return contiene;
+
+  const mapa = [
+    ['comisaria', 'comisaría'],
+    ['denuncia', 'comisaría'],
+    ['policia', 'comisaría'],
+    ['hospital', 'hospital'],
+    ['urgencia', 'hospital'],
+    ['enfermer', 'hospital'],
+    ['barrio', 'barrio'],
+    ['vecino', 'barrio'],
+    ['calle', 'barrio'],
+    ['colegio', 'colegio'],
+    ['escolar', 'colegio'],
+    ['aula', 'colegio'],
+    ['orientacion', 'colegio'],
+    ['ong', 'ong'],
+    ['comunidad', 'ong'],
+    ['trabajo', 'trabajo'],
+    ['oficina', 'trabajo'],
+    ['laboral', 'trabajo'],
+    ['plaza', 'plaza'],
+    ['cafe', 'café'],
+    ['hogar', 'hogar'],
+    ['casa', 'hogar']
+  ];
+  for (const [clave, categoria] of mapa) {
+    if (!q.includes(clave)) continue;
+    const porCat = BANCO_ESCENARIOS.find(
+      (e) =>
+        normalizar(e.categoriaNombre).includes(normalizar(categoria)) ||
+        normalizar(e.categoria).includes(normalizar(categoria)) ||
+        normalizar(e.titulo).includes(clave)
     );
     if (porCat) return porCat;
   }
-  return BANCO_ESCENARIOS[0] || null;
+
+  const token = q.split(/\s+/).find((t) => t.length > 3) || q.slice(0, 5);
+  const porToken = BANCO_ESCENARIOS.find((e) => normalizar(e.titulo).includes(token));
+  return porToken || BANCO_ESCENARIOS[0] || null;
+}
+
+/** Completa cada escena IA con un escenario del banco y campos listos para crear. */
+export function enriquecerEscenasIa(escenas = [], escenarioPrincipal = null) {
+  const lista = Array.isArray(escenas) && escenas.length ? escenas : [];
+  return lista.map((esc, idx) => {
+    const ref =
+      (idx === 0 && escenarioPrincipal) ||
+      emparejarEscenario(esc?.nombre || esc?.escenarioSugerido || '');
+    return {
+      nombre: ref?.titulo || esc?.nombre || `Lugar ${idx + 1}`,
+      contexto:
+        String(esc?.contexto || '').trim() ||
+        ref?.descripcion ||
+        'Observa el lugar, escucha a las personas y decide cómo intervenir.',
+      pregunta:
+        String(esc?.pregunta || '').trim() ||
+        '¿Cuál es la intervención más adecuada en este momento?',
+      opcionBuena:
+        String(esc?.opcionBuena || '').trim() ||
+        'Escuchar, contrastar versiones y proponer un paso ético',
+      opcionMala:
+        String(esc?.opcionMala || '').trim() ||
+        'Imponer una conclusión rápida sin escuchar',
+      explicacionBuena:
+        String(esc?.explicacionBuena || '').trim() ||
+        'Favorece contención, escucha y criterio profesional.',
+      explicacionMala:
+        String(esc?.explicacionMala || '').trim() ||
+        'Debilita el proceso y puede escalar el conflicto.',
+      escenarioRef: ref
+    };
+  });
 }
 
 export default function AsistenteIACasos({
@@ -109,23 +205,53 @@ export default function AsistenteIACasos({
 
   function usarBorrador() {
     if (!borrador || !onAplicar) return;
-    const personajes = emparejarPersonajes(borrador.personajesSugeridos);
-    const escenario = emparejarEscenario(borrador.escenarioSugerido);
+    const metaPj = Math.max(
+      2,
+      (borrador.personajesSugeridos || []).length || 6
+    );
+    const personajes = emparejarPersonajes(borrador.personajesSugeridos, metaPj);
+    const escenario = emparejarEscenario(
+      borrador.escenarioSugerido || borrador.escenaSugerida?.nombre || lugar
+    );
+    const escenasBase =
+      Array.isArray(borrador.escenasSugeridas) && borrador.escenasSugeridas.length
+        ? borrador.escenasSugeridas
+        : borrador.escenaSugerida
+          ? [borrador.escenaSugerida]
+          : [
+              {
+                nombre: borrador.escenarioSugerido,
+                contexto: borrador.contextoHistoria,
+                pregunta: borrador.pregunta,
+                opcionBuena: borrador.opcionBuena,
+                opcionMala: borrador.opcionMala,
+                explicacionBuena: borrador.explicacionBuena,
+                explicacionMala: borrador.explicacionMala
+              }
+            ];
+    const escenas = enriquecerEscenasIa(escenasBase, escenario);
+    const primera = escenas[0] || {};
     onAplicar({
       form: {
         titulo: borrador.titulo || '',
         desarrolloSituacional: borrador.desarrolloSituacional || '',
         contextoHistoria: borrador.contextoHistoria || '',
         tiempoEstimadoSegundos: borrador.tiempoEstimadoSegundos || 800,
-        pregunta: borrador.pregunta || '',
-        opcionBuena: borrador.opcionBuena || '',
-        opcionMala: borrador.opcionMala || ''
+        pregunta: primera.pregunta || borrador.pregunta || '',
+        opcionBuena: primera.opcionBuena || borrador.opcionBuena || '',
+        opcionMala: primera.opcionMala || borrador.opcionMala || '',
+        modo: 'completo'
       },
       personajes,
-      escenario,
-      escenaSugerida: borrador.escenaSugerida || null,
+      escenario: primera.escenarioRef || escenario,
+      escenaSugerida: primera,
+      escenasSugeridas: escenas,
       rubricaSugerida: borrador.rubricaSugerida || null,
-      borrador
+      borrador: {
+        ...borrador,
+        escenasSugeridas: escenas,
+        escenaSugerida: primera
+      }
     });
   }
 
@@ -159,12 +285,15 @@ export default function AsistenteIACasos({
             rows={compacto ? 2 : 3}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Ej: Conflicto entre vecinos por el uso de la cancha comunal…"
+            placeholder="Ej: Conflicto escolar con 6 involucrados y 4 escenas…"
             required
             minLength={8}
             maxLength={2000}
             disabled={disabled || cargando}
           />
+          <p className="muted-light">
+            Indica cantidades si las necesitas: «6 involucrados» y «4 escenas». La IA las respeta.
+          </p>
         </div>
 
         {!compacto ? (
@@ -241,7 +370,13 @@ export default function AsistenteIACasos({
           <ul className="asistente-meta">
             <li>Escenario: {borrador.escenarioSugerido}</li>
             <li>Personajes: {(borrador.personajesSugeridos || []).join(', ')}</li>
+            <li>
+              Escenas: {(borrador.escenasSugeridas || [borrador.escenaSugerida]).filter(Boolean).length}
+            </li>
             <li>Pregunta: {borrador.pregunta}</li>
+            <li>
+              Opciones: {borrador.opcionBuena ? 'correcta + incorrecta' : 'pendientes'}
+            </li>
             <li>Tiempo: {borrador.tiempoEstimadoSegundos}s</li>
           </ul>
           <button type="button" className="btn-play" onClick={usarBorrador} disabled={disabled}>

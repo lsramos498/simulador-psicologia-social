@@ -91,6 +91,44 @@ export function crearRepositorioSesiones(pool) {
         return filas[0] ?? null;
       },
 
+      /** Autorización del estudiante en la actividad (sin bloqueo). */
+      async consultarAutorizacion(actividadId, estudianteId) {
+        const [filas] = await conexion.execute(
+          `SELECT id, actividad_id AS actividadId, estudiante_id AS estudianteId, estado
+           FROM EstudianteAutorizado
+           WHERE actividad_id = ? AND estudiante_id = ?
+           LIMIT 1`,
+          [actividadId, estudianteId]
+        );
+        return filas[0] ?? null;
+      },
+
+      /** Resumen de actividad + título del caso para la pantalla del estudiante. */
+      async consultarActividadResumen(actividadId) {
+        const [filas] = await conexion.execute(
+          `SELECT a.id, a.caso_id AS casoId, a.estado, a.fechaInicio, a.fechaFin,
+                  a.tiempoLimiteSegundos, a.lugar, a.mensajePersonalizado,
+                  c.titulo AS casoTitulo
+           FROM ActividadProgramada a
+           INNER JOIN Caso c ON c.id = a.caso_id
+           WHERE a.id = ?
+           LIMIT 1`,
+          [actividadId]
+        );
+        return filas[0] ?? null;
+      },
+
+      /** Programada → Iniciada cuando el estudiante abre su caso. */
+      async marcarActividadIniciada(actividadId) {
+        const [resultado] = await conexion.execute(
+          `UPDATE ActividadProgramada
+           SET estado = 'Iniciada'
+           WHERE id = ? AND estado = 'Programada'`,
+          [actividadId]
+        );
+        return resultado.affectedRows;
+      },
+
       async listarPorActividad(actividadId) {
         const [filas] = await conexion.execute(
           `SELECT s.id, s.actividad_id AS actividadId, s.estudiante_id AS estudianteId,
@@ -319,6 +357,32 @@ export function crearRepositorioSesiones(pool) {
           [comentarioDocente, evaluacion.id]
         );
         return { comentarioDocente, creado: evaluacion.comentarioDocente === null };
+      },
+
+      /** Datos para notificar por correo el comentario docente. */
+      async obtenerContextoComentarioDocente(sesionId) {
+        const [filas] = await conexion.execute(
+          `SELECT s.id AS sesionId, s.actividad_id AS actividadId, s.estudiante_id AS estudianteId,
+                  a.docente_id AS docenteId, a.caso_id AS casoId,
+                  c.titulo AS casoTitulo,
+                  e.resultado, e.retroalimentacionGeneral, e.comentarioDocente,
+                  ue.correoInstitucional AS estudianteCorreo,
+                  ue.nombres AS estudianteNombres,
+                  ue.apellidos AS estudianteApellidos,
+                  ud.correoInstitucional AS docenteCorreo,
+                  ud.nombres AS docenteNombres,
+                  ud.apellidos AS docenteApellidos
+           FROM SesionSimulacion s
+           INNER JOIN ActividadProgramada a ON a.id = s.actividad_id
+           INNER JOIN Caso c ON c.id = a.caso_id
+           INNER JOIN Evaluacion e ON e.sesion_id = s.id
+           INNER JOIN Usuario ue ON ue.id = s.estudiante_id
+           INNER JOIN Usuario ud ON ud.id = a.docente_id
+           WHERE s.id = ?
+           LIMIT 1`,
+          [sesionId]
+        );
+        return filas[0] ?? null;
       }
     };
   }

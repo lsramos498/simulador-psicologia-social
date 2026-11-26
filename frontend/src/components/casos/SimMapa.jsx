@@ -1,5 +1,6 @@
 import { pinDeIndice } from '../../data/mapaPines';
 import { portadaEscena } from '../../utils/escenasLocal';
+import { tituloCasoLimpio } from '../../utils/tituloCaso';
 
 const GUIA = {
   nombre: 'Nova',
@@ -32,15 +33,12 @@ export default function SimMapa({
 
   return (
     <section className="sim-player sim-player-mapa">
-      <header className="sim-top">
+      <header className="sim-top sim-top-compacto">
         <div>
           <p className="kicker">Mapa de la práctica</p>
           <h2>Elige a dónde ir</h2>
-          <p className="muted-light">{caso.titulo}</p>
+          <p className="muted-light">{tituloCasoLimpio(caso.titulo)}</p>
         </div>
-        <button type="button" className="btn-ghost-dark" onClick={onSalir}>
-          Salir
-        </button>
       </header>
 
       <div className="sim-mapa-board">
@@ -111,15 +109,17 @@ export default function SimMapa({
         </div>
 
         <aside className="sim-mapa-panel">
-          <div
-            className="sim-mapa-preview"
-            style={{
-              backgroundImage: `linear-gradient(180deg, transparent 20%, rgba(20,36,48,0.78)), url('${previewImg}')`
-            }}
-          >
-            <p className="kicker">Lugar seleccionado</p>
-            <h3>{preview?.nombre || 'Elige un punto'}</h3>
-            <p>{preview?.contexto || 'Pasa el cursor o toca un pin del mapa.'}</p>
+          <div className="sim-mapa-preview">
+            <div
+              className="sim-mapa-preview-foto"
+              style={{ backgroundImage: `url('${previewImg}')` }}
+              aria-hidden="true"
+            />
+            <div className="sim-mapa-preview-copy">
+              <p className="kicker">Lugar seleccionado</p>
+              <h3>{preview?.nombre || 'Elige un punto'}</h3>
+              <p>{preview?.contexto || 'Pasa el cursor o toca un pin del mapa.'}</p>
+            </div>
           </div>
 
           <div className={`sim-guia ${guiaAbierta ? 'abierta' : ''}`}>
@@ -144,42 +144,43 @@ export default function SimMapa({
             ) : null}
           </div>
 
-          <div className="sim-mapa-leyenda">
-            <span>
-              <i className="ley sugerido" /> Sugerido
-            </span>
-            <span>
-              <i className="ley visitado" /> Visitado
-            </span>
-            <span>
-              <i className="ley hecho" /> Hecho
-            </span>
+          <div className="sim-mapa-acciones">
+            <div className="sim-mapa-leyenda">
+              <span>
+                <i className="ley sugerido" /> Sugerido
+              </span>
+              <span>
+                <i className="ley visitado" /> Visitado
+              </span>
+              <span>
+                <i className="ley hecho" /> Hecho
+              </span>
+            </div>
+            <p className="sim-mapa-progreso sim-nivel-badge">
+              Progreso {resueltos.size}/{escenas.length}
+            </p>
+            {resueltos.size >= escenas.length ? (
+              <button
+                type="button"
+                className="btn-play"
+                onClick={() => {
+                  if (modoLive && onTerminar) onTerminar();
+                  else onFinLocal();
+                }}
+              >
+                {modoLive ? 'Finalizar caso' : 'Terminar simulación'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn-play"
+                onClick={() => onElegirLugar(previewIdx)}
+                disabled={previewIdx == null}
+              >
+                Entrar aquí
+              </button>
+            )}
           </div>
-
-          <p className="muted-light">
-            Progreso: {resueltos.size} de {escenas.length} lugares resueltos
-          </p>
-          {resueltos.size >= escenas.length ? (
-            <button
-              type="button"
-              className="btn-play"
-              onClick={() => {
-                if (modoLive && onTerminar) onTerminar();
-                else onFinLocal();
-              }}
-            >
-              {modoLive ? 'Finalizar y ver resultados' : 'Terminar simulación'}
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="btn-play"
-              onClick={() => onElegirLugar(previewIdx)}
-              disabled={previewIdx == null}
-            >
-              Entrar aquí
-            </button>
-          )}
         </aside>
       </div>
     </section>

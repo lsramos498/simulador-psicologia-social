@@ -13,16 +13,16 @@ const GUIA = {
 function consejoGuia(escenas, visitados, indiceSugerido) {
   const pendientes = escenas.filter((e) => !visitados.has(e.orden));
   if (pendientes.length === 0) {
-    return 'Ya recorriste todos los lugares. Si quieres, revisa alguno otra vez o termina la simulación.';
+    return 'Ya recorriste todos los lugares. Puedes revisar alguno o terminar la simulación.';
   }
   const sugerida = escenas[indiceSugerido] || pendientes[0];
   if (!visitados.size) {
-    return `Si fuera tú, empezaría por «${sugerida.nombre}». Ahí sueles encontrar la primera versión oficial del conflicto.`;
+    return `Empieza por «${sugerida.nombre}»: lee el contexto, escucha las pistas y responde la pregunta de la escena.`;
   }
   if (pendientes[0]) {
-    return `Si fuera tú, ahora iría a «${pendientes[0].nombre}». Todavía te falta contrastar lo que pasa ahí.`;
+    return `Te falta «${pendientes[0].nombre}». Ahí hay otra parte de la historia y otra pregunta.`;
   }
-  return `Si fuera tú, volvería a «${sugerida.nombre}» para preguntar lo que quedó pendiente.`;
+  return `Vuelve a «${sugerida.nombre}» si quieres contrastar otra vez las pistas.`;
 }
 
 export default function SimulacionPlayer({
@@ -37,12 +37,12 @@ export default function SimulacionPlayer({
     [caso.escenas]
   );
 
-  const [fase, setFase] = useState('mapa'); // mapa | lugar | dialogo | decision | feedback | fin
+  const [fase, setFase] = useState('mapa'); // mapa | escena | pista | enviada | feedback | fin
   const [indiceEscena, setIndiceEscena] = useState(null);
   const [indiceDecision, setIndiceDecision] = useState(0);
   const [personajeActivo, setPersonajeActivo] = useState(null);
   const [dialogoIdx, setDialogoIdx] = useState(0);
-  const [preguntados, setPreguntados] = useState(() => new Set());
+  const [pistasVistas, setPistasVistas] = useState(() => new Set());
   const [opcionElegida, setOpcionElegida] = useState(null);
   const [totalDecisiones, setTotalDecisiones] = useState(0);
   const [respuestas, setRespuestas] = useState([]);
@@ -52,6 +52,9 @@ export default function SimulacionPlayer({
   const [hoverLugar, setHoverLugar] = useState(null);
   const [errorLive, setErrorLive] = useState('');
   const [guardando, setGuardando] = useState(false);
+  const [hayMasPreguntasAqui, setHayMasPreguntasAqui] = useState(false);
+  const [opcionPendiente, setOpcionPendiente] = useState(null);
+  const [casoCompleto, setCasoCompleto] = useState(false);
 
   const escena = indiceEscena == null ? null : escenas[indiceEscena];
   const decisionesEscena = useMemo(
@@ -66,7 +69,7 @@ export default function SimulacionPlayer({
     [escenas]
   );
 
-  const dialogos = personajeActivo
+  const pistas = personajeActivo
     ? dialogosDePersonaje(caso, personajeActivo.nombre, escena)
     : [];
 
@@ -76,15 +79,20 @@ export default function SimulacionPlayer({
   }, [escenas, visitados]);
 
   const consejo = consejoGuia(escenas, visitados, sugeridoIdx);
+  const contextoEscena =
+    String(escena?.contexto || '').trim() ||
+    String(caso?.contextoHistoria || '').trim() ||
+    'Observa el lugar, escucha las pistas y responde la pregunta de esta escena.';
 
   function irAlMapa() {
     setFase('mapa');
     setIndiceEscena(null);
     setPersonajeActivo(null);
     setDialogoIdx(0);
-    setPreguntados(new Set());
+    setPistasVistas(new Set());
     setOpcionElegida(null);
     setGuiaAbierta(true);
+    setErrorLive('');
   }
 
   function elegirLugar(idx) {
@@ -93,38 +101,46 @@ export default function SimulacionPlayer({
     setIndiceEscena(idx);
     setIndiceDecision(0);
     setVisitados((prev) => new Set([...prev, elegida.orden]));
-    setFase('lugar');
+    setFase('escena');
     setPersonajeActivo(null);
     setDialogoIdx(0);
-    setPreguntados(new Set());
+    setPistasVistas(new Set());
     setOpcionElegida(null);
     setGuiaAbierta(false);
+    setErrorLive('');
   }
 
-  function preguntarA(personaje) {
+  function abrirPista(personaje) {
     setPersonajeActivo(personaje);
     setDialogoIdx(0);
-    setFase('dialogo');
-    setPreguntados((prev) => new Set([...prev, personaje.nombre]));
+    setFase('pista');
+    setPistasVistas((prev) => new Set([...prev, personaje.nombre]));
   }
 
-  function siguienteDialogo() {
-    if (dialogoIdx < dialogos.length - 1) {
+  function siguientePista() {
+    if (dialogoIdx < pistas.length - 1) {
       setDialogoIdx((i) => i + 1);
       return;
     }
-    setFase('lugar');
+    setFase('escena');
     setPersonajeActivo(null);
   }
 
-  function irADecision() {
-    setIndiceDecision(0);
-    setFase('decision');
-    setOpcionElegida(null);
+  function elegirOpcion(opcion) {
+    if (guardando || opcionPendiente) return;
+    setErrorLive('');
+    setOpcionPendiente(opcion);
   }
 
-  async function elegirOpcion(opcion) {
+  function cancelarEnvio() {
     if (guardando) return;
+    setOpcionPendiente(null);
+  }
+
+  async function confirmarEnvio() {
+    const opcion = opcionPendiente;
+    if (!opcion || guardando) return;
+
     setErrorLive('');
     setOpcionElegida(opcion);
 
@@ -137,13 +153,15 @@ export default function SimulacionPlayer({
         });
       } catch (err) {
         setOpcionElegida(null);
-        setErrorLive(err?.message || 'No se pudo guardar la respuesta. Intentá de nuevo.');
+        setOpcionPendiente(null);
+        setErrorLive(err?.message || 'No se pudo guardar la respuesta. Intenta de nuevo.');
         setGuardando(false);
         return;
       }
       setGuardando(false);
     }
 
+    setOpcionPendiente(null);
     setTotalDecisiones((n) => n + 1);
     if (decision?.id != null) {
       setRespuestas((prev) => {
@@ -159,29 +177,70 @@ export default function SimulacionPlayer({
         ];
       });
     }
-    setFase(modoLive ? 'lugar' : 'feedback');
-    if (modoLive && escena) {
-      if (indiceDecision + 1 >= decisionesEscena.length) {
-        setResueltos((prev) => new Set([...prev, escena.orden]));
-      } else {
-        setIndiceDecision((i) => i + 1);
-        setOpcionElegida(null);
-        setFase('decision');
-      }
+
+    const quedanMas = indiceDecision + 1 < decisionesEscena.length;
+    setHayMasPreguntasAqui(quedanMas);
+
+    if (!quedanMas && escena) {
+      const next = new Set([...resueltos, escena.orden]);
+      setResueltos(next);
+      setCasoCompleto(next.size >= escenas.length);
+    } else {
+      setCasoCompleto(false);
     }
+
+    if (modoLive) {
+      setFase('enviada');
+      return;
+    }
+
+    setFase('feedback');
+  }
+
+  function finalizarCaso() {
+    setOpcionElegida(null);
+    setHayMasPreguntasAqui(false);
+    setCasoCompleto(false);
+    if (modoLive && onTerminar) {
+      onTerminar();
+      return;
+    }
+    setFase('fin');
+  }
+
+  function continuarTrasEnviada() {
+    if (hayMasPreguntasAqui) {
+      setIndiceDecision((i) => i + 1);
+      setOpcionElegida(null);
+      setHayMasPreguntasAqui(false);
+      setCasoCompleto(false);
+      setFase('escena');
+      return;
+    }
+    if (casoCompleto) {
+      finalizarCaso();
+      return;
+    }
+    setOpcionElegida(null);
+    setHayMasPreguntasAqui(false);
+    irAlMapa();
   }
 
   function despuesDeFeedback() {
     if (indiceDecision + 1 < decisionesEscena.length) {
       setIndiceDecision((i) => i + 1);
       setOpcionElegida(null);
-      setFase('decision');
+      setFase('escena');
       return;
     }
     if (escena) {
       const next = new Set([...resueltos, escena.orden]);
       setResueltos(next);
       if (next.size >= escenas.length) {
+        if (modoLive && onTerminar) {
+          onTerminar();
+          return;
+        }
         setFase('fin');
       } else {
         irAlMapa();
@@ -194,7 +253,7 @@ export default function SimulacionPlayer({
   if (!escenas.length) {
     return (
       <section className="sim-player">
-        <p>Este caso aún no tiene lugares para visitar.</p>
+        <p>Este caso aún no tiene escenas para visitar.</p>
         <button type="button" className="btn-ghost-dark" onClick={onSalir}>
           Volver
         </button>
@@ -242,23 +301,24 @@ export default function SimulacionPlayer({
 
   return (
     <section className="sim-player">
-      <header className="sim-top">
+      <header className="sim-top sim-top-compacto">
         <div>
-          <p className="kicker">
-            Estás en · lugar {indiceEscena + 1} de {escenas.length}
+          <p className="sim-nivel-badge">
+            Misión {indiceEscena + 1} / {escenas.length}
           </p>
           <h2>{escena.nombre}</h2>
-          <p className="muted-light">{escena.contexto}</p>
         </div>
         <div className="ficha-acciones">
           <button type="button" className="btn-ghost-dark" onClick={irAlMapa}>
             Volver al mapa
           </button>
-          <button type="button" className="btn-ghost-dark" onClick={onSalir}>
-            Salir
-          </button>
         </div>
       </header>
+
+      <div className="sim-contexto-escena">
+        <p className="kicker">Contexto de la escena</p>
+        <p>{contextoEscena}</p>
+      </div>
 
       <div className="sim-stage" style={{ backgroundImage: `url('${fondo}')` }}>
         <div className="sim-stage-shade" />
@@ -266,13 +326,13 @@ export default function SimulacionPlayer({
         <div className="sim-personajes">
           {(escena.personajes || []).map((pj) => {
             const foto = imagenDePersonaje(pj.nombre);
-            const ya = preguntados.has(pj.nombre);
+            const ya = pistasVistas.has(pj.nombre);
             return (
               <button
                 key={pj.id || pj.nombre}
                 type="button"
                 className={ya ? 'sim-pj ya' : 'sim-pj'}
-                onClick={() => preguntarA(pj)}
+                onClick={() => abrirPista(pj)}
               >
                 <span
                   className="sim-pj-foto"
@@ -283,13 +343,13 @@ export default function SimulacionPlayer({
                   }}
                 />
                 <strong>{pj.nombre}</strong>
-                <em>{ya ? 'Ya hablaste' : 'Preguntar'}</em>
+                <em>{ya ? 'Pista vista' : 'Ver pista'}</em>
               </button>
             );
           })}
         </div>
 
-        {fase === 'dialogo' && personajeActivo ? (
+        {fase === 'pista' && personajeActivo ? (
           <div className="sim-dialogo">
             <div className="sim-dialogo-head">
               <span
@@ -302,12 +362,12 @@ export default function SimulacionPlayer({
               />
               <div>
                 <strong>{personajeActivo.nombre}</strong>
-                <em>te responde</em>
+                <em>comparte una pista de la historia</em>
               </div>
             </div>
-            <p className="sim-dialogo-texto">{dialogos[dialogoIdx]}</p>
-            <button type="button" className="btn-play" onClick={siguienteDialogo}>
-              {dialogoIdx < dialogos.length - 1 ? 'Seguir escuchando' : 'Cerrar diálogo'}
+            <p className="sim-dialogo-texto">{pistas[dialogoIdx]}</p>
+            <button type="button" className="btn-play" onClick={siguientePista}>
+              {dialogoIdx < pistas.length - 1 ? 'Siguiente pista' : 'Volver a la escena'}
             </button>
           </div>
         ) : null}
@@ -316,32 +376,17 @@ export default function SimulacionPlayer({
       <aside className="sim-guia compacta">
         <span className="sim-guia-foto" style={{ backgroundImage: `url('${GUIA.imagen}')` }} />
         <p>
-          <strong>{GUIA.nombre}:</strong> Pregunta a quienes estén aquí. Cuando tengas pistas,
-          decide. Si te trabas, vuelve al mapa y te oriento.
+          <strong>{GUIA.nombre}:</strong> Lee el contexto, abre las pistas de cada persona y
+          responde la pregunta de esta escena. Cada lugar suma un pedazo distinto de la historia.
         </p>
       </aside>
 
-      {fase === 'lugar' ? (
-        <div className="sim-acciones">
-          <p className="muted-light">
-            Pregunta a las personas del lugar. Cuando tengas información, toma una decisión.
-          </p>
-          <div className="ficha-acciones">
-            <button type="button" className="btn-ghost-dark" onClick={irAlMapa}>
-              Elegir otro lugar
-            </button>
-            <button type="button" className="btn-play" onClick={irADecision} disabled={!decision}>
-              Decidir en este lugar
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {fase === 'decision' && decision ? (
+      {(fase === 'escena' || fase === 'pista') && decision ? (
         <div className="sim-decision">
+          <p className="sim-nivel-badge">Desafío</p>
           {decisionesEscena.length > 1 ? (
             <p className="muted-light">
-              Pregunta {indiceDecision + 1} de {decisionesEscena.length} en este lugar
+              Reto {indiceDecision + 1} de {decisionesEscena.length} en este lugar
             </p>
           ) : null}
           <h3>{decision.pregunta}</h3>
@@ -352,8 +397,12 @@ export default function SimulacionPlayer({
               <button
                 key={op.id || op.orden}
                 type="button"
-                className="sim-op"
-                disabled={guardando}
+                className={`sim-op${
+                  opcionPendiente && (opcionPendiente.id || opcionPendiente.orden) === (op.id || op.orden)
+                    ? ' seleccionada'
+                    : ''
+                }`}
+                disabled={guardando || fase === 'pista' || Boolean(opcionPendiente)}
                 onClick={() => elegirOpcion(op)}
               >
                 {op.texto}
@@ -363,12 +412,91 @@ export default function SimulacionPlayer({
         </div>
       ) : null}
 
+      {opcionPendiente ? (
+        <div className="lumina-modal-backdrop" role="presentation" onClick={cancelarEnvio}>
+          <div
+            className="lumina-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirmar-envio-titulo"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="kicker">Confirmación</p>
+            <h3 id="confirmar-envio-titulo">¿Enviar esta respuesta?</h3>
+            <p className="muted-light">
+              Una vez enviada quedará registrada en tu sesión.
+            </p>
+            <blockquote className="lumina-modal-quote">{opcionPendiente.texto}</blockquote>
+            <div className="ficha-acciones">
+              <button
+                type="button"
+                className="btn-ghost-dark"
+                onClick={cancelarEnvio}
+                disabled={guardando}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn-play"
+                onClick={confirmarEnvio}
+                disabled={guardando}
+              >
+                {guardando ? 'Enviando…' : 'Sí, enviar respuesta'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {(fase === 'escena' || fase === 'pista') && !decision ? (
+        <div className="sim-acciones">
+          <p className="alert">
+            Esta escena no tiene pregunta configurada. Pídele a tu docente que la complete.
+          </p>
+          <button type="button" className="btn-ghost-dark" onClick={irAlMapa}>
+            Ir a otro lugar
+          </button>
+        </div>
+      ) : null}
+
+      {fase === 'enviada' ? (
+        <div className="sim-feedback ok sim-enviada">
+          <h3>Respuesta enviada</h3>
+          <p>
+            {hayMasPreguntasAqui
+              ? 'Tu respuesta quedó registrada. Hay otra pregunta en esta misma escena.'
+              : casoCompleto
+                ? 'Recorriste todas las escenas. Puedes finalizar el caso y ver tus resultados.'
+                : 'Tu respuesta quedó registrada. Puedes ir a otro lugar para seguir armando la historia.'}
+          </p>
+          {opcionElegida?.texto ? (
+            <p className="muted-light">Elegiste: {opcionElegida.texto}</p>
+          ) : null}
+          <div className="ficha-acciones">
+            {hayMasPreguntasAqui ? (
+              <button type="button" className="btn-play" onClick={continuarTrasEnviada}>
+                Siguiente pregunta
+              </button>
+            ) : casoCompleto ? (
+              <button type="button" className="btn-play" onClick={continuarTrasEnviada}>
+                Finalizar caso
+              </button>
+            ) : (
+              <button type="button" className="btn-play" onClick={continuarTrasEnviada}>
+                Ir a otro lugar
+              </button>
+            )}
+          </div>
+        </div>
+      ) : null}
+
       {fase === 'feedback' && opcionElegida ? (
         <div className={`sim-feedback ${opcionElegida.esCorrecta ? 'ok' : 'no'}`}>
           <h3>{opcionElegida.esCorrecta ? 'Buena intervención' : 'Hay una mejor opción'}</h3>
           <p>
             {opcionElegida.explicacion ||
-              'Sigue practicando la escucha y el contraste de versiones.'}
+              'Sigue contrastando pistas y el contexto de cada escena.'}
           </p>
           <button type="button" className="btn-play" onClick={despuesDeFeedback}>
             Volver al mapa

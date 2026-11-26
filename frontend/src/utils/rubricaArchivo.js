@@ -9,21 +9,21 @@ export const PLANTILLA_RUBRICA_JSON = {
     {
       nombre: 'Escucha y contraste de versiones',
       ponderacion: 40,
-      puntajeMaximo: 4,
+      puntajeMaximo: 5,
       niveles: [
         { nombre: 'Básico', descripcion: 'Escucha una sola versión.', puntaje: 1, orden: 1 },
-        { nombre: 'Medio', descripcion: 'Contrasta al menos dos relatos.', puntaje: 2, orden: 2 },
-        { nombre: 'Avanzado', descripcion: 'Integra versiones y propone ruta ética.', puntaje: 4, orden: 3 }
+        { nombre: 'Medio', descripcion: 'Contrasta al menos dos relatos.', puntaje: 3, orden: 2 },
+        { nombre: 'Avanzado', descripcion: 'Integra versiones y propone ruta ética.', puntaje: 5, orden: 3 }
       ]
     },
     {
       nombre: 'Intervención ética',
       ponderacion: 60,
-      puntajeMaximo: 4,
+      puntajeMaximo: 5,
       niveles: [
         { nombre: 'Básico', descripcion: 'Identifica el conflicto.', puntaje: 1, orden: 1 },
-        { nombre: 'Medio', descripcion: 'Propone una acción respetuosa.', puntaje: 2, orden: 2 },
-        { nombre: 'Avanzado', descripcion: 'Media y remite con claridad.', puntaje: 4, orden: 3 }
+        { nombre: 'Medio', descripcion: 'Propone una acción respetuosa.', puntaje: 3, orden: 2 },
+        { nombre: 'Avanzado', descripcion: 'Media y remite con claridad.', puntaje: 5, orden: 3 }
       ]
     }
   ]
@@ -40,13 +40,13 @@ function normalizarCriterio(c, indice = 0) {
   if (niveles.length === 0) {
     niveles.push(
       { nombre: 'Básico', descripcion: 'Desempeño inicial.', puntaje: 1, orden: 1 },
-      { nombre: 'Avanzado', descripcion: 'Desempeño alto.', puntaje: 4, orden: 2 }
+      { nombre: 'Avanzado', descripcion: 'Desempeño alto.', puntaje: 5, orden: 2 }
     );
   }
   return {
     nombre: String(c?.nombre || `Criterio ${indice + 1}`).trim(),
     ponderacion: Number(c?.ponderacion) || 0,
-    puntajeMaximo: Number(c?.puntajeMaximo) || 4,
+    puntajeMaximo: Number(c?.puntajeMaximo) || 5,
     niveles
   };
 }
@@ -125,17 +125,151 @@ export function parseRubricaCsv(texto) {
   };
 }
 
-export async function leerArchivoRubrica(file) {
+/**
+ * Interpreta texto libre (PDF/TXT) como rúbrica con criterios y niveles.
+ */
+export function parseRubricaDesdeTexto(textoCrudo, nombreArchivo = '') {
+  const texto = String(textoCrudo || '').replace(/\u0000/g, '').trim();
+  if (!texto || texto.length < 20) {
+    throw new Error('El archivo de rúbrica no tiene texto legible.');
+  }
+
+  // Si el TXT es JSON o CSV, preferir esos parsers.
+  if (texto.trimStart().startsWith('{')) {
+    try {
+      return parseRubricaJson(texto);
+    } catch {
+      /* sigue con heurística */
+    }
+  }
+  if (/nombre_criterio/i.test(texto.split(/\r?\n/)[0] || '')) {
+    return parseRubricaCsv(texto);
+  }
+
+  const nombreMatch = texto.match(/(?:r[\uFFFDúu]brica|nombre)\s*[:\-]\s*(.+)/i);
+  const nombre =
+    (nombreMatch?.[1] || '').trim().split(/\r?\n/)[0].slice(0, 150) ||
+    (nombreArchivo
+      ? `Rúbrica - ${String(nombreArchivo).replace(/\.[^.]+$/, '')}`
+      : 'Rúbrica importada');
+
+  const bloques = [];
+  const regexCriterio =
+    /(?:^|\n)\s*(?:criterio\s*\d*\s*[:.\-]|[-•*]\s*)([^\n]{4,160})/gi;
+  let match;
+  const indices = [];
+  while ((match = regexCriterio.exec(texto))) {
+    indices.push({ index: match.index, titulo: match[1].trim() });
+  }
+
+  if (indices.length === 0) {
+    const lineas = texto
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l.length > 8);
+    const candidatas = lineas.filter((l) =>
+      /criterio|escucha|intervenci|mediaci|etica|ética|privacidad|contenci/i.test(l)
+    );
+    for (const linea of candidatas.slice(0, 4)) {
+      bloques.push({
+        nombre: linea.replace(/^[-•*\d.)\s]+/, '').slice(0, 120),
+        descripcion: linea.slice(0, 400)
+      });
+    }
+  } else {
+    for (let i = 0; i < indices.length; i += 1) {
+      const ini = indices[i].index;
+      const fin = i + 1 < indices.length ? indices[i + 1].index : Math.min(texto.length, ini + 900);
+      const bloque = texto.slice(ini, fin).trim();
+      bloques.push({
+        nombre: indices[i].titulo.replace(/^(?:criterio\s*\d*\s*[:.\-]?\s*)/i, '').slice(0, 120),
+        descripcion: bloque.slice(0, 500)
+      });
+    }
+  }
+
+  if (!bloques.length) {
+    bloques.push({
+      nombre: 'Intervención ética',
+      descripcion: texto.slice(0, 600)
+    });
+  }
+
+  const criterios = bloques.slice(0, 6).map((b, i, arr) => {
+    const ponderacion = Math.round(100 / arr.length);
+    return normalizarCriterio(
+      {
+        nombre: b.nombre || `Criterio ${i + 1}`,
+        ponderacion: i === arr.length - 1 ? 100 - ponderacion * (arr.length - 1) : ponderacion,
+        puntajeMaximo: 5,
+        niveles: [
+          {
+            nombre: 'Básico',
+            descripcion: `Nivel inicial: ${String(b.descripcion || '').slice(0, 160)}`,
+            puntaje: 1,
+            orden: 1
+          },
+          {
+            nombre: 'Medio',
+            descripcion: 'Aplica parcialmente el criterio con apoyo.',
+            puntaje: 3,
+            orden: 2
+          },
+          {
+            nombre: 'Avanzado',
+            descripcion: `Desempeño alto en: ${b.nombre}`,
+            puntaje: 5,
+            orden: 3
+          }
+        ]
+      },
+      i
+    );
+  });
+
+  return {
+    nombre,
+    descripcion: `Importada desde ${nombreArchivo || 'documento de texto'}. Revisa ponderaciones antes de publicar.`,
+    criterios,
+    textoFuente: texto.slice(0, 8000)
+  };
+}
+
+export async function leerArchivoRubrica(file, { extraerPdf } = {}) {
   if (!file) throw new Error('Selecciona un archivo.');
   const nombre = String(file.name || '').toLowerCase();
+  const esPdf = nombre.endsWith('.pdf') || file.type === 'application/pdf';
+
+  if (esPdf) {
+    if (typeof extraerPdf !== 'function') {
+      throw new Error('No se puede leer PDF de rúbrica en este contexto.');
+    }
+    const texto = await extraerPdf(file);
+    return parseRubricaDesdeTexto(texto, file.name);
+  }
+
   const texto = await file.text();
   if (nombre.endsWith('.json')) return parseRubricaJson(texto);
-  if (nombre.endsWith('.csv') || nombre.endsWith('.txt')) return parseRubricaCsv(texto);
-  // Intento JSON y luego CSV
+  if (nombre.endsWith('.csv')) return parseRubricaCsv(texto);
+  if (nombre.endsWith('.txt')) {
+    try {
+      return parseRubricaJson(texto);
+    } catch {
+      try {
+        return parseRubricaCsv(texto);
+      } catch {
+        return parseRubricaDesdeTexto(texto, file.name);
+      }
+    }
+  }
   try {
     return parseRubricaJson(texto);
   } catch {
-    return parseRubricaCsv(texto);
+    try {
+      return parseRubricaCsv(texto);
+    } catch {
+      return parseRubricaDesdeTexto(texto, file.name);
+    }
   }
 }
 
@@ -208,17 +342,19 @@ export function calcularResultadoSimulacion({ caso, respuestas = [] }) {
     }
   }
 
+  const NOTA_MAXIMA = 5;
   const fraccion = total === 0 ? 0 : correctas / total;
+  const notaEscala = Math.round(NOTA_MAXIMA * fraccion * 100) / 100;
   const criterios = (caso?.rubrica?.criterios || []).map((c) => ({
     nombre: c.nombre,
     ponderacion: Number(c.ponderacion) || 0,
-    puntajeMaximo: Number(c.puntajeMaximo) || 0,
-    puntuacion: Math.round(Number(c.puntajeMaximo || 0) * fraccion * 100) / 100
+    puntajeMaximo: NOTA_MAXIMA,
+    puntuacion: notaEscala
   }));
 
   const resultado =
     criterios.length === 0
-      ? Math.round(fraccion * 5 * 100) / 100
+      ? notaEscala
       : Math.round(
           criterios.reduce((suma, c) => suma + c.puntuacion * (c.ponderacion / 100), 0) * 100
         ) / 100;
@@ -235,7 +371,7 @@ export function calcularResultadoSimulacion({ caso, respuestas = [] }) {
       total === 0
         ? 'El caso no tiene preguntas para evaluar.'
         : respondidas < total
-          ? `Intento incompleto: ${correctas} aciertos de ${total}. Las no respondidas cuentan como cero.`
-          : `${correctas} aciertos de ${total} preguntas.`
+          ? `Intento incompleto: ${correctas} aciertos de ${total}. Nota: ${resultado} / ${NOTA_MAXIMA}.`
+          : `${correctas} aciertos de ${total} preguntas. Nota: ${resultado} / ${NOTA_MAXIMA}.`
   };
 }

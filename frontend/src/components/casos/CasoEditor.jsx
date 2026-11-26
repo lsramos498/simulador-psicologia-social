@@ -17,7 +17,6 @@ import { aPersonajeApi, bancoCompleto } from '../../data/bancoPersonajes';
 import EditorTabBasicos from './EditorTabBasicos';
 import EditorTabDialogos from './EditorTabDialogos';
 import EditorTabEscenas from './EditorTabEscenas';
-import EditorTabPersonajes from './EditorTabPersonajes';
 import EditorTabPublicar from './EditorTabPublicar';
 import EditorTabRubrica from './EditorTabRubrica';
 import { checklistPublicacion, mensajeError, pillEstado } from '../../utils/casoHelpers';
@@ -26,7 +25,6 @@ import { dialogosDeCaso, guardarDialogosCaso } from '../../utils/dialogosLocal';
 
 const TABS = [
   { id: 'basicos', label: 'Historia' },
-  { id: 'personajes', label: 'Personajes' },
   { id: 'escenas', label: 'Escenas' },
   { id: 'dialogos', label: 'Diálogos' },
   { id: 'rubrica', label: 'Evaluación' },
@@ -65,11 +63,12 @@ export default function CasoEditor({
     esFinal: false
   });
   const [escenarioNuevo, setEscenarioNuevo] = useState(null);
+  const [personajesEscenaNueva, setPersonajesEscenaNueva] = useState([]);
   const [dialogosForm, setDialogosForm] = useState(() => dialogosDeCaso(caso));
   const [decisionForms, setDecisionForms] = useState({});
   const [opcionForms, setOpcionForms] = useState({});
   const [rubrica, setRubrica] = useState(() => ({
-    nombre: caso.rubrica?.nombre || `Evaluación · ${caso.titulo || 'Historia'}`,
+    nombre: caso.rubrica?.nombre || `Evaluación - ${caso.titulo || 'Historia'}`,
     descripcion: caso.rubrica?.descripcion || '',
     criterios: caso.rubrica?.criterios?.length
       ? caso.rubrica.criterios.map((c) => ({
@@ -87,10 +86,10 @@ export default function CasoEditor({
           {
             nombre: 'Intervención',
             ponderacion: 100,
-            puntajeMaximo: 4,
+            puntajeMaximo: 5,
             niveles: [
               { nombre: 'Básico', descripcion: 'Identifica el conflicto.', puntaje: 1, orden: 1 },
-              { nombre: 'Avanzado', descripcion: 'Media y propone acuerdo.', puntaje: 4, orden: 2 }
+              { nombre: 'Avanzado', descripcion: 'Media y propone acuerdo.', puntaje: 5, orden: 2 }
             ]
           }
         ]
@@ -277,37 +276,79 @@ export default function CasoEditor({
     evento.target.reset();
   }
 
+  function togglePersonajeEscenaNueva(personaje) {
+    setPersonajesEscenaNueva((prev) => {
+      const existe = prev.some((p) => p.id === personaje.id);
+      if (existe) return prev.filter((p) => p.id !== personaje.id);
+      return [...prev, personaje];
+    });
+  }
+
   async function crearEscena(evento) {
     evento.preventDefault();
     if (!escenarioNuevo && !escenaForm.nombre.trim()) {
-      onError('Elige un escenario o escribe un nombre.');
+      onError('Elige un escenario o escribe un nombre para la escena.');
+      return;
+    }
+    if (personajesEscenaNueva.length === 0) {
+      onError('Selecciona al menos un personaje para esta escena.');
       return;
     }
     const nombre = (escenarioNuevo?.titulo || escenaForm.nombre).trim();
     const contexto = (escenarioNuevo?.descripcion || escenaForm.contexto).trim();
     const orden = siguienteOrden(caso.escenas);
     await correr(async () => {
+      // Asegura que los personajes elegidos existan en el caso y luego los asocia a la escena.
+      let casoActual = caso;
+      for (const personaje of personajesEscenaNueva) {
+        const ya = (casoActual.personajes || []).some(
+          (p) => p.nombre.toLocaleLowerCase('es') === personaje.nombre.toLocaleLowerCase('es')
+        );
+        if (!ya) {
+          const resPj = await agregarPersonaje(token, caso.id, aPersonajeApi(personaje));
+          casoActual = resPj.data || casoActual;
+          onCaso?.(casoActual);
+        }
+      }
+
       const respuesta = await agregarEscena(token, caso.id, {
         nombre,
         contexto,
         orden,
         esFinal: Boolean(escenaForm.esFinal)
       });
-      if (escenarioNuevo && respuesta?.data) {
-        const creada =
-          (respuesta.data.escenas || []).find((e) => e.orden === orden) ||
-          (respuesta.data.escenas || []).slice(-1)[0];
-        if (creada) {
+      casoActual = respuesta?.data || casoActual;
+      onCaso?.(casoActual);
+
+      const creada =
+        (casoActual.escenas || []).find((e) => e.orden === orden) ||
+        (casoActual.escenas || []).slice(-1)[0];
+
+      if (creada) {
+        if (escenarioNuevo) {
           guardarPortadaEscena(caso.id, creada.id, escenarioNuevo);
           guardarPortadaEscena(caso.id, creada.orden, escenarioNuevo);
           guardarPortadaEscena(caso.id, creada.nombre, escenarioNuevo);
           await sincronizarMaterialServidor();
         }
+
+        for (const personaje of personajesEscenaNueva) {
+          const enCaso = (casoActual.personajes || []).find(
+            (p) => p.nombre.toLocaleLowerCase('es') === personaje.nombre.toLocaleLowerCase('es')
+          );
+          if (enCaso?.id) {
+            const resAsoc = await asociarPersonaje(token, caso.id, creada.id, enCaso.id);
+            casoActual = resAsoc.data || casoActual;
+            onCaso?.(casoActual);
+          }
+        }
       }
-      return respuesta;
-    }, 'Escena creada.');
+
+      return { data: casoActual };
+    }, 'Escena creada con escenario y personajes.');
     setEscenaForm({ nombre: '', contexto: '', esFinal: false });
     setEscenarioNuevo(null);
+    setPersonajesEscenaNueva([]);
   }
 
   async function guardarEscena(escena, patch) {
@@ -498,16 +539,6 @@ export default function CasoEditor({
         />
       ) : null}
 
-      {tab === 'personajes' ? (
-        <EditorTabPersonajes
-          idsEnCaso={idsEnCaso}
-          personajes={caso.personajes}
-          trabajando={trabajando}
-          onAgregarDelBanco={agregarDelBanco}
-          onAgregarPersonalizado={agregarPersonalizado}
-        />
-      ) : null}
-
       {tab === 'escenas' ? (
         <EditorTabEscenas
           casoId={caso.id}
@@ -517,6 +548,8 @@ export default function CasoEditor({
           setEscenaForm={setEscenaForm}
           escenarioNuevo={escenarioNuevo}
           setEscenarioNuevo={setEscenarioNuevo}
+          personajesEscenaNueva={personajesEscenaNueva}
+          onTogglePersonajeEscena={togglePersonajeEscenaNueva}
           decisionForms={decisionForms}
           setDecisionForms={setDecisionForms}
           opcionForms={opcionForms}

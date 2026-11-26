@@ -4,37 +4,70 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CID_PORTADA = 'lumina-portada';
+const CID_ACTIVIDAD = 'lumina-actividad';
 
-/** Portada del login (biblioteca) embebida en el correo vía CID. */
-export function resolverAdjuntoPortada() {
-  const candidatos = [
-    path.resolve(__dirname, '../../../../frontend/public/login-bg-libreria.jpg'),
-    path.resolve(process.cwd(), 'frontend/public/login-bg-libreria.jpg'),
-    path.resolve(process.cwd(), '../frontend/public/login-bg-libreria.jpg')
+const ESCENARIOS_CASO = [
+  'game-esc-comisaria.jpg',
+  'game-esc-hospital.jpg',
+  'game-esc-barrio.jpg',
+  'game-esc-hogar.jpg',
+  'game-esc-plaza.jpg',
+  'game-esc-ong.jpg',
+  'game-esc-trabajo.jpg',
+  'game-esc-bienestar.jpg',
+  'game-esc-colegio.jpg',
+  'game-esc-cafe.jpg'
+];
+
+function buscarArchivoPublico(...relativos) {
+  const bases = [
+    path.resolve(__dirname, '../../../../frontend/public'),
+    path.resolve(process.cwd(), 'frontend/public'),
+    path.resolve(process.cwd(), '../frontend/public')
   ];
-
-  for (const archivo of candidatos) {
-    if (fs.existsSync(archivo)) {
-      return {
-        filename: 'lumina-portada.jpg',
-        path: archivo,
-        cid: CID_PORTADA,
-        contentDisposition: 'inline'
-      };
+  for (const base of bases) {
+    for (const rel of relativos) {
+      const archivo = path.join(base, rel);
+      if (fs.existsSync(archivo)) return archivo;
     }
   }
-
   return null;
 }
 
-function bloquePortada(tieneImagen) {
-  if (tieneImagen) {
+/** Portada del login (biblioteca) embebida en el correo vía CID. */
+export function resolverAdjuntoPortada() {
+  const archivo = buscarArchivoPublico('login-bg-libreria.jpg');
+  if (!archivo) return null;
+  return {
+    filename: 'lumina-portada.jpg',
+    path: archivo,
+    cid: CID_PORTADA,
+    contentDisposition: 'inline'
+  };
+}
+
+/** Imagen de escenario asociada al caso/actividad (misma lógica que el frontend). */
+export function resolverAdjuntoActividad(casoId) {
+  const idx = Math.abs(Number(casoId) || 0) % ESCENARIOS_CASO.length;
+  const nombre = ESCENARIOS_CASO[idx];
+  const archivo = buscarArchivoPublico(`escenarios/${nombre}`);
+  if (!archivo) return null;
+  return {
+    filename: nombre,
+    path: archivo,
+    cid: CID_ACTIVIDAD,
+    contentDisposition: 'inline'
+  };
+}
+
+function bloquePortada(adjunto, alt = 'Lumina') {
+  if (adjunto?.cid) {
     return `
       <tr>
         <td style="padding:0;line-height:0;font-size:0;">
           <img
-            src="cid:${CID_PORTADA}"
-            alt="Lumina — biblioteca"
+            src="cid:${adjunto.cid}"
+            alt="${alt}"
             width="560"
             style="display:block;width:100%;max-width:560px;height:auto;border:0;"
           />
@@ -68,19 +101,42 @@ export function envolverCorreoLumina({
   pieHtml,
   ctaUrl,
   ctaTexto = 'Entrar a Lumina',
-  conPortada = true
+  conPortada = true,
+  imagenActividad = null
 }) {
-  const adjunto = conPortada ? resolverAdjuntoPortada() : null;
-  const portada = bloquePortada(Boolean(adjunto));
+  const adjuntoActividad = imagenActividad || null;
+  const adjunto = adjuntoActividad || (conPortada ? resolverAdjuntoPortada() : null);
+  const portada = bloquePortada(
+    adjunto,
+    adjuntoActividad ? 'Escenario de la actividad' : 'Lumina — biblioteca'
+  );
 
-  const boton = ctaUrl
+  const urlCtaCruda = ctaUrl ? String(ctaUrl) : '';
+  const hrefCta = urlCtaCruda
+    ? urlCtaCruda
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+    : '';
+  const textoCtaVisible = urlCtaCruda
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  const boton = hrefCta
     ? `
       <tr>
         <td style="padding:8px 28px 28px;text-align:center;">
-          <a href="${ctaUrl}"
+          <a href="${hrefCta}"
+             target="_blank"
+             rel="noopener noreferrer"
              style="display:inline-block;padding:14px 28px;border-radius:999px;background:linear-gradient(180deg,#f3d27a,#c9a24a);color:#2a1c14;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;text-decoration:none;box-shadow:0 8px 20px rgba(0,0,0,0.35);">
             ${ctaTexto} →
           </a>
+          <div style="margin-top:12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.4;color:rgba(255,236,200,0.7);word-break:break-all;">
+            Si el botón no abre, copia este enlace:<br/>
+            <a href="${hrefCta}" target="_blank" rel="noopener noreferrer" style="color:#f3d27a;">${textoCtaVisible}</a>
+          </div>
         </td>
       </tr>`
     : '';
@@ -121,7 +177,7 @@ export function envolverCorreoLumina({
           </tr>
         </table>
         <div style="margin-top:14px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:rgba(255,236,200,0.4);">
-          Lumina · Universidad
+          Lumina - Universidad
         </div>
       </td>
     </tr>
@@ -135,4 +191,4 @@ export function envolverCorreoLumina({
   };
 }
 
-export { CID_PORTADA };
+export { CID_PORTADA, CID_ACTIVIDAD };

@@ -14,7 +14,7 @@ export default function EditorTabBasicos({
     <div className="panel-editor editor-basicos-ia">
       <div className="crear-head-acciones editor-ia-bar">
         <p className="muted-light" style={{ margin: 0 }}>
-          Editá los datos a mano o pedile un borrador a la IA.
+          Edita los datos a mano o pídele un borrador a la IA.
         </p>
         <button
           type="button"

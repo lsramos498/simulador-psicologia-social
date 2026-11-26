@@ -73,7 +73,7 @@ test('el registro del repositorio sirve directamente para validarAccesoEstudiant
     new Date('2026-11-03T15:00:00')
   );
 
-  assert.deepEqual(resultado, { estudianteId: 10, actividadId: 5 });
+  assert.deepEqual(resultado, { estudianteId: 10, actividadId: 5, verResultado: false });
 });
 
 test('si el código no existe devuelve un registro vacío (y el acceso se rechaza con 401)', async () => {

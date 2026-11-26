@@ -109,7 +109,7 @@ test('falla con un mensaje claro si falta la clave secreta', () => {
 
 test('permite el acceso con correo y código correctos', () => {
   const resultado = validarAccesoEstudiante(credenciales, crearRegistro(), AHORA);
-  assert.deepEqual(resultado, { estudianteId: 10, actividadId: 5 });
+  assert.deepEqual(resultado, { estudianteId: 10, actividadId: 5, verResultado: false });
 });
 
 test('acepta el correo en mayúsculas y el código con espacios o minúsculas', () => {
@@ -187,7 +187,15 @@ test('rechaza con 403 después de la fecha de fin', () => {
   esperarError(() => validarAccesoEstudiante(credenciales, crearRegistro(), tarde), 403, /terminó/);
 });
 
-test('rechaza con 403 si la sesión del estudiante ya finalizó', () => {
+test('permite entrar a ver el resultado si la sesión ya finalizó', () => {
   const registro = crearRegistro({ sesion: { estado: 'Finalizado' } });
-  esperarError(() => validarAccesoEstudiante(credenciales, registro, AHORA), 403, /finalizada/);
+  const resultado = validarAccesoEstudiante(credenciales, registro, AHORA);
+  assert.deepEqual(resultado, { estudianteId: 10, actividadId: 5, verResultado: true });
+});
+
+test('permite ver el resultado aunque la ventana de la actividad ya cerró', () => {
+  const tarde = new Date('2026-11-03T18:01:00');
+  const registro = crearRegistro({ sesion: { estado: 'Finalizado' } });
+  const resultado = validarAccesoEstudiante(credenciales, registro, tarde);
+  assert.equal(resultado.verResultado, true);
 });

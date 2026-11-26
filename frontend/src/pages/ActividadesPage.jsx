@@ -10,6 +10,7 @@ import {
   listarEspacios,
   listarEstudiantes,
   listarEstudiantesAdmin,
+  listarGrupos,
   retirarEstudianteActividad,
   cerrarActividad,
   cerrarVencidasActividades,
@@ -17,7 +18,10 @@ import {
 } from '../api/client';
 import ActividadCrearForm from '../components/actividades/ActividadCrearForm';
 import ActividadesLista from '../components/actividades/ActividadesLista';
+import GameDecor from '../components/GameDecor';
 import { mensajeError } from '../utils/casoHelpers';
+import { formatearFecha } from '../utils/dateFormat';
+import { portadaDeCaso } from '../data/portadas';
 
 function ahoraLocalInput(minutosOffset = 0) {
   const d = new Date(Date.now() + minutosOffset * 60_000);
@@ -25,23 +29,25 @@ function ahoraLocalInput(minutosOffset = 0) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export default function ActividadesPage({ sesion }) {
+export default function ActividadesPage({ sesion, casoIdInicial = null, onCasoInicialConsumido }) {
   const { token, usuario } = sesion;
   const esAdmin = (usuario?.roles || []).includes('Administrador');
   const [actividades, setActividades] = useState([]);
   const [casos, setCasos] = useState([]);
   const [espacios, setEspacios] = useState([]);
   const [estudiantes, setEstudiantes] = useState([]);
-  const [estudianteRetiro, setEstudianteRetiro] = useState('');
+  const [grupos, setGrupos] = useState([]);
+  const [retiroPorActividad, setRetiroPorActividad] = useState({});
+  const [extraPorActividad, setExtraPorActividad] = useState({});
   const [codigos, setCodigos] = useState([]);
   const [convocatorias, setConvocatorias] = useState([]);
   const [actividadConvocadaId, setActividadConvocadaId] = useState(null);
-  const [estudianteExtra, setEstudianteExtra] = useState('');
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [cargando, setCargando] = useState(true);
   const [trabajando, setTrabajando] = useState(false);
   const [detalleActividad, setDetalleActividad] = useState(null);
+  const [mostrarAvanzado, setMostrarAvanzado] = useState(false);
   const [form, setForm] = useState({
     casoId: '',
     espacioAcademicoId: '',
@@ -51,7 +57,7 @@ export default function ActividadesPage({ sesion }) {
     tiempoLimiteSegundos: 900,
     intentosPermitidos: 1,
     lugar: 'Aula / práctica',
-    mensajePersonalizado: 'Has sido convocado a una práctica en Lumina. Entrá con tu correo y este código.',
+    mensajePersonalizado: 'Te convocaron a una práctica en Lumina. Entra con tu correo y el código de inicio de sesión.',
     estudiantesIds: []
   });
 
@@ -78,9 +84,15 @@ export default function ActividadesPage({ sesion }) {
         listarCasos(token, filtrosCasos),
         listarEspacios(token)
       ]);
+      const listaEspacios = esp.data || [];
       setActividades(acts.data || []);
       setCasos(casosRes.data || []);
-      setEspacios(esp.data || []);
+      setEspacios(listaEspacios);
+      setForm((prev) =>
+        prev.espacioAcademicoId || !listaEspacios[0]
+          ? prev
+          : { ...prev, espacioAcademicoId: String(listaEspacios[0].id) }
+      );
       try {
         const est = esAdmin
           ? await listarEstudiantesAdmin(token)
@@ -88,6 +100,12 @@ export default function ActividadesPage({ sesion }) {
         setEstudiantes(est.data || []);
       } catch {
         setEstudiantes([]);
+      }
+      try {
+        const gr = await listarGrupos(token);
+        setGrupos(gr.data || []);
+      } catch {
+        setGrupos([]);
       }
     } catch (err) {
       setError(mensajeError(err));
@@ -101,20 +119,25 @@ export default function ActividadesPage({ sesion }) {
   }, []);
 
   useEffect(() => {
+    if (!casoIdInicial) return;
+    setForm((prev) => ({ ...prev, casoId: String(casoIdInicial) }));
+    setMensaje('Caso listo para programar. Abre un grupo, selecciona estudiantes y toca Programar.');
+    setError('');
+    const t = setTimeout(() => {
+      document.getElementById('programar-actividad')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }, 120);
+    onCasoInicialConsumido?.();
+    return () => clearTimeout(t);
+  }, [casoIdInicial]);
+
+  useEffect(() => {
     if (casoElegido?.rubricaId) {
       setForm((prev) => ({ ...prev, rubricaId: String(casoElegido.rubricaId) }));
     }
   }, [casoElegido?.rubricaId]);
-
-  function toggleEstudiante(id) {
-    setForm((prev) => {
-      const set = new Set(prev.estudiantesIds.map(Number));
-      const n = Number(id);
-      if (set.has(n)) set.delete(n);
-      else set.add(n);
-      return { ...prev, estudiantesIds: [...set] };
-    });
-  }
 
   async function crear(evento) {
     evento.preventDefault();
@@ -124,18 +147,29 @@ export default function ActividadesPage({ sesion }) {
     setCodigos([]);
     setConvocatorias([]);
     try {
+      let espacioId = Number(form.espacioAcademicoId);
+      if (!espacioId) {
+        const resEsp = await crearEspacio(token, {
+          nombre: 'Práctica clínica',
+          codigo: `PRA-${Date.now().toString().slice(-5)}`
+        });
+        const creado = resEsp.data || resEsp;
+        espacioId = Number(creado.id);
+        setEspacios((prev) => [...prev, creado]);
+        setForm((prev) => ({ ...prev, espacioAcademicoId: String(creado.id) }));
+      }
       if (!form.rubricaId) {
         throw new Error(
-          'El caso elegido no tiene rúbrica activa. Abrí el editor del caso → pestaña Evaluación, subí o armá la rúbrica y guardala.'
+          'El caso no tiene rúbrica. Abre el caso → Evaluación, arma la rúbrica y guárdala antes de publicar.'
         );
       }
       const ids = form.estudiantesIds.map(Number).filter((n) => n > 0);
       if (!ids.length) {
-        throw new Error('Selecciona o escribe al menos un estudiante.');
+        throw new Error('Entra a un grupo y selecciona estudiantes (o usa Seleccionar todos).');
       }
       const payload = {
         casoId: Number(form.casoId),
-        espacioAcademicoId: Number(form.espacioAcademicoId),
+        espacioAcademicoId: espacioId,
         rubricaId: Number(form.rubricaId),
         fechaInicio: form.fechaInicio,
         fechaFin: form.fechaFin,
@@ -154,16 +188,18 @@ export default function ActividadesPage({ sesion }) {
       const previews = avisos.map((n) => n.previewUrl).filter(Boolean);
       setMensaje(
         [
-          'Actividad creada.',
+          'Actividad programada.',
           enviadasCorreo
-            ? `Correo enviado a ${enviadasCorreo} estudiante(s).`
-            : 'Aviso registrado en bandeja del sistema.',
-          'Guardá los códigos: solo se muestran ahora.',
-          previews[0] ? `Preview del correo: ${previews[0]}` : ''
+            ? `Convocatoria enviada a ${enviadasCorreo} estudiante(s).`
+            : 'Aviso registrado en bandeja.',
+          'Abajo toca Iniciar cuando quieras abrir la práctica.',
+          'Guarda los códigos (solo se muestran ahora).',
+          previews[0] ? `Preview: ${previews[0]}` : ''
         ]
           .filter(Boolean)
           .join(' ')
       );
+      setForm((prev) => ({ ...prev, estudiantesIds: [], casoId: '' }));
       if (actividadId) {
         await verConvocatorias(actividadId);
       }
@@ -173,6 +209,14 @@ export default function ActividadesPage({ sesion }) {
     } finally {
       setTrabajando(false);
     }
+  }
+
+  function elegirCasoParaProgramar(casoId) {
+    setForm((prev) => ({ ...prev, casoId: String(casoId) }));
+    setMensaje('Caso elegido. Ahora abre un grupo y selecciona estudiantes.');
+    setError('');
+    const ancla = document.getElementById('programar-actividad');
+    ancla?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   async function crearEspacioRapido() {
@@ -208,10 +252,10 @@ export default function ActividadesPage({ sesion }) {
     }
   }
 
-  async function agregarExtra(actividadId) {
-    const estudianteId = Number(estudianteExtra);
+  async function agregarExtra(actividadId, valorSelect) {
+    const estudianteId = Number(valorSelect ?? extraPorActividad[actividadId]);
     if (!estudianteId) {
-      setError('Indicá el ID del estudiante a convocar.');
+      setError('Indica el ID del estudiante a convocar.');
       return;
     }
     setTrabajando(true);
@@ -227,8 +271,9 @@ export default function ActividadesPage({ sesion }) {
       if (codigo) {
         setCodigos((prev) => [...prev, { estudianteId, codigo }]);
       }
-      setEstudianteExtra('');
+      setExtraPorActividad((prev) => ({ ...prev, [actividadId]: '' }));
       await verConvocatorias(actividadId);
+      await cargar();
     } catch (err) {
       setError(mensajeError(err));
     } finally {
@@ -236,18 +281,20 @@ export default function ActividadesPage({ sesion }) {
     }
   }
 
-  async function retirar(actividadId) {
-    const idEst = Number(estudianteRetiro);
+  async function retirar(actividadId, valorSelect) {
+    const idEst = Number(valorSelect ?? retiroPorActividad[actividadId]);
     if (!idEst) {
-      setError('Indicá el ID a retirar.');
+      setError('Indica el estudiante a retirar.');
       return;
     }
     setTrabajando(true);
+    setError('');
     try {
       await retirarEstudianteActividad(token, actividadId, idEst);
       setMensaje(`Estudiante #${idEst} retirado y notificado.`);
-      setEstudianteRetiro('');
+      setRetiroPorActividad((prev) => ({ ...prev, [actividadId]: '' }));
       await verConvocatorias(actividadId);
+      await cargar();
     } catch (err) {
       setError(mensajeError(err));
     } finally {
@@ -313,12 +360,14 @@ export default function ActividadesPage({ sesion }) {
 
   return (
     <section className="crear-caso">
-      <header className="crear-head">
+      <GameDecor variant="ambient" munecos={3} />
+      <header className="crear-head rise">
         <div>
           <p className="kicker">{esAdmin ? 'Admin / Docente' : 'Docente'}</p>
-          <h2>Actividades y convocatoria</h2>
+          <h2>Actividades</h2>
           <p className="muted-light">
-            Programa un caso con rúbrica, genera códigos y notifica a los estudiantes.
+            Flujo corto: <strong>Publicar caso</strong> → <strong>Programar</strong> (elige un grupo) →{' '}
+            <strong>Iniciar</strong>.
           </p>
         </div>
         <div className="ficha-acciones">
@@ -335,18 +384,48 @@ export default function ActividadesPage({ sesion }) {
       {error ? <div className="alert fade">{error}</div> : null}
       {cargando ? <p className="muted-light">Cargando…</p> : null}
 
-      <ActividadCrearForm
-        form={form}
-        setForm={setForm}
-        publicados={publicados}
-        espacios={espacios}
-        estudiantes={estudiantes}
-        casoElegido={casoElegido}
-        trabajando={trabajando}
-        onSubmit={crear}
-        onCrearEspacio={crearEspacioRapido}
-        onToggleEstudiante={toggleEstudiante}
-      />
+      {publicados.length > 0 ? (
+        <div className="panel-editor casos-listos">
+          <h3>Casos listos para programar</h3>
+          <p className="muted-light">
+            Publicaste el caso: elígelo aquí, convoca un grupo y programa. Después solo inicias.
+          </p>
+          <div className="casos-listos-grid">
+            {publicados.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className={
+                  String(form.casoId) === String(c.id)
+                    ? 'caso-listo-card activo'
+                    : 'caso-listo-card'
+                }
+                onClick={() => elegirCasoParaProgramar(c.id)}
+              >
+                <strong>{c.titulo}</strong>
+                <span>#{c.id} - {c.rubricaId ? 'Con rúbrica' : 'Sin rúbrica'}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div id="programar-actividad">
+        <ActividadCrearForm
+          token={token}
+          form={form}
+          setForm={setForm}
+          publicados={publicados}
+          espacios={espacios}
+          grupos={grupos}
+          casoElegido={casoElegido}
+          trabajando={trabajando}
+          onSubmit={crear}
+          onCrearEspacio={crearEspacioRapido}
+          mostrarAvanzado={mostrarAvanzado}
+          setMostrarAvanzado={setMostrarAvanzado}
+        />
+      </div>
 
       {codigos.length > 0 ? (
         <div className="asistente-resultado">
@@ -363,7 +442,7 @@ export default function ActividadesPage({ sesion }) {
                   await navigator.clipboard.writeText(texto);
                   setMensaje('Códigos copiados al portapapeles.');
                 } catch {
-                  setError('No se pudo copiar. Seleccioná los códigos a mano.');
+                  setError('No se pudo copiar. Selecciona los códigos a mano.');
                 }
               }}
             >
@@ -388,13 +467,13 @@ export default function ActividadesPage({ sesion }) {
               const preview = String(n.mensaje || '').match(/https:\/\/ethereal\.email\/message\/\S+/);
               return (
                 <li key={n.id}>
-                  #{n.estudianteId} {n.nombres || ''} {n.apellidos || ''} · {n.estado}
-                  {n.canal ? ` · ${n.canal}` : ''}
-                  {n.asunto ? ` · ${n.asunto}` : ''}
-                  {n.errorEnvio ? ` · aviso: ${n.errorEnvio}` : ''}
+                  #{n.estudianteId} {n.nombres || ''} {n.apellidos || ''} - {n.estado}
+                  {n.canal ? ` - ${n.canal}` : ''}
+                  {n.asunto ? ` - ${n.asunto}` : ''}
+                  {n.errorEnvio ? ` - aviso: ${n.errorEnvio}` : ''}
                   {preview ? (
                     <>
-                      {' · '}
+                      {' - '}
                       <a href={preview[0]} target="_blank" rel="noreferrer">
                         Ver correo enviado
                       </a>
@@ -408,23 +487,38 @@ export default function ActividadesPage({ sesion }) {
       ) : null}
 
       {detalleActividad ? (
-        <div className="panel-editor">
+        <div className="panel-editor actividad-detalle">
+          <div
+            className="actividad-detalle-foto"
+            style={{
+              backgroundImage: `url('${portadaDeCaso({
+                id: detalleActividad.casoId,
+                titulo: detalleActividad.casoTitulo
+              })}')`
+            }}
+            aria-hidden="true"
+          />
           <div className="ficha-acciones" style={{ marginBottom: '0.5rem' }}>
-            <h3 style={{ margin: 0 }}>
-              Detalle actividad #{detalleActividad.id} · {detalleActividad.estado}
+            <h3 style={{ margin: 0 }} className="actividad-card-titulo">
+              {detalleActividad.casoTitulo || `Caso #${detalleActividad.casoId}`}
             </h3>
             <button type="button" className="btn-ghost-dark" onClick={() => setDetalleActividad(null)}>
               Cerrar
             </button>
           </div>
           <p className="muted-light">
-            Caso {detalleActividad.casoId} · Rúbrica {detalleActividad.rubricaId || '—'} · Espacio{' '}
-            {detalleActividad.espacioAcademicoId || '—'}
+            Actividad #{detalleActividad.id} - {detalleActividad.estado} - Rúbrica{' '}
+            {detalleActividad.rubricaId || '—'}
+            {detalleActividad.espacioAcademicoNombre
+              ? ` - ${detalleActividad.espacioAcademicoNombre}`
+              : ''}
           </p>
-          <p className="muted-light">
-            {detalleActividad.fechaInicio} → {detalleActividad.fechaFin}
+          <p>
+            <strong>Inicio:</strong> {formatearFecha(detalleActividad.fechaInicio)}
+            {' - '}
+            <strong>Fin:</strong> {formatearFecha(detalleActividad.fechaFin)}
             {detalleActividad.tiempoLimiteSegundos
-              ? ` · límite ${detalleActividad.tiempoLimiteSegundos}s`
+              ? ` - límite ${detalleActividad.tiempoLimiteSegundos}s`
               : ''}
           </p>
           <h4>Estudiantes autorizados</h4>
@@ -434,7 +528,7 @@ export default function ActividadesPage({ sesion }) {
             <ul className="asistente-meta">
               {detalleActividad.estudiantesAutorizados.map((e) => (
                 <li key={e.id || e.estudianteId}>
-                  #{e.estudianteId} {e.nombres || ''} {e.apellidos || ''} · {e.estado}
+                  #{e.estudianteId} {e.nombres || ''} {e.apellidos || ''} - {e.estado}
                 </li>
               ))}
             </ul>
@@ -446,10 +540,10 @@ export default function ActividadesPage({ sesion }) {
         actividades={actividades}
         estudiantes={estudiantes}
         trabajando={trabajando}
-        estudianteExtra={estudianteExtra}
-        setEstudianteExtra={setEstudianteExtra}
-        estudianteRetiro={estudianteRetiro}
-        setEstudianteRetiro={setEstudianteRetiro}
+        extraPorActividad={extraPorActividad}
+        setExtraPorActividad={setExtraPorActividad}
+        retiroPorActividad={retiroPorActividad}
+        setRetiroPorActividad={setRetiroPorActividad}
         onIniciar={iniciar}
         onCerrar={cerrar}
         onVerDetalle={verDetalle}

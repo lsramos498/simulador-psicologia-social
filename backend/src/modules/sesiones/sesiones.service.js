@@ -45,6 +45,61 @@ function ventanaMasUnDia(fila, ahora) {
   return ahora.getTime() >= new Date(fila.fechaFin).getTime() + DIA_MS;
 }
 
+function resumenActividad(actividad, fila) {
+  if (!actividad && !fila) return null;
+  return {
+    id: Number(actividad?.id ?? fila?.actividadId),
+    casoId: Number(actividad?.casoId ?? fila?.casoId ?? 0) || null,
+    casoTitulo: actividad?.casoTitulo || null,
+    estado: actividad?.estado ?? fila?.estadoActividad ?? null,
+    fechaInicio: actividad?.fechaInicio ?? fila?.fechaInicio ?? null,
+    fechaFin: actividad?.fechaFin ?? fila?.fechaFin ?? null,
+    lugar: actividad?.lugar ?? null,
+    mensajePersonalizado: actividad?.mensajePersonalizado ?? null
+  };
+}
+
+async function asegurarSesionConvocada(repositorio, actividadId, estudianteId, ahora) {
+  if (typeof repositorio.consultarAutorizacion !== 'function') {
+    throw crearErrorHttp('No hay sesión para esta actividad. El docente debe iniciarla primero.', 404);
+  }
+
+  const auth = await repositorio.consultarAutorizacion(actividadId, estudianteId);
+  if (!auth || auth.estado !== 'Autorizado') {
+    throw crearErrorHttp('No estás autorizado para esta actividad.', 403);
+  }
+
+  const actividad =
+    typeof repositorio.consultarActividadResumen === 'function'
+      ? await repositorio.consultarActividadResumen(actividadId)
+      : null;
+
+  if (!actividad) {
+    throw crearErrorHttp('La actividad no existe.', 404);
+  }
+  if (actividad.estado === 'Cerrada') {
+    throw crearErrorHttp('La actividad ya está cerrada.', 409);
+  }
+
+  const inicioVentana = new Date(actividad.fechaInicio).getTime();
+  const finVentana = new Date(actividad.fechaFin).getTime();
+  if (ahora.getTime() < inicioVentana || ahora.getTime() > finVentana) {
+    throw crearErrorHttp('La actividad está fuera de la ventana de acceso.', 403);
+  }
+
+  // Solo el docente pasa Programada → Iniciada. El estudiante no puede adelantar eso.
+  if (actividad.estado === 'Programada') {
+    throw crearErrorHttp(
+      'La actividad aún está programada. Espera a que tu docente la inicie.',
+      409
+    );
+  }
+
+  if (typeof repositorio.preparar === 'function') {
+    await repositorio.preparar(actividadId);
+  }
+}
+
 function tiempoDeSesionAgotado(fila, ahora) {
   if (!fila.inicio || fila.tiempoLimiteSegundos == null) return false;
   const inicio = new Date(fila.inicio).getTime();
@@ -95,7 +150,7 @@ function convertirSesionBD(registro) {
   });
 }
 
-export function crearServicioSesiones(repositorio, reloj = () => new Date()) {
+export function crearServicioSesiones(repositorio, reloj = () => new Date(), notificaciones = null) {
   if (!repositorio || typeof repositorio.enTransaccion !== 'function') {
     throw new TypeError('Se requiere el repositorio de sesiones.');
   }
@@ -348,9 +403,18 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date()) {
 
     async iniciarPropia(actividadId, estudianteId, ahora = new Date()) {
       await this.cerrarVencidas(ahora);
-      const fila = await repositorio.obtenerPorEstudiante(actividadId, estudianteId);
+
+      let fila = await repositorio.obtenerPorEstudiante(actividadId, estudianteId);
+
+      // Si aún no hay sesión: el estudiante convocado puede abrir el caso
+      // (prepara sesiones y pasa la actividad a Iniciada si estaba Programada).
       if (!fila) {
-        throw crearErrorHttp('No hay sesión para esta actividad. El docente debe iniciarla primero.', 404);
+        await asegurarSesionConvocada(repositorio, actividadId, estudianteId, ahora);
+        fila = await repositorio.obtenerPorEstudiante(actividadId, estudianteId);
+      }
+
+      if (!fila) {
+        throw crearErrorHttp('No hay sesión para esta actividad.', 404);
       }
       if (Number(fila.estudianteId) !== Number(estudianteId)) {
         throw crearErrorHttp('La sesión no pertenece a este estudiante.', 403);
@@ -361,6 +425,14 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date()) {
       if (fila.estado === ESTADOS_SESION.EN_CURSO) {
         return publica(fila);
       }
+
+      if (fila.estadoActividad === 'Programada') {
+        throw crearErrorHttp(
+          'La actividad aún está programada. Cuando tu docente la inicie vas a poder practicar.',
+          409
+        );
+      }
+
       if (fila.estadoActividad !== 'Iniciada') {
         throw crearErrorHttp('La actividad todavía no está iniciada.', 409);
       }
@@ -369,8 +441,11 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date()) {
       if (ahora.getTime() < inicioVentana || ahora.getTime() > finVentana) {
         throw crearErrorHttp('La actividad está fuera de la ventana de acceso.', 403);
       }
-      // RF-22: no se puede iniciar si ya pasó la mitad del tiempo (ver acceso/ingresoTardio.js).
-      if (esIngresoTardio(fila, ahora)) {
+      // RF-22: mitad de la ventana de convocatoria (no del tiempo corto de simulación).
+      const ventanaSegundos = Number.isFinite(inicioVentana) && Number.isFinite(finVentana) && finVentana > inicioVentana
+        ? Math.floor((finVentana - inicioVentana) / 1000)
+        : Number(fila.tiempoLimiteSegundos) || 0;
+      if (esIngresoTardio({ fechaInicio: fila.fechaInicio, tiempoLimiteSegundos: ventanaSegundos }, ahora)) {
         const error = crearErrorHttp(
           'Ingreso tardío: ya pasó el tiempo permitido para iniciar esta actividad. Habla con tu docente.',
           403
@@ -398,14 +473,39 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date()) {
     },
 
     async consultarPropia(actividadId, estudianteId) {
-      const fila = await repositorio.obtenerPorEstudiante(actividadId, estudianteId);
-      if (!fila || Number(fila.estudianteId) !== Number(estudianteId)) {
-        throw crearErrorHttp('No hay sesión para esta actividad.', 404);
+      const actividad =
+        typeof repositorio.consultarActividadResumen === 'function'
+          ? await repositorio.consultarActividadResumen(actividadId)
+          : null;
+
+      if (actividad && typeof repositorio.consultarAutorizacion === 'function') {
+        const auth = await repositorio.consultarAutorizacion(actividadId, estudianteId);
+        if (!auth || auth.estado !== 'Autorizado') {
+          throw crearErrorHttp('No estás autorizado para esta actividad.', 403);
+        }
       }
-      const evaluacion = fila.estado === ESTADOS_SESION.FINALIZADO
-        ? await repositorio.obtenerEvaluacion(fila.id)
-        : null;
-      return { sesion: publica(fila), evaluacion };
+
+      const fila = await repositorio.obtenerPorEstudiante(actividadId, estudianteId);
+      if (fila && Number(fila.estudianteId) === Number(estudianteId)) {
+        const evaluacion = fila.estado === ESTADOS_SESION.FINALIZADO
+          ? await repositorio.obtenerEvaluacion(fila.id)
+          : null;
+        return {
+          sesion: publica(fila),
+          evaluacion,
+          actividad: resumenActividad(actividad, fila)
+        };
+      }
+
+      if (actividad) {
+        return {
+          sesion: null,
+          evaluacion: null,
+          actividad: resumenActividad(actividad, null)
+        };
+      }
+
+      throw crearErrorHttp('No hay sesión para esta actividad.', 404);
     },
 
     async consultar(sesionId, actor) {
@@ -430,7 +530,7 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date()) {
         throw crearErrorHttp('El comentario supera el tamaño permitido.', 400);
       }
 
-      return repositorio.enTransaccion(async (tx) => {
+      const guardado = await repositorio.enTransaccion(async (tx) => {
         const sesion = await tx.obtenerPorId(sesionId, true);
         if (!sesion) throw crearErrorHttp('La sesión no existe.', 404);
         if (Number(sesion.docenteId) !== docenteId) {
@@ -439,10 +539,57 @@ export function crearServicioSesiones(repositorio, reloj = () => new Date()) {
         if (sesion.estado !== ESTADOS_SESION.FINALIZADO) {
           throw crearErrorHttp('La sesión debe estar finalizada.', 409);
         }
-        const guardado = await tx.guardarComentarioDocente(sesionId, comentario);
-        if (!guardado) throw crearErrorHttp('La sesión no tiene una evaluación registrada.', 409);
-        return guardado;
+        const resultado = await tx.guardarComentarioDocente(sesionId, comentario);
+        if (!resultado) throw crearErrorHttp('La sesión no tiene una evaluación registrada.', 409);
+        return resultado;
       });
+
+      let notificacion = null;
+      if (notificaciones && typeof notificaciones.enviar === 'function') {
+        try {
+          const ctx = await repositorio.obtenerContextoComentarioDocente(sesionId);
+          if (ctx?.estudianteCorreo) {
+            const { TIPOS_NOTIFICACION } = await import(
+              '../notificaciones/notificaciones.factory.js'
+            );
+            const nombreEst = [ctx.estudianteNombres, ctx.estudianteApellidos]
+              .filter(Boolean)
+              .join(' ')
+              .trim();
+            const nombreDoc = [ctx.docenteNombres, ctx.docenteApellidos]
+              .filter(Boolean)
+              .join(' ')
+              .trim();
+            const correoEst = String(ctx.estudianteCorreo).trim();
+            const envio = await notificaciones.enviar(TIPOS_NOTIFICACION.COMENTARIO_DOCENTE, {
+              destinatario: correoEst,
+              casoTitulo: ctx.casoTitulo || `Actividad #${ctx.actividadId}`,
+              comentarioDocente: comentario,
+              retroalimentacionGeneral: ctx.retroalimentacionGeneral || null,
+              nota: ctx.resultado,
+              casoId: ctx.casoId,
+              actividadId: ctx.actividadId,
+              estudianteId: ctx.estudianteId,
+              docenteCorreo: ctx.docenteCorreo || undefined,
+              docenteNombre: nombreDoc || undefined,
+              estudianteNombre: nombreEst || undefined
+            });
+            notificacion = {
+              destinatario: envio.destinatario,
+              estado: envio.estado,
+              canal: envio.canal,
+              previewUrl: envio.previewUrl || null
+            };
+          }
+        } catch (error) {
+          notificacion = {
+            estado: 'Fallida',
+            error: error?.message || String(error)
+          };
+        }
+      }
+
+      return { ...guardado, notificacion };
     },
 
     async consultarReporteParticipacion(actividadId, docenteId) {

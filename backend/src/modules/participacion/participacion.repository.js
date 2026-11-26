@@ -6,9 +6,9 @@ export function crearRepositorioParticipacion(pool) {
         if (!bloquear) {
           const [filas] = await conexion.execute(`
             SELECT s.id, s.actividad_id AS actividadId, s.estudiante_id AS estudianteId,
-                   s.estado, s.inicio, a.caso_id AS casoId, a.tiempoLimiteSegundos,
-                   a.estado AS estadoActividad, a.fechaInicio, a.fechaFin,
-                   ea.estado AS estadoAutorizacion
+                   s.estado, s.inicio, a.caso_id AS casoId, a.docente_id AS docenteId,
+                   a.tiempoLimiteSegundos, a.estado AS estadoActividad,
+                   a.fechaInicio, a.fechaFin, ea.estado AS estadoAutorizacion
             FROM SesionSimulacion s
             JOIN ActividadProgramada a ON a.id = s.actividad_id
             LEFT JOIN EstudianteAutorizado ea
@@ -114,13 +114,17 @@ export function crearRepositorioParticipacion(pool) {
       },
 
       async consultarRespuestas(sesionId) {
-        // No exponer corrección ni puntuación durante la participación.
         const [filas] = await conexion.execute(`
-          SELECT id, sesion_id AS sesionId, decision_id AS decisionId,
-                 opcion_id AS opcionId, fechaRespuesta, fechaModificacion
-          FROM RespuestaEstudiante
-          WHERE sesion_id = ? AND opcion_id IS NOT NULL
-          ORDER BY id
+          SELECT r.id, r.sesion_id AS sesionId, r.decision_id AS decisionId,
+                 r.opcion_id AS opcionId, r.fechaRespuesta, r.fechaModificacion,
+                 o.texto AS opcionTexto, o.esCorrecta,
+                 d.pregunta, e.nombre AS escenaNombre
+          FROM RespuestaEstudiante r
+          LEFT JOIN OpcionDecision o ON o.id = r.opcion_id
+          LEFT JOIN Decision d ON d.id = r.decision_id
+          LEFT JOIN Escena e ON e.id = d.escena_id
+          WHERE r.sesion_id = ? AND r.opcion_id IS NOT NULL
+          ORDER BY r.id
         `, [sesionId]);
         return filas;
       },
@@ -146,9 +150,11 @@ export function crearRepositorioParticipacion(pool) {
       async listarRetroalimentacion(sesionId) {
         const [filas] = await conexion.execute(
           `SELECT r.decision_id AS decisionId, r.opcion_id AS opcionId,
-                  o.texto AS opcionTexto, rt.explicacion
+                  o.texto AS opcionTexto, o.esCorrecta,
+                  d.pregunta, rt.explicacion, rt.fundamentoTeorico
            FROM RespuestaEstudiante r
            INNER JOIN OpcionDecision o ON o.id = r.opcion_id
+           LEFT JOIN Decision d ON d.id = r.decision_id
            LEFT JOIN Retroalimentacion rt ON rt.opcion_id = o.id
            WHERE r.sesion_id = ?
            ORDER BY r.id`,
