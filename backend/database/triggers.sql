@@ -74,6 +74,12 @@ DROP TRIGGER IF EXISTS trg_autorizacion_marcar_consumida;
 DROP TRIGGER IF EXISTS trg_evaluacion_sesion_finalizada;
 DROP TRIGGER IF EXISTS trg_asistencia_sincronizar_fecha;
 DROP TRIGGER IF EXISTS trg_espacio_codigo_mayusculas;
+DROP TRIGGER IF EXISTS trg_codigo_login_expira_default;
+DROP TRIGGER IF EXISTS trg_codigo_login_no_reutilizar;
+DROP TRIGGER IF EXISTS trg_sesion_defaults_insert;
+DROP TRIGGER IF EXISTS trg_actividad_fechas_validas;
+DROP TRIGGER IF EXISTS trg_caso_no_editar_publicado;
+DROP TRIGGER IF EXISTS trg_escena_orden_positivo;
 
 DELIMITER $$
 
@@ -432,6 +438,98 @@ FOR EACH ROW
 BEGIN
   IF NEW.codigo IS NOT NULL THEN
     SET NEW.codigo = UPPER(TRIM(NEW.codigo));
+  END IF;
+END$$
+
+-- =====================================================
+-- CODIGO LOGIN ESTUDIANTE (OTP de sesión)
+-- =====================================================
+
+-- 25) Si no trae expiración, el OTP vale 15 minutos desde ahora
+CREATE TRIGGER trg_codigo_login_expira_default
+BEFORE INSERT ON CodigoLoginEstudiante
+FOR EACH ROW
+BEGIN
+  IF NEW.expiraEn IS NULL THEN
+    SET NEW.expiraEn = DATE_ADD(NOW(), INTERVAL 15 MINUTE);
+  END IF;
+  IF NEW.fechaCreacion IS NULL THEN
+    SET NEW.fechaCreacion = NOW();
+  END IF;
+  IF NEW.usado IS NULL THEN
+    SET NEW.usado = FALSE;
+  END IF;
+END$$
+
+-- 26) Un OTP ya consumido (usado=TRUE) no puede volver a FALSE
+CREATE TRIGGER trg_codigo_login_no_reutilizar
+BEFORE UPDATE ON CodigoLoginEstudiante
+FOR EACH ROW
+BEGIN
+  IF OLD.usado = TRUE AND NEW.usado = FALSE THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Un código de login ya usado no se puede reactivar.';
+  END IF;
+END$$
+
+-- =====================================================
+-- EXTRAS (refuerzo para revisión de clase)
+-- =====================================================
+
+-- 27) Al crear sesión: estado, intento y segundos por defecto
+CREATE TRIGGER trg_sesion_defaults_insert
+BEFORE INSERT ON SesionSimulacion
+FOR EACH ROW
+BEGIN
+  IF NEW.estado IS NULL OR NEW.estado = '' THEN
+    SET NEW.estado = 'Sin iniciar';
+  END IF;
+  IF NEW.numeroIntento IS NULL OR NEW.numeroIntento < 1 THEN
+    SET NEW.numeroIntento = 1;
+  END IF;
+  IF NEW.segundosConsumidos IS NULL OR NEW.segundosConsumidos < 0 THEN
+    SET NEW.segundosConsumidos = 0;
+  END IF;
+END$$
+
+-- 28) Al programar actividad: fechaFin debe ser posterior a fechaInicio
+CREATE TRIGGER trg_actividad_fechas_validas
+BEFORE INSERT ON ActividadProgramada
+FOR EACH ROW
+BEGIN
+  IF NEW.fechaFin <= NEW.fechaInicio THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'La fecha de finalización debe ser posterior a la de inicio.';
+  END IF;
+END$$
+
+-- 29) Un caso Publicado/Archivado no cambia su contenido (solo puede cambiar de estado)
+CREATE TRIGGER trg_caso_no_editar_publicado
+BEFORE UPDATE ON Caso
+FOR EACH ROW
+BEGIN
+  IF OLD.estado IN ('Publicado', 'Archivado') THEN
+    IF NOT (
+         OLD.titulo <=> NEW.titulo
+     AND OLD.desarrolloSituacional <=> NEW.desarrolloSituacional
+     AND OLD.contextoHistoria <=> NEW.contextoHistoria
+     AND OLD.tiempoEstimadoSegundos <=> NEW.tiempoEstimadoSegundos
+     AND OLD.creador_id <=> NEW.creador_id
+    ) THEN
+      SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No se puede editar el contenido de un caso Publicado o Archivado.';
+    END IF;
+  END IF;
+END$$
+
+-- 30) El orden de una escena empieza en 1
+CREATE TRIGGER trg_escena_orden_positivo
+BEFORE INSERT ON Escena
+FOR EACH ROW
+BEGIN
+  IF NEW.orden IS NULL OR NEW.orden < 1 THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'El orden de la escena debe ser un entero mayor o igual a 1.';
   END IF;
 END$$
 

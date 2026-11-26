@@ -544,11 +544,32 @@ CREATE TABLE Notificacion (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- DISPARADORES (ver backend/database/triggers.sql — 24 triggers)
+-- CÓDIGOS OTP DE INICIO DE SESIÓN DEL ESTUDIANTE (acceso)
 -- =====================================================
--- Se aplican con: mysql ... < backend/database/triggers.sql
--- Incluyen auditoría, validaciones de negocio, fechas automáticas
--- y normalización de datos (Usuario, Caso, Sesión, Respuestas, Actividad, etc.).
+-- La aplicación solo tiene SELECT/INSERT/UPDATE/DELETE: la tabla debe existir
+-- desde el esquema (para bases existentes: migrations/002_codigo_login_estudiante.sql).
+CREATE TABLE CodigoLoginEstudiante (
+  id INT NOT NULL AUTO_INCREMENT,
+  usuario_id INT NOT NULL,
+  codigoHash VARCHAR(64) NOT NULL,
+  expiraEn DATETIME NOT NULL,
+  usado BOOLEAN NOT NULL DEFAULT FALSE,
+  fechaCreacion DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_codigo_login_hash (codigoHash),
+  KEY idx_codigo_login_usuario (usuario_id),
+  CONSTRAINT fk_codigo_login_usuario
+    FOREIGN KEY (usuario_id) REFERENCES Usuario (id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- DISPARADORES (ver backend/database/triggers.sql — 30 triggers)
+-- =====================================================
+-- Se aplican con: npm run db:triggers   (o mysql ... < backend/database/triggers.sql)
+-- Guía para la clase: backend/database/README-disparadores.md
+-- Incluyen auditoría, validaciones de negocio, fechas automáticas,
+-- normalización de datos y reglas del OTP (CodigoLoginEstudiante).
 
 -- =====================================================
 -- REGLAS DE NEGOCIO QUE DEBEN VALIDARSE EN BACKEND

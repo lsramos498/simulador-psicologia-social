@@ -544,6 +544,26 @@ CREATE TABLE Notificacion (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
+-- CÓDIGOS OTP DE INICIO DE SESIÓN DEL ESTUDIANTE (acceso)
+-- =====================================================
+-- La aplicación solo tiene SELECT/INSERT/UPDATE/DELETE: la tabla debe existir
+-- desde el esquema (para bases existentes: migrations/002_codigo_login_estudiante.sql).
+CREATE TABLE CodigoLoginEstudiante (
+  id INT NOT NULL AUTO_INCREMENT,
+  usuario_id INT NOT NULL,
+  codigoHash VARCHAR(64) NOT NULL,
+  expiraEn DATETIME NOT NULL,
+  usado BOOLEAN NOT NULL DEFAULT FALSE,
+  fechaCreacion DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_codigo_login_hash (codigoHash),
+  KEY idx_codigo_login_usuario (usuario_id),
+  CONSTRAINT fk_codigo_login_usuario
+    FOREIGN KEY (usuario_id) REFERENCES Usuario (id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
 -- REGLAS DE NEGOCIO QUE DEBEN VALIDARSE EN BACKEND
 -- =====================================================
 -- 1. Usuario: los estudiantes deben autenticarse con correo institucional y código de autorización válido.

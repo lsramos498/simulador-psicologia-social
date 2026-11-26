@@ -17,4 +17,6 @@ coverage/
 Thumbs.db
 .idea/
 docs/entrega-pt-dcp-ejecutado/chrome-profile/
+docs/entrega-pt-dcp-ejecutado/chrome-profile-shot/
 docs/entrega-pt-dcp-ejecutado/**/chrome-profile/
+docs/entrega-pt-dcp-ejecutado/**/chrome-profile-shot/

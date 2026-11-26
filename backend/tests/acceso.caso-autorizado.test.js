@@ -35,7 +35,10 @@ function crearApp({ buscar = async (actividadId) => (actividadId === 5 ? 3 : nul
   };
   const app = express();
   app.use(express.json());
-  app.use('/api/casos', crearRutasCasos(async () => servicio, { buscarCasoDeActividad: buscar }));
+  app.use('/api/casos', crearRutasCasos(async () => servicio, {
+    buscarCasoDeActividad: buscar,
+    buscarCasosDelEstudiante: async () => [] // sin convocatorias (no toca MySQL)
+  }));
   return { app, consultados };
 }
 
@@ -126,4 +129,54 @@ test('la consulta del caso usa SQL parametrizado y devuelve null si no existe', 
   assert.match(llamadas[0].sql, /WHERE id = \?/);
   assert.deepEqual(llamadas[0].valores, [5]);
   assert.throws(() => crearBuscadorCasoDeActividad(null), TypeError);
+});
+
+// ---------- Ingreso con código de sesión (OTP): el token no trae actividad ----------
+
+const estudianteOtp = { id: 30, roles: ['Estudiante'], permisos: [] }; // convocado a actividades con casos 3 y 4
+
+function crearAppOtp({ casosDelEstudiante = async (id) => (id === 30 ? [3, 4] : []) } = {}) {
+  const servicio = {
+    async listar() { return [{ id: 3 }, { id: 4 }, { id: 9 }]; },
+    async obtener(id) { return { id: Number(id), escenas: [] }; }
+  };
+  const app = express();
+  app.use(express.json());
+  app.use('/api/casos', crearRutasCasos(async () => servicio, {
+    buscarCasoDeActividad: async () => { throw new Error('no debería usarse sin actividadId'); },
+    buscarCasosDelEstudiante: casosDelEstudiante
+  }));
+  return app;
+}
+
+test('OTP: el estudiante ve los casos de las actividades a las que está convocado', async () => {
+  const app = crearAppOtp();
+  await request(app).get('/api/casos/3').set('Authorization', token(estudianteOtp)).expect(200);
+  await request(app).get('/api/casos/4').set('Authorization', token(estudianteOtp)).expect(200);
+});
+
+test('OTP: el estudiante recibe 403 en un caso de una actividad a la que no está convocado', async () => {
+  await request(crearAppOtp()).get('/api/casos/9').set('Authorization', token(estudianteOtp)).expect(403);
+});
+
+test('OTP: el listado muestra solo los casos de sus convocatorias', async () => {
+  const res = await request(crearAppOtp()).get('/api/casos').set('Authorization', token(estudianteOtp)).expect(200);
+  assert.deepEqual(res.body.data.map((c) => c.id), [3, 4]);
+});
+
+test('OTP: un estudiante sin convocatorias recibe 403', async () => {
+  const app = crearAppOtp({ casosDelEstudiante: async () => [] });
+  await request(app).get('/api/casos/3').set('Authorization', token(estudianteOtp)).expect(403);
+  await request(app).get('/api/casos').set('Authorization', token(estudianteOtp)).expect(403);
+});
+
+test('OTP: la consulta de casos del estudiante usa SQL parametrizado y solo convocatorias Autorizado', async () => {
+  const { crearBuscadorCasosDelEstudiante } = await import('../src/modules/acceso/casoDeActividad.js');
+  const llamadas = [];
+  const buscar = crearBuscadorCasosDelEstudiante({
+    async execute(sql, valores) { llamadas.push({ sql, valores }); return [[{ casoId: 3 }, { casoId: 4 }]]; }
+  });
+  assert.deepEqual(await buscar(30), [3, 4]);
+  assert.match(llamadas[0].sql, /estudiante_id = \? AND ea\.estado = 'Autorizado'/);
+  assert.deepEqual(llamadas[0].valores, [30]);
 });

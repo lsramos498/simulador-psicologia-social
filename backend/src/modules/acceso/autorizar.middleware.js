@@ -144,11 +144,15 @@ export function requiereActividadAutorizada(
  */
 export function requiereCasoDeSuActividad(
   buscarCasoDeActividad,
-  obtenerCasoPedido = (req) => req.params?.id
+  obtenerCasoPedido = (req) => req.params?.id,
+  buscarCasosDelEstudiante = null
 ) {
   // Falla al definir la ruta, no en cada petición
   if (typeof buscarCasoDeActividad !== 'function' || typeof obtenerCasoPedido !== 'function') {
     throw new TypeError('requiereCasoDeSuActividad necesita funciones para buscar y leer el caso');
+  }
+  if (buscarCasosDelEstudiante !== null && typeof buscarCasosDelEstudiante !== 'function') {
+    throw new TypeError('buscarCasosDelEstudiante debe ser una función');
   }
 
   return async (req, res, next) => {
@@ -159,28 +163,38 @@ export function requiereCasoDeSuActividad(
       return next();
     }
 
+    // Token del código de una actividad: trae actividadId → solo el caso de esa actividad.
+    // Token del código de sesión (OTP): no trae actividad → los casos de las
+    // actividades a las que el estudiante está convocado (estado Autorizado).
     const actividadId = Number(req.usuario.actividadId);
-    if (!Number.isInteger(actividadId) || actividadId <= 0) {
+    const conActividad = Number.isInteger(actividadId) && actividadId > 0;
+    if (!conActividad && !buscarCasosDelEstudiante) {
       return res.status(403).json({ error: 'No está autorizado para este caso' });
     }
 
-    let casoPermitido;
+    let casosPermitidos;
     try {
-      casoPermitido = Number(await buscarCasoDeActividad(actividadId));
+      const encontrados = conActividad
+        ? [await buscarCasoDeActividad(actividadId)]
+        : await buscarCasosDelEstudiante(Number(req.usuario.id));
+      casosPermitidos = (encontrados || [])
+        .map(Number)
+        .filter((id) => Number.isInteger(id) && id > 0);
     } catch (error) {
       console.error('No se pudo verificar el caso del estudiante:', error?.message);
       return res.status(500).json({ error: 'Error interno del servidor' });
     }
-    if (!Number.isInteger(casoPermitido) || casoPermitido <= 0) {
+    if (casosPermitidos.length === 0) {
       return res.status(403).json({ error: 'No está autorizado para este caso' });
     }
 
     const pedido = obtenerCasoPedido(req);
-    if (pedido !== undefined && Number(pedido) !== casoPermitido) {
+    if (pedido !== undefined && !casosPermitidos.includes(Number(pedido))) {
       return res.status(403).json({ error: 'No está autorizado para este caso' });
     }
 
-    req.casoAutorizadoId = casoPermitido;
+    req.casosAutorizadosIds = casosPermitidos;
+    req.casoAutorizadoId = casosPermitidos[0];
     return next();
   };
 }
