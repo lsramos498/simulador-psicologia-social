@@ -1,0 +1,135 @@
+# Blueprint de Render para Lumina. Guía: docs/DESPLIEGUE.md
+#
+#   lumina-mysql  servicio privado con MySQL 8.4 y disco persistente
+#   lumina-api    backend (Node.js)
+#   lumina-web    frontend (sitio estático); /api/* se reenvía a lumina-api
+#
+# La API y el frontend se despliegan solos cuando el CI de GitHub Actions pasa.
+# La base de datos se despliega a mano.
+
+services:
+  - type: pserv
+    name: lumina-mysql
+    runtime: docker
+    plan: starter
+    region: virginia
+    dockerfilePath: ./deploy/mysql/Dockerfile
+    dockerContext: .
+    autoDeployTrigger: "off"
+    disk:
+      name: lumina-mysql-datos
+      mountPath: /var/lib/mysql
+      sizeGB: 1
+    envVars:
+      - key: MYSQL_ROOT_PASSWORD
+        generateValue: true
+      - key: LUMINA_APP_PASSWORD
+        generateValue: true
+      - key: TZ
+        value: America/Bogota
+
+  - type: web
+    name: lumina-api
+    runtime: node
+    plan: free
+    region: virginia
+    rootDir: backend
+    buildCommand: npm ci --omit=dev
+    # El plan free no tiene pre-deploy: el seed (idempotente) corre al arrancar.
+    startCommand: npm run db:seed || echo "Seed no aplicado; se reintentará en el próximo arranque."; npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: TZ
+        value: America/Bogota
+      - key: DB_HOST
+        fromService:
+          type: pserv
+          name: lumina-mysql
+          property: host
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_NAME
+        value: proyecto_nuclear
+      - key: DB_USER
+        value: lumina_app
+      - key: DB_PASSWORD
+        fromService:
+          type: pserv
+          name: lumina-mysql
+          envVarKey: LUMINA_APP_PASSWORD
+      - key: DB_TIMEZONE
+        value: "-05:00"
+      - key: JWT_SECRETO
+        generateValue: true
+      - key: CODIGO_AUTORIZACION_SECRETO
+        generateValue: true
+      - key: JWT_EXPIRACION
+        value: 1h
+      - key: URL_ACCESO
+        value: https://lumina-web.onrender.com
+      - key: ACCESO_CODIGO_EN_PANTALLA
+        value: "false"
+      - key: INGRESO_TARDIO_FRACCION
+        value: "0.5"
+      - key: ADMIN_CORREO
+        sync: false
+      - key: ADMIN_NOMBRES
+        sync: false
+      - key: ADMIN_APELLIDOS
+        sync: false
+      - key: ADMIN_CONTRASENA
+        sync: false
+      # Render bloquea 465 y 587 en el plan free: se usa un relay por el puerto 2525.
+      - key: SMTP_MODE
+        value: smtp
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "2525"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+
+  - type: web
+    name: lumina-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://lumina-api.onrender.com/api/*
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
