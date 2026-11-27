@@ -1,0 +1,9 @@
+[mysqld]
+character-set-server=utf8mb4
+collation-server=utf8mb4_unicode_ci
+default-time-zone='-05:00'
+# Requerido por los disparadores de triggers.sql.
+log-bin-trust-function-creators=1
+bind-address=0.0.0.0
+# Ahorra memoria en el plan starter (512 MB).
+performance_schema=OFF
