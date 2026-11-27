@@ -92,7 +92,7 @@ Guardar una copia de los respaldos fuera de Render.
 
 ## Verificación
 
-1. `https://lumina-api.onrender.com/api/health` responde `{"status":"ok",...}`.
-2. `https://lumina-web.onrender.com` carga y el administrador puede entrar.
+1. `https://lumina-api-zh5t.onrender.com/api/health` responde `{"status":"ok",...}`.
+2. `https://lumina-web-zh5t.onrender.com` carga y el administrador puede entrar.
 3. Un docente crea, publica y programa un caso, y un estudiante convocado entra con su código.
 4. En Seguimiento se ve la participación y se descarga el reporte CSV.

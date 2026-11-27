@@ -71,7 +71,7 @@ services:
       - key: JWT_EXPIRACION
         value: 1h
       - key: URL_ACCESO
-        value: https://lumina-web.onrender.com
+        value: https://lumina-web-zh5t.onrender.com
       - key: ACCESO_CODIGO_EN_PANTALLA
         value: "false"
       - key: INGRESO_TARDIO_FRACCION
@@ -113,7 +113,7 @@ services:
     routes:
       - type: rewrite
         source: /api/*
-        destination: https://lumina-api.onrender.com/api/*
+        destination: https://lumina-api-zh5t.onrender.com/api/*
       - type: rewrite
         source: /*
         destination: /index.html
