@@ -63,13 +63,31 @@ export function requierePermiso(permiso) {
  * obtenerActividadId indica de dónde sale la actividad de la ruta
  * (por defecto, req.params.id).
  */
-export function requiereActividadAutorizada(obtenerActividadId = (req) => req.params?.id) {
+async function consultarAutorizacionEnBD(actividadId, estudianteId) {
+  const { pool } = await import('../../config/database.js');
+  const [filas] = await pool.execute(
+    `SELECT 1 AS ok
+       FROM EstudianteAutorizado
+      WHERE actividad_id = ?
+        AND estudiante_id = ?
+        AND estado = 'Autorizado'
+      LIMIT 1`,
+    [actividadId, estudianteId]
+  );
+  return filas.length > 0;
+}
+
+export function requiereActividadAutorizada(
+  obtenerActividadId = (req) => req.params?.id,
+  consultarAutorizacion = consultarAutorizacionEnBD
+) {
   if (typeof obtenerActividadId !== 'function') {
     throw new TypeError('requiereActividadAutorizada necesita una función que entregue la actividad');
   }
+  if (typeof consultarAutorizacion !== 'function') {
+    throw new TypeError('requiereActividadAutorizada necesita una función para consultar la convocatoria');
+  }
 
-  // Login OTP de sesión: el JWT no fija actividadId; se valida convocatoria en BD.
-  // Login legacy (código de actividad): actividadId del token debe coincidir.
   return async (req, res, next) => {
     if (!req.usuario) {
       return res.status(401).json({ error: 'Debe autenticarse para continuar' });
@@ -84,28 +102,23 @@ export function requiereActividadAutorizada(obtenerActividadId = (req) => req.pa
       return res.status(403).json({ error: 'No está autorizado para esta actividad' });
     }
 
-    if (Number(req.usuario.actividadId) === actividadPedida) {
+    // Los tokens legados quedan vinculados a una sola actividad: no deben
+    // consultar la base de datos para intentar acceder a otra convocatoria.
+    if (req.usuario.actividadId != null) {
+      const actividadDelToken = Number(req.usuario.actividadId);
+      if (!Number.isInteger(actividadDelToken) || actividadDelToken !== actividadPedida) {
+        return res.status(403).json({ error: 'No está autorizado para esta actividad' });
+      }
       return next();
     }
 
+    // Los tokens OTP no fijan actividadId; su autorización se verifica en BD.
     try {
-      const { pool } = await import('../../config/database.js');
-      const consulta = pool.execute(
-        `SELECT 1 AS ok
-           FROM EstudianteAutorizado
-          WHERE actividad_id = ?
-            AND estudiante_id = ?
-            AND estado = 'Autorizado'
-          LIMIT 1`,
-        [actividadPedida, Number(req.usuario.id)]
+      const autorizado = await consultarAutorizacion(
+        actividadPedida,
+        Number(req.usuario.id)
       );
-      const timeout = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('timeout-autorizacion-actividad')), 2500);
-      });
-      const [filas] = await Promise.race([consulta, timeout]);
-      if (filas.length > 0) {
-        return next();
-      }
+      if (autorizado) return next();
     } catch {
       return res.status(403).json({ error: 'No está autorizado para esta actividad' });
     }

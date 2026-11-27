@@ -117,6 +117,16 @@ test('Un administrador puede consultar respuestas de cualquier sesión', async (
   );
 });
 
+test('Un administrador con rol en mayúsculas puede consultar respuestas de cualquier sesión', async () => {
+  const { servicio } = preparar({
+    obtenerSesion: async () => sesionEnCurso({ estudianteId: 7, docenteId: 55 })
+  });
+  assert.deepEqual(
+    await servicio.consultar(1, { id: 99, roles: ['ADMINISTRADOR'] }),
+    [{ id: 10, ...datos }]
+  );
+});
+
 test('Consulta vacía y rechazo de consultas ajenas, inexistentes o inválidas', async () => {
   assert.deepEqual(await preparar({ consultarRespuestas: async () => [] }).servicio.consultar(1, 7), []);
   await assert.rejects(preparar().servicio.consultar(1, 8), { codigo: 'SESION_AJENA' });

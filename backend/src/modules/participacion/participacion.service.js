@@ -1,3 +1,4 @@
+import { ROLES, tieneRol } from '../acceso/autorizacion.js';
 import { registrarRespuesta } from './registrarRespuesta.js';
 import { puedeModificarRespuesta } from './puedeModificarRespuesta.js';
 import { calcularProgreso } from './calcularProgreso.js';
@@ -40,8 +41,7 @@ function comprobarAccesoConsulta(sesion, actorCrudo) {
   const actor = normalizarActor(actorCrudo);
   const propia = Number(sesion.estudianteId) === Number(actor.id);
   const delDocente = Number(sesion.docenteId) === Number(actor.id);
-  const roles = Array.isArray(actor.roles) ? actor.roles : [];
-  const esAdmin = roles.includes('Administrador');
+  const esAdmin = tieneRol(actor, ROLES.ADMINISTRADOR);
   if (!propia && !delDocente && !esAdmin) {
     throw errorParticipacion(
       'SESION_AJENA',
